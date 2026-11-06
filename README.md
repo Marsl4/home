@@ -1,32 +1,39 @@
-# React + TypeScript + Vite
+# Studium-App
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Notizen mit Text und Zeichnungen, lokal im Browser.
 
-Currently, two official plugins are available:
+## Starten
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Im Terminal im Projektordner:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Dann im Browser **http://localhost:5173** öffnen. Beenden mit `Ctrl + C` im Terminal.
+
+(Nur beim allerersten Mal bzw. nach dem Herunterladen auf einen neuen Rechner vorher `npm install` ausführen.)
+
+## Bedienung
+
+- **Neue Seite:** "+ Neue Seite" unten in der Seitenleiste
+- **Umbenennen:** oben auf der Seite in den großen Titel klicken
+- **Löschen:** in der Seitenleiste mit der Maus über die Seite fahren → "×"
+- **Blöcke einfügen:** `/` tippen (Überschriften, Listen, Tabellen, Bilder, **Zeichnung** …)
+- **Speichern:** passiert automatisch (im Browser, in IndexedDB)
+
+## Aufbau des Codes
+
+| Datei | Aufgabe |
+|---|---|
+| `src/App.tsx` | Hauptlayout, Seitenverwaltung |
+| `src/components/Sidebar.tsx` | Seitenleiste |
+| `src/components/PageEditor.tsx` | Editor für eine Seite + automatisches Speichern |
+| `src/editor/schema.tsx` | Welche Blöcke es gibt + Einträge im "/"-Menü |
+| `src/editor/DrawingBlock.tsx` | Zeichen-Block (Excalidraw) |
+| `src/storage/db.ts` | Alles rund ums Speichern |
+
+## Wichtig
+
+Die Daten liegen nur in **diesem Browser** auf **diesem Mac**. Wer die Browserdaten
+löscht (oder einen anderen Browser nimmt), sieht die Notizen nicht. Backup/Sync kommt später.

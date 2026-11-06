@@ -1,10 +1,15 @@
 import { useEffect, useRef } from "react";
 import { BlockNoteView } from "@blocknote/mantine";
-import { useCreateBlockNote } from "@blocknote/react";
+import {
+  getDefaultReactSlashMenuItems,
+  SuggestionMenuController,
+  useCreateBlockNote,
+} from "@blocknote/react";
+import { filterSuggestionItems } from "@blocknote/core/extensions";
 import { de } from "@blocknote/core/locales";
 import "@blocknote/mantine/style.css";
 
-import { schema, type EditorBlock } from "../editor/schema";
+import { drawingSlashMenuItem, schema, type EditorBlock } from "../editor/schema";
 import { savePageContent } from "../storage/db";
 
 type Props = {
@@ -60,5 +65,18 @@ export function PageEditor({ pageId, initialContent }: Props) {
     };
   }, [editor, pageId]);
 
-  return <BlockNoteView editor={editor} onChange={scheduleSave} theme="light" />;
+  return (
+    // slashMenu={false}: wir ersetzen das Standard-"/"-Menü durch eines mit unserem Zeichen-Block.
+    <BlockNoteView editor={editor} onChange={scheduleSave} theme="light" slashMenu={false}>
+      <SuggestionMenuController
+        triggerCharacter="/"
+        getItems={async (query) =>
+          filterSuggestionItems(
+            [...getDefaultReactSlashMenuItems(editor), drawingSlashMenuItem(editor)],
+            query,
+          )
+        }
+      />
+    </BlockNoteView>
+  );
 }

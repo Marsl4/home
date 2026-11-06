@@ -146,3 +146,13 @@ body {
   margin-top: 20vh;
   color: var(--text-muted);
 }
+
+/* ---------- Zeichen-Block ---------- */
+.drawing-block {
+  width: 100%;
+  height: 450px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 4px 0;
+}
