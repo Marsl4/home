@@ -115,7 +115,7 @@ body {
 .page {
   flex: 1;
   overflow-y: auto;
-  padding: 48px 0 120px;
+  padding-top: 48px;
 }
 
 .page-title-input {
@@ -147,12 +147,99 @@ body {
   color: var(--text-muted);
 }
 
-/* ---------- Zeichen-Block ---------- */
-.drawing-block {
+/* ---------- Zeichenschicht ---------- */
+.page-content {
+  position: relative; /* Bezugspunkt für die Zeichenschicht */
+  min-height: 100%;
+  padding-bottom: 40vh; /* Platz zum Zeichnen unter dem Text */
+}
+
+.drawing-layer {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: 450px;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none; /* Stift-Modus aus: Klicks gehen an den Editor */
+}
+
+.drawing-layer.active {
+  pointer-events: auto;
+  cursor: crosshair;
+  touch-action: none; /* auf dem iPad: Stift malt, statt die Seite zu scrollen */
+}
+
+.drawing-layer.active.erasing {
+  cursor: cell;
+}
+
+.highlighter-stroke {
+  opacity: 0.6;
+  mix-blend-mode: multiply; /* Text bleibt unter dem Textmarker lesbar */
+}
+
+.drawing-toolbar {
+  position: fixed;
+  top: 12px;
+  right: 16px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: #fff;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-  margin: 4px 0;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.toolbar-button {
+  border: none;
+  background: none;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 16px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.toolbar-button:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.toolbar-button.selected {
+  background: var(--active);
+}
+
+.toolbar-button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.toolbar-button.done {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  margin: 0 2px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--border);
+  cursor: pointer;
+}
+
+.color-swatch.selected {
+  box-shadow: 0 0 0 2px var(--text);
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 22px;
+  margin: 0 4px;
+  background: var(--border);
 }

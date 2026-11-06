@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 
 import { Sidebar } from "./components/Sidebar";
 import { PageEditor } from "./components/PageEditor";
-import type { EditorBlock } from "./editor/schema";
+import { DrawingLayer } from "./drawing/DrawingLayer";
+import type { Stroke } from "./drawing/strokes";
+import { removeUnknownBlocks, type EditorBlock } from "./editor/schema";
 import {
-  deletePageContent,
+  deletePageData,
   loadPageContent,
+  loadPageDrawing,
   loadPages,
   savePages,
   type Page,
@@ -14,10 +17,11 @@ import {
 export default function App() {
   const [pages, setPages] = useState<Page[] | null>(null); // null = lädt noch
   const [activePageId, setActivePageId] = useState<string | null>(null);
-  // Inhalt der aktiven Seite, wie er aus dem Speicher geladen wurde.
-  const [loadedContent, setLoadedContent] = useState<{
+  // Inhalt der aktiven Seite (Text + Zeichnungen), wie er aus dem Speicher geladen wurde.
+  const [loaded, setLoaded] = useState<{
     pageId: string;
     blocks: EditorBlock[] | undefined;
+    strokes: Stroke[];
   } | null>(null);
 
   // Beim Start: Seitenliste laden.
@@ -32,9 +36,17 @@ export default function App() {
   useEffect(() => {
     if (!activePageId) return;
     let cancelled = false;
-    loadPageContent(activePageId).then((blocks) => {
-      if (!cancelled) setLoadedContent({ pageId: activePageId, blocks: blocks as EditorBlock[] });
-    });
+    Promise.all([loadPageContent(activePageId), loadPageDrawing(activePageId)]).then(
+      ([blocks, strokes]) => {
+        if (!cancelled) {
+          setLoaded({
+            pageId: activePageId,
+            blocks: blocks && removeUnknownBlocks(blocks as EditorBlock[]),
+            strokes,
+          });
+        }
+      },
+    );
     return () => {
       cancelled = true;
     };
@@ -62,7 +74,7 @@ export default function App() {
 
     const remaining = (pages ?? []).filter((p) => p.id !== id);
     updatePages(remaining);
-    deletePageContent(id);
+    deletePageData(id);
     if (activePageId === id) setActivePageId(remaining[0]?.id ?? null);
   };
 
@@ -82,21 +94,18 @@ export default function App() {
 
       <main className="page">
         {activePage ? (
-          <>
-            <input
-              className="page-title-input"
-              value={activePage.title}
-              placeholder="Ohne Titel"
-              onChange={(e) => renamePage(activePage.id, e.target.value)}
-            />
-            {loadedContent?.pageId === activePage.id && (
-              <PageEditor
-                key={activePage.id}
-                pageId={activePage.id}
-                initialContent={loadedContent.blocks}
+          loaded?.pageId === activePage.id && (
+            // key: beim Seitenwechsel Editor und Zeichenschicht komplett neu aufbauen
+            <DrawingLayer key={activePage.id} pageId={activePage.id} initialStrokes={loaded.strokes}>
+              <input
+                className="page-title-input"
+                value={activePage.title}
+                placeholder="Ohne Titel"
+                onChange={(e) => renamePage(activePage.id, e.target.value)}
               />
-            )}
-          </>
+              <PageEditor pageId={activePage.id} initialContent={loaded.blocks} />
+            </DrawingLayer>
+          )
         ) : (
           <div className="empty-state">
             <p>Noch keine Seite da.</p>
