@@ -25,4 +25,6 @@ export type Section = {
   View: FC<SectionProps>; // Inhalt der großen Fläche rechts
   // Optional: lädt die Daten des Bereichs und stellt sie Leiste + Ansicht zur Verfügung.
   Provider?: FC<{ children: ReactNode }>;
+  // Optional: unten in der Leiste anzeigen (z. B. Einstellungen).
+  placement?: "bottom";
 };

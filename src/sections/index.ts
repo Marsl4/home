@@ -10,6 +10,9 @@ import {
   ListTodo,
   NotebookPen,
   PenLine,
+  Settings,
+  DatabaseBackup,
+  UserRound,
 } from "lucide-react";
 
 import { NotesPanel } from "./notes/NotesPanel";
@@ -23,6 +26,7 @@ import { PlaceholderView } from "./placeholder/PlaceholderView";
 import { TodosPanel } from "./todos/TodosPanel";
 import { TodosProvider } from "./todos/TodosProvider";
 import { TodosView } from "./todos/TodosView";
+import { SettingsView } from "./settings/SettingsView";
 import type { Section } from "./types";
 import { UniPanel } from "./uni/UniPanel";
 import { UniView } from "./uni/UniView";
@@ -88,5 +92,17 @@ export const sections: Section[] = [
     ],
     Panel: PlaceholderPanel,
     View: PlaceholderView,
+  },
+  {
+    id: "settings",
+    label: "Einstellungen",
+    icon: Settings,
+    placement: "bottom",
+    subItems: [
+      { id: "backup", label: "Daten & Backup", icon: DatabaseBackup },
+      { id: "account", label: "Konto", icon: UserRound },
+    ],
+    Panel: PlaceholderPanel,
+    View: SettingsView,
   },
 ];

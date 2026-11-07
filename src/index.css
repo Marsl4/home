@@ -858,3 +858,133 @@ button {
 .pdf-error {
   color: #dc2626;
 }
+
+.rail-spacer {
+  flex: 1;
+}
+
+/* =========================================================
+   Einstellungen
+   ========================================================= */
+.settings {
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 32px 120px;
+}
+
+.settings h1 {
+  margin: 0 0 8px;
+  font-size: 32px;
+}
+
+.settings-intro {
+  margin: 0 0 24px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.settings-intro strong {
+  color: var(--text);
+}
+
+.settings-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.settings-stat {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--panel-bg);
+}
+
+.settings-stat-value {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.settings-stat-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.settings-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.settings-card h2 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.settings-card p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.settings-card button {
+  flex-shrink: 0;
+}
+
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.secondary-button:hover {
+  background: var(--hover);
+}
+
+.primary-button:disabled,
+.secondary-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.settings-status {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.settings-status.ok {
+  background: #ecfdf3;
+  color: #166534;
+}
+
+.settings-status.error {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.settings-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
