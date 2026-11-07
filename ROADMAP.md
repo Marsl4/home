@@ -25,6 +25,12 @@
 - [ ] **KI-Integration**: Claude und andere KI-Assistenten direkt in der App nutzen
       (z. B. Zusammenfassungen, Fragen zu Notizen und PDFs, Lernkarten).
 
+### Echte App (nicht im Browser)
+- [ ] **Als normale App verpacken** (Capacitor): eigenes Icon, startet ohne Browser/Terminal,
+      läuft offline auf iPad, iPhone und Mac. Der bisherige Code bleibt erhalten.
+      Zum Testen reicht die kostenlose Apple-ID; dauerhaft + iCloud braucht das
+      Apple Developer Program (99 €/Jahr).
+
 ### Konto & Sync
 - [ ] **Einstellungsseite mit Anmeldung**: Daten an ein Konto knüpfen.
 - [ ] **iCloud als Ziel**: Daten über iCloud speichern und zwischen Mac und iPad synchronisieren.
