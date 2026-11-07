@@ -25,7 +25,7 @@ export function AiSettings() {
       const model = available.includes(settings.model)
         ? settings.model
         : (pickModel(available) ?? settings.model);
-      saveAiSettings({ apiKey, model });
+      saveAiSettings({ ...settings, apiKey, model });
       setStatus({ kind: "ok", text: "Verbindung klappt – der Schlüssel ist gespeichert." });
     } catch (e) {
       setStatus({ kind: "error", text: describeAiError(e) });
@@ -112,6 +112,30 @@ export function AiSettings() {
             </option>
           ))}
         </select>
+      </section>
+
+      <section className="settings-card">
+        <div>
+          <h2>Antworten</h2>
+          <p>
+            „Schnell“: die KI denkt nur kurz nach und antwortet zügig – reicht meist. „Gründlich“: mehr
+            Nachdenken, z. B. für schwierige Aufgaben, dafür längere Wartezeit.
+          </p>
+        </div>
+        <div className="segmented">
+          <button
+            className={!settings.thorough ? "selected" : ""}
+            onClick={() => saveAiSettings({ ...settings, thorough: false })}
+          >
+            Schnell
+          </button>
+          <button
+            className={settings.thorough ? "selected" : ""}
+            onClick={() => saveAiSettings({ ...settings, thorough: true })}
+          >
+            Gründlich
+          </button>
+        </div>
       </section>
 
       <div className="ai-privacy">

@@ -1,7 +1,7 @@
 // Verbindung zu Google Gemini (offizielles Paket @google/genai).
 // Die App schickt Anfragen direkt vom Gerät an Google – es gibt keinen eigenen Server dazwischen.
 // Alles Anbieter-Spezifische steht nur hier: Kommt später z. B. Claude dazu, reicht eine zweite Datei.
-import { ApiError, GoogleGenAI, type Content, type Part } from "@google/genai";
+import { ApiError, GoogleGenAI, ThinkingLevel, type Content, type Part, type ThinkingConfig } from "@google/genai";
 
 export type ChatMessage = {
   role: "user" | "assistant";
@@ -26,10 +26,19 @@ type AskOptions = {
   attachment: Attachment | null; // wird nur an die neue Frage gehängt
   onText: (textSoFar: string) => void;
   signal?: AbortSignal;
+  fast: boolean; // wenig "Nachdenken" vor der Antwort (schneller)
 };
 
+// Wie viel die KI vor der Antwort nachdenkt. Ältere Modelle (2.x) nehmen ein Budget,
+// neuere (ab 3) eine Stufe. Kennt ein Modell die Einstellung nicht, wird ohne gefragt.
+function thinkingFor(model: string, fast: boolean): ThinkingConfig | undefined {
+  if (!fast) return undefined;
+  if (/^gemini-[12]\./.test(model)) return { thinkingBudget: model.includes("pro") ? 128 : 0 };
+  return { thinkingLevel: ThinkingLevel.LOW };
+}
+
 // Stellt die Frage und liefert die Antwort Stück für Stück (onText), sobald sie entsteht.
-export async function askGemini({ apiKey, model, history, attachment, onText, signal }: AskOptions) {
+export async function askGemini({ apiKey, model, history, attachment, onText, signal, fast }: AskOptions) {
   const ai = new GoogleGenAI({ apiKey });
   const contents: Content[] = history.map((message, index) => {
     const parts: Part[] = [{ text: message.text }];
@@ -37,11 +46,21 @@ export async function askGemini({ apiKey, model, history, attachment, onText, si
     return { role: message.role === "user" ? "user" : "model", parts };
   });
 
-  const stream = await ai.models.generateContentStream({
-    model,
-    contents,
-    config: { systemInstruction: SYSTEM_PROMPT, abortSignal: signal },
-  });
+  const request = (thinkingConfig: ThinkingConfig | undefined) =>
+    ai.models.generateContentStream({
+      model,
+      contents,
+      config: { systemInstruction: SYSTEM_PROMPT, abortSignal: signal, ...(thinkingConfig && { thinkingConfig }) },
+    });
+  const thinking = thinkingFor(model, fast);
+  let stream;
+  try {
+    stream = await request(thinking);
+  } catch (error) {
+    // Modell mag die Denk-Einstellung nicht -> einfach ohne nochmal
+    if (!thinking || !(error instanceof ApiError) || error.status !== 400 || !/think/i.test(error.message)) throw error;
+    stream = await request(undefined);
+  }
   let answer = "";
   for await (const chunk of stream) {
     answer += chunk.text ?? "";

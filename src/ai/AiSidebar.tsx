@@ -1,6 +1,6 @@
 // KI-Leiste rechts: Chat mit Gemini. Kennt die Notiz bzw. das PDF der aktiven Hälfte
 // und schickt sie (wenn gewünscht) mit der Frage mit.
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Copy, FileText, NotebookPen, Send, Sparkles, Square, Trash2, X } from "lucide-react";
 
 import { showToast } from "../components/toast";
@@ -53,11 +53,20 @@ type Props = {
 export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Props) {
   const { pages } = useNotes();
   const { pdfs } = usePdfs();
-  const { apiKey, model } = useAiSettings();
+  const settings = useAiSettings();
+  const { apiKey, model } = settings;
   const [messages, setMessages] = usePersistentState<ChatMessage[]>("ai:chat", []);
   const [input, setInput] = useState("");
   const [includeSource, setIncludeSource] = useState(true);
   const [busy, setBusy] = useState(false);
+  // Während auf die erste Antwort gewartet wird: was passiert gerade, seit wann?
+  const [waiting, setWaiting] = useState<{ text: string; since: number } | null>(null);
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!waiting) return;
+    const timer = window.setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(timer);
+  }, [waiting]);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -105,8 +114,12 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
     abortRef.current = controller;
     let answer = "";
     let step = "Notiz/PDF vorbereiten"; // für die Fehlermeldung: wobei ist es schiefgegangen?
+    const since = Date.now();
+    const what = attached?.kind === "pdf" && range ? (range.from === range.to ? "1 Seite" : `${range.to - range.from + 1} Seiten`) : "die Notiz";
+    setWaiting({ text: attached ? `bereitet ${what} vor` : "denkt nach", since });
     try {
       const attachment = attached ? await loadAttachment(attached, range) : null;
+      setWaiting({ text: attached ? `liest ${what}` : "denkt nach", since });
       const ask = (modelName: string) =>
         askGemini({
           apiKey,
@@ -114,7 +127,9 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
           history,
           attachment,
           signal: controller.signal,
+          fast: !settings.thorough,
           onText: (soFar) => {
+            setWaiting(null);
             answer = soFar;
             setMessages([...history, { role: "assistant", text: soFar }]);
           },
@@ -138,7 +153,7 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
           step = `Anfrage an ${candidate}`;
           try {
             await ask(candidate);
-            saveAiSettings({ apiKey, model: candidate });
+            saveAiSettings({ ...settings, model: candidate });
             lastError = null;
             break;
           } catch (retryError) {
@@ -159,6 +174,7 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
       }
     } finally {
       abortRef.current = null;
+      setWaiting(null);
       setBusy(false);
       scrollToEnd();
     }
@@ -238,7 +254,9 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
                     )}
                   </>
                 ) : (
-                  <span className="ai-typing">denkt nach …</span>
+                  <span className="ai-typing">
+                    {waiting ? `${waiting.text} … ${Math.floor((Date.now() - waiting.since) / 1000)} s` : "denkt nach …"}
+                  </span>
                 )}
               </div>
             ))}

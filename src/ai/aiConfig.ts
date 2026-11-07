@@ -8,6 +8,9 @@ import { readStored } from "../storage/uiState";
 export type AiSettings = {
   apiKey: string;
   model: string;
+  // false (Standard) = schnell: die KI "denkt" vor der Antwort nur kurz nach.
+  // true = gründlich: mehr Nachdenken, dafür längere Wartezeit.
+  thorough?: boolean;
 };
 
 // "gemini-flash-latest" zeigt bei Google immer auf das aktuelle schnelle Modell (gratis nutzbar).
