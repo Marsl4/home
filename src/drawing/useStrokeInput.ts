@@ -8,6 +8,8 @@ import { usePaneFocused } from "../components/PaneContext";
 import { recognizeShape, transformShape, type ShapeKind } from "./shapes";
 import {
   boundsOf,
+  boxInLasso,
+  unionBoxes,
   eraseFromStroke,
   hitsStroke,
   straightenHighlight,
@@ -38,8 +40,12 @@ type Options = {
   onErase: (remaining: Stroke[]) => void; // während des Radierens
   onEraseDone: (before: Stroke[]) => void; // Radieren beendet und es wurde etwas entfernt
   // Lasso: ausgewählte Striche wurden verschoben (next = alle Striche, verschobene schon geändert)
-  onMoveDone: (next: Stroke[], movedIds: Set<string>) => void;
-  onDeleteSelection: (next: Stroke[]) => void; // ausgewählte Striche gelöscht
+  // (dx, dy = Verschiebung, damit auch ausgewählte Bilder/Textfelder mitwandern können)
+  onMoveDone: (next: Stroke[], movedIds: Set<string>, dx: number, dy: number) => void;
+  // ausgewählte Striche gelöscht; selectedIds enthält auch ausgewählte Bilder/Textfelder
+  onDeleteSelection: (next: Stroke[], selectedIds: Set<string>) => void;
+  // Weitere Dinge, die das Lasso mit auswählen kann (Bilder …), mit ihrem Rahmen in eigenen Koordinaten.
+  items?: { id: string; box: Box }[];
   // Ausschnitt-Werkzeug: Bereich wurde eingekreist (Linie in eigenen Koordinaten)
   onSnip: (polygon: [number, number][]) => void;
 };
@@ -96,7 +102,10 @@ export function useStrokeInput(options: Options) {
   }
 
   const selected = strokes.filter((s) => selection.has(s.id));
-  const baseBox = boundsOf(selected.map((s) => ({ stroke: s, dy: offsetOf(s) })));
+  const items = options.items ?? [];
+  const selectedItemBoxes = items.filter((item) => selection.has(item.id)).map((item) => item.box);
+  const strokeBox = boundsOf(selected.map((s) => ({ stroke: s, dy: offsetOf(s) })));
+  const baseBox = unionBoxes([...(strokeBox ? [strokeBox] : []), ...selectedItemBoxes]);
   const selectionBox: Box | null = baseBox && {
     ...baseBox,
     x: baseBox.x + (drag?.dx ?? 0),
@@ -107,7 +116,7 @@ export function useStrokeInput(options: Options) {
     x >= box.x && x <= box.x + box.width && y >= box.y && y <= box.y + box.height;
 
   const deleteSelection = () => {
-    options.onDeleteSelection(strokes.filter((s) => !selection.has(s.id)));
+    options.onDeleteSelection(strokes.filter((s) => !selection.has(s.id)), selection);
     setSelection(NO_SELECTION);
   };
 
@@ -269,7 +278,7 @@ export function useStrokeInput(options: Options) {
       const dy = y - drag.start[1];
       if (dx !== 0 || dy !== 0) {
         const next = strokes.map((s) => (selection.has(s.id) ? moveStroke(s, dx, dy) : s));
-        options.onMoveDone(next, selection);
+        options.onMoveDone(next, selection, dx, dy);
       }
       return;
     }
@@ -281,7 +290,8 @@ export function useStrokeInput(options: Options) {
       }
       if (lasso.length > 2) {
         const caught = strokes.filter((s) => strokeInLasso(s, offsetOf(s), lasso));
-        setSelection(new Set(caught.map((s) => s.id)));
+        const caughtItems = items.filter((item) => boxInLasso(item.box, lasso));
+        setSelection(new Set([...caught.map((s) => s.id), ...caughtItems.map((item) => item.id)]));
       }
       return;
     }

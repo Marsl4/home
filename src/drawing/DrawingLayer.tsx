@@ -282,9 +282,25 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
     onEraseDone: (before) => setHistory([...history, before]),
     onStrokeDone: (stroke) => commit([...strokes, anchorStroke(stroke)]),
     // Verschobene Striche hängen danach am Text an ihrer neuen Stelle.
-    onMoveDone: (next, movedIds) =>
-      commit(next.map((s) => (movedIds.has(s.id) ? anchorStroke(s) : s))),
-    onDeleteSelection: commit,
+    onMoveDone: (next, movedIds, dx, dy) => {
+      commit(next.map((s) => (movedIds.has(s.id) ? anchorStroke(s) : s)));
+      if (images.some((img) => movedIds.has(img.id))) {
+        updateImages((current) =>
+          current.map((img) => (movedIds.has(img.id) ? anchorImage({ ...img, x: img.x + dx, y: img.y + dy }) : img)),
+        );
+      }
+    },
+    onDeleteSelection: (next, selectedIds) => {
+      commit(next);
+      if (images.some((img) => selectedIds.has(img.id))) {
+        updateImages((current) => current.filter((img) => !selectedIds.has(img.id)));
+      }
+    },
+    // Bilder kann das Lasso mit auswählen.
+    items: images.map((img) => ({
+      id: img.id,
+      box: { x: img.x, y: img.y + offsetOf(img), width: img.width, height: img.height },
+    })),
     onSnip: (polygon) => {
       const box = boundsOfPolygon(polygon);
       const element = svgRef.current!.parentElement!; // die ganze Seite (Text + Zeichnungen)
@@ -364,6 +380,8 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
         columnLeft={layout.columnLeft}
         zoom={zoom}
         offsetOf={offsetOf}
+        lassoSelected={selection}
+        lassoOffset={dragOffset}
         interactive={!penMode}
         onMove={(id, dx, dy) =>
           updateImages((current) =>

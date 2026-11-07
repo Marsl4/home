@@ -9,6 +9,8 @@ type Props = {
   images: FloatingImage[];
   columnLeft: number; // Abstand der Textspalte vom linken Rand
   zoom: number; // Zoom des Blatts: Mausbewegungen werden dadurch geteilt
+  lassoSelected: Set<string>; // per Lasso ausgewählt (wird mit den Strichen verschoben)
+  lassoOffset: { dx: number; dy: number }; // aktuelle Lasso-Verschiebung
   offsetOf: (image: FloatingImage) => number; // Verschiebung, weil der Text darüber gewandert ist
   interactive: boolean; // im Stift-Modus nicht anfassbar (dann wird darüber gezeichnet)
   onMove: (id: string, dx: number, dy: number) => void;
@@ -77,13 +79,14 @@ export function FloatingImages(props: Props) {
     <div className="floating-images">
       {images.map((image) => {
         const isDragged = drag?.id === image.id;
-        const moveX = isDragged && drag.mode === "move" ? drag.dx : 0;
-        const moveY = isDragged && drag.mode === "move" ? drag.dy : 0;
+        const inLasso = props.lassoSelected.has(image.id);
+        const moveX = (isDragged && drag.mode === "move" ? drag.dx : 0) + (inLasso ? props.lassoOffset.dx : 0);
+        const moveY = (isDragged && drag.mode === "move" ? drag.dy : 0) + (inLasso ? props.lassoOffset.dy : 0);
         const width = resizedWidth(image);
         return (
           <div
             key={image.id}
-            className={`floating-image ${selectedId === image.id ? "selected" : ""} ${interactive ? "interactive" : ""}`}
+            className={`floating-image ${selectedId === image.id || inLasso ? "selected" : ""} ${interactive ? "interactive" : ""}`}
             style={{
               left: columnLeft + image.x + moveX,
               top: image.y + offsetOf(image) + moveY,

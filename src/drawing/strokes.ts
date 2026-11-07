@@ -144,6 +144,26 @@ export function strokeInLasso(stroke: Stroke, dy: number, lasso: [number, number
   return stroke.points.some(([x, y]) => pointInPolygon(x, y + dy, lasso));
 }
 
+// Liegt ein Rechteck (z. B. ein Bild) im Lasso? Es reicht, wenn es teilweise drin ist.
+export function boxInLasso(box: Box, lasso: [number, number][]): boolean {
+  const { x, y, width, height } = box;
+  const probes: [number, number][] = [
+    [x, y], [x + width, y], [x, y + height], [x + width, y + height], [x + width / 2, y + height / 2],
+  ];
+  if (probes.some(([px, py]) => pointInPolygon(px, py, lasso))) return true;
+  return lasso.some(([px, py]) => px >= x && px <= x + width && py >= y && py <= y + height);
+}
+
+// Kleinstes Rechteck um mehrere Rechtecke.
+export function unionBoxes(boxes: Box[]): Box | null {
+  if (boxes.length === 0) return null;
+  const left = Math.min(...boxes.map((b) => b.x));
+  const top = Math.min(...boxes.map((b) => b.y));
+  const right = Math.max(...boxes.map((b) => b.x + b.width));
+  const bottom = Math.max(...boxes.map((b) => b.y + b.height));
+  return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
 // Rechteck um mehrere Striche (mit etwas Rand für die Strichdicke).
 export function boundsOf(strokes: { stroke: Stroke; dy: number }[], padding = 10): Box | null {
   const xs: number[] = [];
