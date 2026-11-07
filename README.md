@@ -1,18 +1,24 @@
-# Studium-App
+# Home
 
 Notizen mit Text und Zeichnungen, lokal im Browser.
 
-## Starten
+## Benutzen (installierte App)
 
-Im Terminal im Projektordner:
+Die App ist online unter **https://<dein-github-name>.github.io/home/** und lässt sich installieren:
 
-```
-npm run dev
-```
+- **Mac (Safari):** Seite öffnen → Menü *Ablage* → *Zum Dock hinzufügen*
+- **Mac (Chrome):** Seite öffnen → Installieren-Symbol rechts in der Adressleiste
+- **iPad (Safari):** Seite öffnen → Teilen-Symbol → *Zum Home-Bildschirm*
 
-Dann im Browser **http://localhost:5173** öffnen. Beenden mit `Ctrl + C` im Terminal.
+Danach startet „Home“ wie eine normale App mit eigenem Icon, auch ohne Internet.
+Deine Daten bleiben auf dem jeweiligen Gerät (Austausch über Einstellungen → Daten & Backup).
 
-(Nur beim allerersten Mal bzw. nach dem Herunterladen auf einen neuen Rechner vorher `npm install` ausführen.)
+## Weiterentwickeln
+
+Im Terminal im Projektordner `npm run dev` und dann **http://localhost:5173** öffnen.
+(Beim allerersten Mal bzw. auf einem neuen Rechner vorher `npm install`.)
+
+Neue Versionen gehen automatisch online, sobald sie zu GitHub hochgeladen werden (`git push`).
 
 ## Bedienung
 
