@@ -9,6 +9,7 @@ import { flushSync } from "react-dom";
 import { usePaneFocused } from "../components/PaneContext";
 import { usePinchZoom } from "../components/usePinchZoom";
 import { savePageDrawing, savePageImages, savePageTexts } from "../storage/db";
+import { printElement } from "../storage/exportFiles";
 import { publish, useLiveSync } from "../storage/liveSync";
 import { DrawingToolbar } from "./DrawingToolbar";
 import { FloatingImages } from "./FloatingImages";
@@ -23,6 +24,7 @@ import { usePenShortcuts, useStrokeInput } from "./useStrokeInput";
 
 type Props = {
   pageId: string;
+  title: string; // für den Dateinamen beim Export
   scrollRef: RefObject<HTMLDivElement | null>; // der scrollende Bereich der Seite
   initialStrokes: Stroke[];
   initialImages: FloatingImage[];
@@ -59,7 +61,7 @@ type Layout = {
   blockTops: Record<string, number>; // Block-ID -> aktuelle Höhe auf der Seite
 };
 
-export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages, initialTexts, children }: Props) {
+export function DrawingLayer({ pageId, title, scrollRef, initialStrokes, initialImages, initialTexts, children }: Props) {
   const textRef = useRef<HTMLDivElement>(null); // daraus lesen wir, wo die Textblöcke liegen
   const svgRef = useRef<SVGSVGElement>(null);
   const sizerRef = useRef<HTMLDivElement>(null);
@@ -406,6 +408,11 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
           settings={toolSettings}
           onSettingsChange={updateToolSettings}
           allowText
+          exportLabel="Als PDF exportieren (Drucken → „Als PDF sichern“)"
+          onExport={() => {
+            flushSync(() => setZoom(1)); // gedruckt wird immer in Originalgröße
+            printElement(scrollRef.current!, title);
+          }}
         />
       </div>
 
@@ -419,6 +426,8 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
         className="page-content"
         ref={contentRef}
         style={{
+          // beim Drucken: nur so lang wie Text bzw. tiefste Zeichnung (siehe index.css)
+          ["--print-min-height" as string]: `${drawingBottom + 24}px`,
           // unter dem Text immer mindestens eine Bildschirmhöhe Platz, unter Zeichnungen auch
           paddingBottom: viewport.height + extraHeight || undefined,
           minHeight: drawingBottom + viewport.height + extraHeight || undefined,

@@ -7,6 +7,7 @@ import { FolderPlus, MoreHorizontal, NotebookPen, Plus, Upload } from "lucide-re
 import type { Page, PdfDoc, Subject } from "../../storage/db";
 import { useNotes } from "../notes/NotesContext";
 import { usePdfs } from "../pdfs/PdfsContext";
+import { exportPdfFile } from "../../storage/exportFiles";
 import { childFolders, folderPath } from "./folders";
 import { useMoveDialog } from "./MoveDialog";
 
@@ -215,6 +216,7 @@ export function FolderBrowser({ mode, folder, nav }: Props) {
                   },
                 },
                 { label: "Verschieben …", onClick: () => openMove({ kind: "pdf", id: pdf.id, name: pdf.name, parentId: pdf.folderId ?? null }) },
+                { label: "Exportieren", onClick: () => exportPdfFile(pdf) },
                 {
                   label: "Löschen",
                   danger: true,

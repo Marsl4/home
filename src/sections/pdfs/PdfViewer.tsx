@@ -1,6 +1,6 @@
 // Zeigt ein PDF: Kopfzeile (Name, Favorit), alle Seiten untereinander, Stift-Werkzeuge.
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Star } from "lucide-react";
+import { Share, Star } from "lucide-react";
 
 import { ScrollIndicator } from "../../components/ScrollIndicator";
 import { usePinchZoom } from "../../components/usePinchZoom";
@@ -10,6 +10,7 @@ import { eraserRadius, strokeSize, useToolSettings } from "../../drawing/toolSet
 import { usePenShortcuts } from "../../drawing/useStrokeInput";
 import { loadPdfFile, loadPdfInk, savePdfInk, type PdfDoc, type PdfInk } from "../../storage/db";
 import { publish, useLiveSync } from "../../storage/liveSync";
+import { exportPdfFile } from "../../storage/exportFiles";
 import { getDocument, type PDFDocumentProxy } from "./pdfjs";
 import { PdfPage } from "./PdfPage";
 import { setPdfPosition } from "./visiblePage";
@@ -136,6 +137,9 @@ export function PdfViewer({ pdf, breadcrumb }: { pdf: PdfDoc; breadcrumb?: React
           title={pdf.favorite ? "Aus Favoriten entfernen" : "Zu Favoriten"}
         >
           <Star size={18} fill={pdf.favorite ? "currentColor" : "none"} />
+        </button>
+        <button className="icon-button" onClick={() => exportPdfFile(pdf)} title="PDF exportieren (in „Downloads“ speichern)">
+          <Share size={17} />
         </button>
         {loaded && <span className="pdf-page-count">{loaded.sizes.length} Seiten</span>}
       </header>

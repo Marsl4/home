@@ -1,5 +1,5 @@
 // Werkzeugleiste oben rechts: Stift-Modus an/aus, Werkzeug, Farbe, Rückgängig.
-import { Eraser, Highlighter, Lasso, Pencil, Scissors, Type, Undo2, type LucideIcon } from "lucide-react";
+import { Eraser, Highlighter, Lasso, Pencil, Scissors, Share, Type, Undo2, type LucideIcon } from "lucide-react";
 
 import { ERASER_SIZES, HIGHLIGHTER_COLORS, HIGHLIGHTER_SIZES, PEN_COLORS, PEN_SIZES, type Tool } from "./strokes";
 import type { SizeLevel, ToolSettings } from "./toolSettings";
@@ -16,6 +16,8 @@ type Props = {
   zoom: number; // aktueller Zoom der Ansicht (1 = 100 %)
   onResetZoom: () => void;
   allowText?: boolean; // Textfelder gibt es (bisher) nur auf Notizseiten
+  onExport?: () => void; // "Exportieren" (Notiz als PDF bzw. PDF-Datei)
+  exportLabel?: string;
   settings: ToolSettings; // Strichdicken + Radierer-Art
   onSettingsChange: (changes: Partial<ToolSettings>) => void;
 };
@@ -46,6 +48,11 @@ export function DrawingToolbar(props: Props) {
     return (
       <div className="drawing-toolbar">
         {zoomButton}
+        {props.onExport && (
+          <button className="toolbar-button" onClick={props.onExport} title={props.exportLabel ?? "Exportieren"}>
+            <Share size={16} />
+          </button>
+        )}
         <button className="toolbar-button" onClick={props.onTogglePenMode} title="Zeichnen (Stift-Modus)">
           <Pencil size={16} /> Zeichnen
         </button>

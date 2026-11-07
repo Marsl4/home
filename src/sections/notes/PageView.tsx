@@ -62,6 +62,7 @@ export function PageView({ page, breadcrumb }: Props) {
       <DrawingLayer
         key={page.id}
         pageId={page.id}
+        title={page.title}
         scrollRef={scrollRef}
         initialStrokes={loaded.strokes}
         initialImages={loaded.images}

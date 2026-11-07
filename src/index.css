@@ -2370,3 +2370,85 @@ path.selected {
 .menu-item.danger {
   color: var(--danger);
 }
+
+/* =========================================================
+   Drucken / Notiz als PDF: nur die gewählte Notizseite, ohne Leisten und Knöpfe
+   ========================================================= */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  body.printing .app {
+    display: block;
+    height: auto;
+    padding: 0;
+  }
+
+  body.printing .rail,
+  body.printing .panel,
+  body.printing .ai-sidebar,
+  body.printing .pane-header,
+  body.printing .pane-divider,
+  body.printing .pane:not(:has(.print-target)),
+  body.printing .toolbar-dock,
+  body.printing .scroll-thumb,
+  body.printing .toast,
+  body.printing .bn-side-menu,
+  body.printing .floating-text-grip,
+  body.printing .floating-text-delete,
+  body.printing .floating-image-delete,
+  body.printing .floating-image-resize,
+  body.printing #start-error {
+    display: none !important;
+  }
+
+  body.printing .main,
+  body.printing .pane {
+    display: block;
+    overflow: visible;
+  }
+
+  body.printing .print-target {
+    height: auto !important;
+    overflow: visible !important;
+    padding-top: 0;
+  }
+
+  body.printing .print-target .zoom-sizer {
+    width: auto !important;
+    height: auto !important;
+    overflow: visible;
+  }
+
+  body.printing .print-target .page-content {
+    width: var(--print-width) !important;
+    zoom: var(--print-zoom);
+    transform: none !important;
+    min-height: var(--print-min-height) !important;
+    padding-bottom: 0 !important;
+  }
+
+  body.printing .print-target .floating-text {
+    border-color: transparent !important;
+  }
+
+  /* grauer Hinweis "Text eingeben oder '/' …" in leeren Zeilen */
+  body.printing .print-target .bn-block-content[data-is-empty-and-focused]::after,
+  body.printing .print-target .bn-block-content[data-is-only-empty-block]::after {
+    content: none !important;
+  }
+}
