@@ -85,6 +85,9 @@ export function pickModel(names: string[]): string | null {
   return anyFlash ?? names[0] ?? null;
 }
 
+// Falls die Modell-Liste nicht abrufbar ist: diese Namen der Reihe nach probieren.
+export const FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"];
+
 // Gibt es das eingestellte Modell nicht (mehr)?
 export function isModelMissing(error: unknown): boolean {
   return error instanceof ApiError && error.status === 404;

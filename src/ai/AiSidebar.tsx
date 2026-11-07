@@ -13,6 +13,7 @@ import { findSource, loadAttachment } from "./context";
 import {
   askGemini,
   describeAiError,
+  FALLBACK_MODELS,
   isModelMissing,
   listGeminiModels,
   pickModel,
@@ -84,6 +85,7 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
     const controller = new AbortController();
     abortRef.current = controller;
     let answer = "";
+    let step = "Notiz/PDF vorbereiten"; // für die Fehlermeldung: wobei ist es schiefgegangen?
     try {
       const attachment = attached ? await loadAttachment(attached) : null;
       const ask = (modelName: string) =>
@@ -99,14 +101,33 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
           },
         });
       try {
+        step = `Anfrage an ${model}`;
         await ask(model);
       } catch (e) {
         // Modell gibt es nicht (mehr)? Dann selbst ein passendes aussuchen, merken und nochmal fragen.
         if (!isModelMissing(e)) throw e;
-        const replacement = pickModel(await listGeminiModels(apiKey));
-        if (!replacement || replacement === model) throw e;
-        saveAiSettings({ apiKey, model: replacement });
-        await ask(replacement);
+        step = "Modell-Liste abrufen";
+        let candidates: string[];
+        try {
+          const best = pickModel(await listGeminiModels(apiKey));
+          candidates = best ? [best] : FALLBACK_MODELS;
+        } catch {
+          candidates = FALLBACK_MODELS; // Liste nicht abrufbar: bekannte Namen durchprobieren
+        }
+        let lastError: unknown = e;
+        for (const candidate of candidates.filter((c) => c !== model)) {
+          step = `Anfrage an ${candidate}`;
+          try {
+            await ask(candidate);
+            saveAiSettings({ apiKey, model: candidate });
+            lastError = null;
+            break;
+          } catch (retryError) {
+            lastError = retryError;
+            if (!isModelMissing(retryError)) break;
+          }
+        }
+        if (lastError) throw lastError;
       }
     } catch (e) {
       if (controller.signal.aborted) {
@@ -115,7 +136,7 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
         // Fehlgeschlagen: Frage zurück ins Eingabefeld, damit nichts verloren geht.
         setMessages(answer ? [...history, { role: "assistant", text: answer }] : messages);
         if (!answer) setInput(question);
-        setError(describeAiError(e));
+        setError(`${describeAiError(e)} (Schritt: ${step})`);
       }
     } finally {
       abortRef.current = null;
