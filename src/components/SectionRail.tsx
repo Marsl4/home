@@ -1,5 +1,5 @@
 // Schmale Leiste ganz links mit den Hauptbereichen.
-import { Columns2 } from "lucide-react";
+import { Columns2, Sparkles } from "lucide-react";
 
 import type { Section } from "../sections/types";
 
@@ -9,9 +9,11 @@ type Props = {
   onClick: (id: string) => void;
   isSplit: boolean;
   onToggleSplit: () => void;
+  aiOpen: boolean;
+  onToggleAi: () => void;
 };
 
-export function SectionRail({ sections, activeId, onClick, isSplit, onToggleSplit }: Props) {
+export function SectionRail({ sections, activeId, onClick, isSplit, onToggleSplit, aiOpen, onToggleAi }: Props) {
   const renderItem = (section: Section) => {
     const Icon = section.icon;
     return (
@@ -31,6 +33,14 @@ export function SectionRail({ sections, activeId, onClick, isSplit, onToggleSpli
     <nav className="rail">
       {sections.filter((s) => s.placement !== "bottom").map(renderItem)}
       <div className="rail-spacer" />
+      <button
+        className={`rail-item ${aiOpen ? "active" : ""}`}
+        onClick={onToggleAi}
+        title={aiOpen ? "KI-Leiste schließen" : "KI-Assistent öffnen"}
+      >
+        <Sparkles size={20} strokeWidth={1.75} />
+        <span className="rail-label">KI</span>
+      </button>
       <button
         className={`rail-item ${isSplit ? "active" : ""}`}
         onClick={onToggleSplit}

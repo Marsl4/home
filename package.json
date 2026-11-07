@@ -13,6 +13,7 @@
     "@blocknote/core": "^0.57.0",
     "@blocknote/mantine": "^0.57.0",
     "@blocknote/react": "^0.57.0",
+    "@google/genai": "^3.0.0",
     "@mantine/core": "^9.7.5",
     "html-to-image": "^1.11.13",
     "idb-keyval": "^6.3.0",

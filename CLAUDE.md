@@ -49,6 +49,10 @@ Nur für mich privat. Läuft auf Mac (Tippen) und später iPad (Apple Pencil).
   ⌘V nur in der aktiven Hälfte (`usePaneFocused()` aus `src/components/PaneContext.ts`). Ist derselbe
   Inhalt zweimal offen, gleichen sich die Ansichten über `src/storage/liveSync.ts` ab – neue Ansichten,
   die etwas speichern, müssen das auch tun (sonst überschreiben sie sich gegenseitig).
+- KI (`src/ai/`): Gemini über `@google/genai`, direkt vom Gerät (kein Server). Schlüssel + Modell in
+  localStorage (`aiConfig.ts`, bewusst nicht in IndexedDB/Backup). Anbieter-Spezifisches nur in `gemini.ts`.
+  `context.ts` macht aus offener Notiz/PDF den mitgeschickten Text. Tests: Google per puppeteer-Request-
+  Interception simulieren (Liste nutzt `supportedGenerationMethods`, Antworten als SSE).
 - Farben nur über die Variablen oben in `src/index.css` (`var(--text)`, `var(--surface)` …), keine
   festen Farbwerte – sonst passt es nicht zum dunklen Design. Schreibflächen (Notizblatt) bekommen
   die Klasse `light-surface` und bleiben immer hell. Hell/Dunkel/System: `src/sections/settings/ThemeProvider.tsx`.

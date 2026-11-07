@@ -4,6 +4,7 @@
 import { useRef, type ReactNode } from "react";
 import { PanelLeftClose, X } from "lucide-react";
 
+import { AiSidebar } from "./ai/AiSidebar";
 import { PaneFocusContext } from "./components/PaneContext";
 import { SectionRail } from "./components/SectionRail";
 import { ToastHost } from "./components/ToastHost";
@@ -38,6 +39,7 @@ export default function App() {
   const [panes, setPanes] = usePersistentState<PaneState[]>("ui:panes", [initialPane]);
   const [focusedIndex, setFocusedIndex] = usePersistentState("ui:focusedPane", 0);
   const [panelOpen, setPanelOpen] = usePersistentState("ui:panelOpen", true);
+  const [aiOpen, setAiOpen] = usePersistentState("ui:aiOpen", false);
   const [splitRatio, setSplitRatio] = usePersistentState("ui:splitRatio", 0.5); // Anteil der linken Hälfte
   const mainRef = useRef<HTMLElement>(null);
 
@@ -100,6 +102,15 @@ export default function App() {
     window.addEventListener("pointerup", onUp);
   };
 
+  // Aus der KI-Leiste zu Einstellungen → KI springen (in der aktiven Hälfte).
+  const openAiSettings = () => {
+    updatePane(focused, {
+      sectionId: "settings",
+      selection: { ...focusedPane.selection, settings: "ai" },
+    });
+    setPanelOpen(true);
+  };
+
   const { Panel } = focusedSection;
 
   return (
@@ -111,6 +122,8 @@ export default function App() {
           onClick={handleRailClick}
           isSplit={isSplit}
           onToggleSplit={toggleSplit}
+          aiOpen={aiOpen}
+          onToggleAi={() => setAiOpen(!aiOpen)}
         />
 
         {panelOpen && (
@@ -175,6 +188,15 @@ export default function App() {
             ];
           })}
         </main>
+
+        {aiOpen && (
+          <AiSidebar
+            sectionId={focusedSection.id}
+            selectedId={focusedPane.selection[focusedSection.id] ?? null}
+            onClose={() => setAiOpen(false)}
+            onOpenSettings={openAiSettings}
+          />
+        )}
       </div>
       <ToastHost />
     </SectionProviders>

@@ -24,8 +24,10 @@
 
 ### Verbindungen nach außen
 - [ ] **Mail-Integration**: E-Mails in der App lesen/schreiben bzw. mit Notizen und ToDos verknüpfen.
-- [ ] **KI-Integration**: Claude und andere KI-Assistenten direkt in der App nutzen
-      (z. B. Zusammenfassungen, Fragen zu Notizen und PDFs, Lernkarten).
+- [~] **KI-Integration**: KI-Leiste rechts (Knopf „KI“) mit Google Gemini (kostenloser Schlüssel,
+      Einstellungen → KI): Chat, kennt die offene Notiz/PDF, Zusammenfassen / Erklären / Abfragen /
+      Karteikarten. Offen: Antwort direkt in Notiz einfügen, weitere Anbieter (z. B. Claude per API-Schlüssel),
+      „Mit Claude öffnen“-Brücke fürs Pro-Abo.
 
 ### Lernen
 - [ ] **Englisch lernen** (wichtig, zeitnah!): eigener Bereich, z. B. Vokabeltrainer mit

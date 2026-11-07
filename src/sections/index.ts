@@ -12,6 +12,7 @@ import {
   PenLine,
   Palette,
   Settings,
+  Sparkles,
   DatabaseBackup,
   UserRound,
 } from "lucide-react";
@@ -103,6 +104,7 @@ export const sections: Section[] = [
     subItems: [
       { id: "backup", label: "Daten & Backup", icon: DatabaseBackup },
       { id: "appearance", label: "Darstellung", icon: Palette },
+      { id: "ai", label: "KI", icon: Sparkles },
       { id: "account", label: "Konto", icon: UserRound },
     ],
     Panel: PlaceholderPanel,

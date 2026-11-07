@@ -1,7 +1,8 @@
-// Einstellungen: "Daten & Backup", "Darstellung" und "Konto" (kommt später).
+// Einstellungen: "Daten & Backup", "Darstellung", "KI" und "Konto" (kommt später).
 import { useRef, useState } from "react";
 import { Download, HardDriveDownload, UserRound } from "lucide-react";
 
+import { AiSettings } from "../../ai/AiSettings";
 import { downloadBackup, restoreBackup } from "../../storage/backup";
 import { useNotes } from "../notes/NotesContext";
 import { usePdfs } from "../pdfs/PdfsContext";
@@ -13,6 +14,7 @@ import { AppearanceSettings } from "./AppearanceSettings";
 export function SettingsView(props: SectionProps) {
   if (props.selectedId === "account") return <PlaceholderView {...props} />;
   if (props.selectedId === "appearance") return <AppearanceSettings />;
+  if (props.selectedId === "ai") return <AiSettings />;
   return <BackupSettings />;
 }
 
