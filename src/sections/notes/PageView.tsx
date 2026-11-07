@@ -42,7 +42,8 @@ export function PageView({ page, breadcrumb }: Props) {
   if (loaded?.pageId !== page.id) return null; // lädt noch
 
   return (
-    <div className="page">
+    // light-surface: das Schreibblatt bleibt auch im dunklen Design hell.
+    <div className="page light-surface">
       {/* key: beim Seitenwechsel Editor und Zeichenschicht komplett neu aufbauen */}
       <DrawingLayer key={page.id} pageId={page.id} initialStrokes={loaded.strokes}>
         {breadcrumb && <div className="page-breadcrumb">{breadcrumb}</div>}

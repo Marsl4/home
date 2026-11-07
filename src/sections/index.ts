@@ -10,6 +10,7 @@ import {
   ListTodo,
   NotebookPen,
   PenLine,
+  Palette,
   Settings,
   DatabaseBackup,
   UserRound,
@@ -27,6 +28,7 @@ import { TodosPanel } from "./todos/TodosPanel";
 import { TodosProvider } from "./todos/TodosProvider";
 import { TodosView } from "./todos/TodosView";
 import { SettingsView } from "./settings/SettingsView";
+import { ThemeProvider } from "./settings/ThemeProvider";
 import type { Section } from "./types";
 import { UniPanel } from "./uni/UniPanel";
 import { UniView } from "./uni/UniView";
@@ -100,9 +102,11 @@ export const sections: Section[] = [
     placement: "bottom",
     subItems: [
       { id: "backup", label: "Daten & Backup", icon: DatabaseBackup },
+      { id: "appearance", label: "Darstellung", icon: Palette },
       { id: "account", label: "Konto", icon: UserRound },
     ],
     Panel: PlaceholderPanel,
     View: SettingsView,
+    Provider: ThemeProvider,
   },
 ];

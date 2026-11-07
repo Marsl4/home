@@ -1,4 +1,4 @@
-// Einstellungen: "Daten & Backup" (funktioniert) und "Konto" (kommt später).
+// Einstellungen: "Daten & Backup", "Darstellung" und "Konto" (kommt später).
 import { useRef, useState } from "react";
 import { Download, HardDriveDownload, UserRound } from "lucide-react";
 
@@ -8,9 +8,11 @@ import { usePdfs } from "../pdfs/PdfsContext";
 import { PlaceholderView } from "../placeholder/PlaceholderView";
 import { useTodos } from "../todos/TodosContext";
 import type { SectionProps } from "../types";
+import { AppearanceSettings } from "./AppearanceSettings";
 
 export function SettingsView(props: SectionProps) {
   if (props.selectedId === "account") return <PlaceholderView {...props} />;
+  if (props.selectedId === "appearance") return <AppearanceSettings />;
   return <BackupSettings />;
 }
 

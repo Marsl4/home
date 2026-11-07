@@ -11,6 +11,14 @@
     <meta name="theme-color" content="#ffffff" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
     <title>Home</title>
+    <script>
+      // Hell/Dunkel sofort setzen (bevor die App geladen ist), damit nichts weiß aufblitzt.
+      try {
+        const choice = JSON.parse(localStorage.getItem("ui:theme") || '"system"');
+        const dark = choice === "dark" || (choice === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -43,6 +43,9 @@ Nur für mich privat. Läuft auf Mac (Tippen) und später iPad (Apple Pencil).
   `src/storage/backup.ts` – Export/Import aller Daten. `src/storage/uiState.ts` – Ansichts-Einstellungen (localStorage).
 - `src/drawing/` – Stift-Logik (`useStrokeInput`), Zeichenschicht für Notizseiten, Werkzeugleiste.
 - Editor: BlockNote (`src/editor/schema.ts`). PDFs: pdf.js (`src/sections/pdfs/`).
+- Farben nur über die Variablen oben in `src/index.css` (`var(--text)`, `var(--surface)` …), keine
+  festen Farbwerte – sonst passt es nicht zum dunklen Design. Schreibflächen (Notizblatt) bekommen
+  die Klasse `light-surface` und bleiben immer hell. Hell/Dunkel/System: `src/sections/settings/ThemeProvider.tsx`.
 
 ### Datenregeln im Code
 - Daten-Provider ändern Listen immer funktional (`update((current) => …)`), sonst gehen

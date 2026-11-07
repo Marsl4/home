@@ -1,22 +1,67 @@
 /* =========================================================
    Farben & Grundwerte – hier zentral ändern
    ========================================================= */
-:root {
+/* Helles Design (Standard). Gilt auch immer für das Schreibblatt (.light-surface). */
+:root,
+[data-theme="dark"] .light-surface {
   --rail-bg: #f0efec;
   --panel-bg: #f7f7f5;
   --main-bg: #ffffff;
+  --surface: #ffffff; /* Karten, Werkzeugleisten, Knöpfe */
   --border: #e6e5e1;
+  --border-strong: #c9c8c3;
   --text: #2f2e2b;
   --text-muted: #8d8c88;
+  --placeholder: #d3d3d1;
   --hover: #e9e8e4;
   --active: #e2e1dc;
   --accent: #4f46e5;
   --accent-soft: #e8e7fb;
+  --danger: #dc2626;
+  --pdf-bg: #ecebe8;
+  --ok-bg: #ecfdf3;
+  --ok-text: #166534;
+  --error-bg: #fef2f2;
+  --error-text: #b91c1c;
+  color-scheme: light; /* helle Datumsfelder, Scrollbalken usw. */
+}
 
+/* Dunkles Design. Die Werkzeugleiste auf dem (hellen) Blatt wird trotzdem dunkel. */
+[data-theme="dark"],
+[data-theme="dark"] .light-surface .drawing-toolbar {
+  --rail-bg: #1b1b1d;
+  --panel-bg: #212123;
+  --main-bg: #18181a;
+  --surface: #29292c;
+  --border: #333336;
+  --border-strong: #4a4a4e;
+  --text: #e8e8e6;
+  --text-muted: #9a9a9e;
+  --placeholder: #55555a;
+  --hover: #2c2c30;
+  --active: #38383c;
+  --accent: #7178f5;
+  --accent-soft: rgba(113, 120, 245, 0.18);
+  --danger: #f87171;
+  --pdf-bg: #111113;
+  --ok-bg: rgba(34, 197, 94, 0.14);
+  --ok-text: #86efac;
+  --error-bg: rgba(248, 113, 113, 0.14);
+  --error-text: #fca5a5;
+  color-scheme: dark;
+}
+
+:root {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--text);
   background: var(--main-bg);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Das Schreibblatt bekommt seine eigene (helle) Hintergrund- und Textfarbe. */
+.light-surface {
+  color: var(--text);
+  background: var(--main-bg);
 }
 
 * {
@@ -290,7 +335,7 @@ button {
 }
 
 .page-title-input::placeholder {
-  color: #d3d3d1;
+  color: var(--placeholder);
 }
 
 .page .bn-container {
@@ -348,7 +393,7 @@ button {
 }
 
 .lasso-delete circle {
-  fill: #fff;
+  fill: var(--surface);
   stroke: var(--accent);
   stroke-width: 1.5;
   vector-effect: non-scaling-stroke;
@@ -387,7 +432,7 @@ path.selected {
   align-items: center;
   gap: 4px;
   padding: 4px;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -432,7 +477,7 @@ path.selected {
   height: 22px;
   margin: 0 2px;
   border-radius: 50%;
-  border: 2px solid #fff;
+  border: 2px solid var(--surface);
   box-shadow: 0 0 0 1px var(--border);
   cursor: pointer;
 }
@@ -523,7 +568,7 @@ path.selected {
 }
 
 .todo-date-input.overdue {
-  color: #dc2626;
+  color: var(--danger);
 }
 
 /* Ohne Datum: Datumsfeld nur beim Drüberfahren zeigen, damit die Liste ruhig bleibt */
@@ -556,7 +601,7 @@ path.selected {
 }
 
 .todo-group h2.overdue {
-  color: #dc2626;
+  color: var(--danger);
 }
 
 .todo-row {
@@ -579,9 +624,9 @@ path.selected {
   width: 20px;
   height: 20px;
   padding: 0;
-  border: 1.5px solid #c4c3bf;
+  border: 1.5px solid var(--border-strong);
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface);
   color: #fff;
   cursor: pointer;
 }
@@ -738,7 +783,7 @@ path.selected {
   padding: 10px 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--surface);
   font-size: 14px;
   text-align: left;
   cursor: pointer;
@@ -751,7 +796,7 @@ path.selected {
 }
 
 .subject-page:hover {
-  border-color: #cfcec9;
+  border-color: var(--border-strong);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
@@ -767,7 +812,7 @@ path.selected {
 }
 
 .text-button.danger:hover {
-  color: #dc2626;
+  color: var(--danger);
 }
 
 /* =========================================================
@@ -795,7 +840,7 @@ path.selected {
 }
 
 .segmented button.selected {
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
@@ -870,7 +915,7 @@ path.selected {
   align-items: center;
   gap: 16px;
   padding: 24px 0 80px;
-  background: #ecebe8;
+  background: var(--pdf-bg);
 }
 
 .pdf-page {
@@ -902,7 +947,7 @@ path.selected {
 
 
 .pdf-error {
-  color: #dc2626;
+  color: var(--danger);
 }
 
 .rail-spacer {
@@ -994,7 +1039,7 @@ path.selected {
   padding: 8px 14px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -1017,13 +1062,13 @@ path.selected {
 }
 
 .settings-status.ok {
-  background: #ecfdf3;
-  color: #166534;
+  background: var(--ok-bg);
+  color: var(--ok-text);
 }
 
 .settings-status.error {
-  background: #fef2f2;
-  color: #b91c1c;
+  background: var(--error-bg);
+  color: var(--error-text);
 }
 
 .settings-hint {
@@ -1031,6 +1076,49 @@ path.selected {
   align-items: center;
   gap: 6px;
   margin-top: 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ---------- Darstellung (Hell/Dunkel) ---------- */
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.theme-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.theme-option:hover {
+  border-color: var(--border-strong);
+}
+
+.theme-option.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.theme-option svg {
+  color: var(--accent);
+}
+
+.theme-option-label {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.theme-option-hint {
   font-size: 13px;
   color: var(--text-muted);
 }
