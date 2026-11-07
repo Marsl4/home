@@ -6,6 +6,7 @@
 - [x] **Uni → Fächer**: jedes Fach hat eigene Notizseiten
 - [x] **PDFs**: PDFs importieren, ansehen und mit dem Stift darauf schreiben
 - [x] **Backup/Export**: Einstellungen → Daten & Backup (Sicherung herunterladen/wiederherstellen)
+- [x] **Installierbare App „Home“**: https://marsl4.github.io/home/ (offline, Icon, eigenes Fenster)
 
 ## Später – nicht vergessen!
 
@@ -27,9 +28,6 @@
       (z. B. Zusammenfassungen, Fragen zu Notizen und PDFs, Lernkarten).
 
 ### Echte App (nicht im Browser) – ohne Kosten
-- [ ] **Installierbare App (PWA)** ← als Nächstes: eigenes Icon im Dock/Home-Bildschirm,
-      eigenes Fenster ohne Browser-Leisten, offline, kein Terminal mehr. Kostenlos online
-      gestellt (z. B. GitHub Pages); Daten bleiben auf dem Gerät.
 - Alternative mit Kosten (nur falls später gewünscht): native App-Hülle (Capacitor).
   Dauerhaft aufs iPad + iCloud-Sync braucht das Apple Developer Program (99 €/Jahr).
 
