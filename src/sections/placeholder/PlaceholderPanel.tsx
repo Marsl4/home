@@ -13,6 +13,7 @@ export function PlaceholderPanel({ section, selectedId, onSelect }: SectionProps
           className={`panel-item ${item.id === activeId ? "active" : ""}`}
           onClick={() => onSelect(item.id)}
         >
+          {item.icon && <item.icon size={15} className="panel-item-icon" />}
           <span className="panel-item-label">{item.label}</span>
         </button>
       ))}

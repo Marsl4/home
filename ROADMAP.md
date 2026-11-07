@@ -3,7 +3,7 @@
 ## Jetzt (in dieser Reihenfolge)
 
 1. [x] **ToDos**: Aufgaben anlegen, abhaken, Heute / Anstehend / Erledigt
-2. [ ] **Uni → Fächer**: jedes Fach hat eigene Notizseiten
+2. [x] **Uni → Fächer**: jedes Fach hat eigene Notizseiten
 3. [ ] **PDFs**: PDFs importieren, ansehen und mit dem Stift darauf schreiben
 
 ## Später – nicht vergessen!

@@ -2,15 +2,16 @@
 import { FileText, Plus, X } from "lucide-react";
 
 import type { SectionProps } from "../types";
-import { resolvePageId, useNotes } from "./NotesContext";
+import { generalPages, resolvePageId, useNotes } from "./NotesContext";
 
 export function NotesPanel({ selectedId, onSelect }: SectionProps) {
-  const { pages, createPage, deletePage } = useNotes();
+  const { pages: allPages, createPage, deletePage } = useNotes();
+  const pages = generalPages(allPages); // nur Seiten ohne Fach
   const activeId = resolvePageId(pages, selectedId);
 
   const handleDelete = (id: string, title: string) => {
     if (!window.confirm(`Seite "${title || "Ohne Titel"}" wirklich löschen?`)) return;
-    const remaining = deletePage(id);
+    const remaining = generalPages(deletePage(id));
     if (id === activeId) onSelect(remaining[0]?.id ?? null);
   };
 

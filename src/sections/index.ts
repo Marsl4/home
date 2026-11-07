@@ -1,7 +1,16 @@
 // Alle Hauptbereiche der App, in der Reihenfolge der linken Leiste.
 // Neuen Bereich hinzufügen = hier einen Eintrag ergänzen.
 // Bereiche, die noch nicht fertig sind, nutzen PlaceholderPanel/PlaceholderView.
-import { CalendarDays, Dumbbell, FileText, GraduationCap, ListTodo, NotebookPen } from "lucide-react";
+import {
+  CalendarDays,
+  ClipboardCheck,
+  Dumbbell,
+  FileText,
+  GraduationCap,
+  ListTodo,
+  NotebookPen,
+  PenLine,
+} from "lucide-react";
 
 import { NotesPanel } from "./notes/NotesPanel";
 import { NotesProvider } from "./notes/NotesProvider";
@@ -12,6 +21,8 @@ import { TodosPanel } from "./todos/TodosPanel";
 import { TodosProvider } from "./todos/TodosProvider";
 import { TodosView } from "./todos/TodosView";
 import type { Section } from "./types";
+import { UniPanel } from "./uni/UniPanel";
+import { UniView } from "./uni/UniView";
 
 export const sections: Section[] = [
   {
@@ -26,14 +37,14 @@ export const sections: Section[] = [
     id: "uni",
     label: "Uni",
     icon: GraduationCap,
+    // Fächer kommen aus den Daten; das hier sind die festen Unterbereiche unter "Planung".
     subItems: [
-      { id: "subjects", label: "Fächer" },
-      { id: "timetable", label: "Stundenplan" },
-      { id: "exams", label: "Prüfungen" },
-      { id: "papers", label: "Hausarbeiten" },
+      { id: "timetable", label: "Stundenplan", icon: CalendarDays },
+      { id: "exams", label: "Prüfungen", icon: ClipboardCheck },
+      { id: "papers", label: "Hausarbeiten", icon: PenLine },
     ],
-    Panel: PlaceholderPanel,
-    View: PlaceholderView,
+    Panel: UniPanel,
+    View: UniView,
   },
   {
     id: "pdfs",

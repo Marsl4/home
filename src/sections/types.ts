@@ -5,6 +5,7 @@ import type { LucideIcon } from "lucide-react";
 export type SubItem = {
   id: string;
   label: string;
+  icon?: LucideIcon;
 };
 
 // Was jede Bereichs-Ansicht und -Leiste von der App bekommt.
