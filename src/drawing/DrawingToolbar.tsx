@@ -134,27 +134,18 @@ export function DrawingToolbar(props: Props) {
   );
 }
 
-// Vorschau einer Dicke: kurzer Strich in der echten Farbe und Dicke (Radierer: Kreis in seiner Größe).
+// Vorschau einer Dicke: Balken in der echten Farbe und Dicke (Radierer: Kreis in seiner Größe).
+// Bewusst aus einfachen Kästchen gebaut (kein SVG) – das sieht in jedem Safari gleich aus.
 function SizePreview({ tool, level, color }: { tool: Tool; level: SizeLevel; color: string }) {
   if (tool === "eraser") {
-    const r = 3 + (ERASER_SIZES[level] / ERASER_SIZES[2]) * 7;
-    return (
-      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden>
-        <circle cx="12" cy="12" r={r} className="size-preview-eraser" />
-      </svg>
-    );
+    const size = 6 + (ERASER_SIZES[level] / ERASER_SIZES[2]) * 12;
+    return <span className="size-preview-eraser" style={{ width: size, height: size }} />;
   }
-  const width = tool === "highlighter" ? HIGHLIGHTER_SIZES[level] / 2.5 : PEN_SIZES[level];
+  const height = tool === "highlighter" ? HIGHLIGHTER_SIZES[level] / 2.2 : PEN_SIZES[level] * 1.1;
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden>
-      <path
-        d="M4 15 C 9 6, 14 18, 20 9"
-        fill="none"
-        stroke={color}
-        strokeWidth={width}
-        strokeLinecap={tool === "highlighter" ? "butt" : "round"}
-        strokeOpacity={tool === "highlighter" ? 0.8 : 1}
-      />
-    </svg>
+    <span
+      className={`size-preview-line ${tool === "highlighter" ? "highlighter" : ""}`}
+      style={{ height: Math.max(2, height), background: color }}
+    />
   );
 }
