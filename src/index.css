@@ -74,6 +74,13 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: 100%;
+  overflow: hidden; /* die Seite selbst scrollt nie – nur die Bereiche darin */
+  overscroll-behavior: none;
+}
+
 body {
   margin: 0;
   background: var(--main-bg);
@@ -89,7 +96,13 @@ button {
    ========================================================= */
 .app {
   display: flex;
-  height: 100vh;
+  /* Genau der sichtbare Bereich: "100vh" ist auf dem iPad (als App) höher als das, was man sieht –
+     dann rutscht die App unter die Statusleiste oben. "dvh" passt sich an (ältere Browser: 100 %). */
+  height: 100%;
+  height: 100dvh;
+  /* Falls das Gerät oben/unten Ränder hat (Statusleiste, Home-Balken), nicht darunter zeichnen. */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .main {
