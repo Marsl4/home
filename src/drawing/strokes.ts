@@ -1,7 +1,7 @@
 // Alles rund um einzelne Striche: Datenformat, Aussehen, Radierer-Treffer.
 import { getStroke } from "perfect-freehand";
 
-export type Tool = "pen" | "highlighter" | "eraser" | "lasso" | "snip"; // snip = Ausschnitt kopieren
+export type Tool = "pen" | "highlighter" | "eraser" | "lasso" | "snip" | "text"; // snip = Ausschnitt kopieren, text = Textfeld setzen
 
 export type Stroke = {
   id: string;

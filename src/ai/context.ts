@@ -1,5 +1,5 @@
 // Welches Material gehört zur aktiven Hälfte (offene Notiz oder PDF) – und wie wird es zu Text?
-import { loadPageContent, loadPdfFile, type Page, type PdfDoc } from "../storage/db";
+import { loadPageContent, loadPageTexts, loadPdfFile, type Page, type PdfDoc } from "../storage/db";
 import { generalPages, resolvePageId } from "../sections/notes/NotesContext";
 import { getDocument } from "../sections/pdfs/pdfjs";
 import { parseSelection } from "../sections/uni/selection";
@@ -40,7 +40,8 @@ const MAX_TEXT_CHARS = 400_000; // grob 100.000 Wörter – mehr schickt die App
 export async function loadAttachment(source: AiSource): Promise<Attachment> {
   if (source.kind === "note") {
     const blocks = (await loadPageContent(source.id)) ?? [];
-    const text = blocksToText(blocks).trim();
+    const boxes = (await loadPageTexts(source.id)).map((t) => t.text.trim()).filter(Boolean);
+    const text = [blocksToText(blocks).trim(), ...boxes.map((t) => `[Textfeld] ${t}`)].filter(Boolean).join("\n\n");
     return { kind: "text", label: `Notiz „${source.title}“`, text: text || "(Die Notiz ist leer.)" };
   }
 

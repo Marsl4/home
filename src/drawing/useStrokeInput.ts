@@ -48,6 +48,8 @@ type Options = {
   items?: { id: string; box: Box }[];
   // Ausschnitt-Werkzeug: Bereich wurde eingekreist (Linie in eigenen Koordinaten)
   onSnip: (polygon: [number, number][]) => void;
+  // Text-Werkzeug: an dieser Stelle wurde hingetippt
+  onPlaceText?: (x: number, y: number) => void;
 };
 
 const NO_SELECTION = new Set<string>();
@@ -62,6 +64,7 @@ export function useStrokeInput(options: Options) {
   const [draft, setDraft] = useState<Stroke | null>(null); // Strich, der gerade entsteht
   const strokesBeforeErasing = useRef<Stroke[] | null>(null); // null = es wird nicht radiert
   const activePointer = useRef<number | null>(null); // der Stift/die Maus, die gerade zeichnet
+  const textTap = useRef<[number, number] | null>(null); // Text-Werkzeug: wo angetippt wurde
   const draftPathRef = useRef<SVGPathElement>(null); // Linie, die gerade entsteht (direkt aktualisiert)
   const holdTimer = useRef(0);
   const holdOrigin = useRef({ x: 0, y: 0 }); // wo der Stift zuletzt "angekommen" ist
@@ -190,6 +193,11 @@ export function useStrokeInput(options: Options) {
     event.currentTarget.setPointerCapture(event.pointerId);
     const [x, y] = toPoint(event);
 
+    if (tool === "text") {
+      textTap.current = [x, y];
+      return;
+    }
+
     if (tool === "snip") {
       setLasso([[x, y]]); // gleiche Linie wie beim Lasso, aber danach wird ein Bild kopiert
       return;
@@ -270,6 +278,12 @@ export function useStrokeInput(options: Options) {
     if (event.pointerId !== activePointer.current) return;
     activePointer.current = null;
     clearTimeout(holdTimer.current);
+    if (textTap.current) {
+      const [x, y] = textTap.current;
+      textTap.current = null;
+      options.onPlaceText?.(x, y); // beim Loslassen, damit sich auf dem iPad die Tastatur öffnen darf
+      return;
+    }
     if (drag) {
       setDrag(null);
       // Endposition direkt vom Loslassen nehmen (die letzte Bewegung ist evtl. noch nicht im Zustand).
@@ -335,6 +349,9 @@ export function usePenShortcuts(penMode: boolean, onExit: () => void, onUndo: ()
   useEffect(() => {
     if (!penMode || !paneFocused) return;
     const onKey = (event: KeyboardEvent) => {
+      // In einem Textfeld gehören Esc und ⌘Z dem Text, nicht den Strichen.
+      const target = event.target as HTMLElement;
+      if (target.isContentEditable || ["INPUT", "TEXTAREA"].includes(target.tagName)) return;
       if (event.key === "Escape") onExit();
       if (event.key === "z" && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();

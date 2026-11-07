@@ -1,5 +1,5 @@
 // Werkzeugleiste oben rechts: Stift-Modus an/aus, Werkzeug, Farbe, Rückgängig.
-import { Eraser, Highlighter, Lasso, Pencil, Scissors, Undo2, type LucideIcon } from "lucide-react";
+import { Eraser, Highlighter, Lasso, Pencil, Scissors, Type, Undo2, type LucideIcon } from "lucide-react";
 
 import { ERASER_SIZES, HIGHLIGHTER_COLORS, HIGHLIGHTER_SIZES, PEN_COLORS, PEN_SIZES, type Tool } from "./strokes";
 import type { SizeLevel, ToolSettings } from "./toolSettings";
@@ -15,6 +15,7 @@ type Props = {
   onUndo: () => void;
   zoom: number; // aktueller Zoom der Ansicht (1 = 100 %)
   onResetZoom: () => void;
+  allowText?: boolean; // Textfelder gibt es (bisher) nur auf Notizseiten
   settings: ToolSettings; // Strichdicken + Radierer-Art
   onSettingsChange: (changes: Partial<ToolSettings>) => void;
 };
@@ -28,6 +29,7 @@ const TOOLS: { tool: Tool; label: string; icon: LucideIcon }[] = [
   { tool: "eraser", label: "Radierer", icon: Eraser },
   { tool: "lasso", label: "Lasso: einkreisen, dann verschieben (⌫ löscht)", icon: Lasso },
   { tool: "snip", label: "Ausschnitt: Bereich einkreisen → als Bild kopieren", icon: Scissors },
+  { tool: "text", label: "Text: irgendwo hintippen und schreiben", icon: Type },
 ];
 
 export function DrawingToolbar(props: Props) {
@@ -66,7 +68,7 @@ export function DrawingToolbar(props: Props) {
   return (
     <div className="drawing-toolbar">
       {zoomButton}
-      {TOOLS.map((t) => (
+      {TOOLS.filter((t) => t.tool !== "text" || props.allowText).map((t) => (
         <button
           key={t.tool}
           className={`toolbar-button ${tool === t.tool ? "selected" : ""}`}

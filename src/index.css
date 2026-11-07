@@ -1755,3 +1755,105 @@ path.selected {
 .scroll-thumb.vertical:active::after {
   width: 8px;
 }
+
+/* ---------- Frei platzierte Textfelder ---------- */
+.floating-texts {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* nur die Felder selbst sind anfassbar */
+}
+
+.floating-text {
+  position: absolute;
+  border: 1px dashed transparent;
+  border-radius: 6px;
+}
+
+.floating-text.interactive {
+  pointer-events: auto;
+}
+
+.floating-text.interactive:hover,
+.floating-text:focus-within,
+.floating-text.selected {
+  border-color: var(--border-strong);
+}
+
+.floating-text-input {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.floating-text-input::placeholder {
+  color: var(--placeholder);
+}
+
+/* Griff, Löschen und Breite nur zeigen, wenn das Feld aktiv ist */
+.floating-text-grip,
+.floating-text-delete,
+.floating-text-resize {
+  position: absolute;
+  display: none;
+}
+
+.floating-text.interactive:hover .floating-text-grip,
+.floating-text.interactive:focus-within .floating-text-grip,
+.floating-text.interactive:focus-within .floating-text-delete,
+.floating-text.interactive:focus-within .floating-text-resize,
+.floating-text.interactive:hover .floating-text-resize {
+  display: flex;
+}
+
+.floating-text-grip {
+  top: 2px;
+  left: -22px;
+  width: 20px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: move;
+  touch-action: none;
+}
+
+.floating-text-grip:hover {
+  background: var(--hover);
+}
+
+.floating-text-delete {
+  top: -10px;
+  right: -10px;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--text);
+  color: var(--main-bg);
+  cursor: pointer;
+}
+
+.floating-text-resize {
+  top: 0;
+  bottom: 0;
+  right: -4px;
+  width: 8px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.drawing-layer.active.tool-text {
+  cursor: text;
+}

@@ -15,13 +15,14 @@
       doppelt (gleicht sich live ab), Trennlinie verschiebbar.
 - [x] **Markier-Modus (Screenshot)**: Werkzeug „Ausschnitt“ (Schere) – Bereich einkreisen,
       wird als Bild kopiert, mit ⌘V einfügen.
-- [~] **Lasso im Zeichen-Modus** (Striche: erledigt; eingefügte Bilder als freie Boxen: erledigt; Text frei verschieben + Bilder per Lasso: offen): Gezeichnetes, Geschriebenes und Eingefügtes auswählen
+- [x] **Lasso im Zeichen-Modus** (Striche, eingefügte Bilder und Textfelder; Text-Werkzeug „T“ setzt freie Textfelder): Gezeichnetes, Geschriebenes und Eingefügtes auswählen
       und frei auf dem Blatt verschieben.
 
 ### iPad
 - [x] Nur Apple Pencil zeichnet, Finger scrollen; Zoom nur im Blatt/PDF (bis 600 %); flüssige, runde Linien
 - [x] Formerkennung beim Füller: am Ende 1 s stillhalten → gerade Linie, Kreis/Ellipse, Dreieck, Rechteck, Vieleck
 - [x] Eingerastete Form mit dem Stift größer/kleiner ziehen; Textmarker-Markierungen werden automatisch gerade
+- [x] Scroll-Markierung am Rand (ziehbar); eingerastete Formen auch drehen
 - [x] 3 Strichdicken (Füller, Textmarker), Radierer mit 3 Größen und Modus „Strich“ / „Genau"
 
 ### Startseite

@@ -3,6 +3,7 @@
 // Wenn wir später einen Server/Sync einbauen, müssen wir nur diese Datei austauschen.
 import { del, get, set } from "idb-keyval";
 import type { FloatingImage } from "../drawing/images";
+import type { FloatingText } from "../drawing/texts";
 import type { Stroke } from "../drawing/strokes";
 
 export type Page = {
@@ -22,6 +23,7 @@ const SUBJECTS_KEY = "subjects";
 const contentKey = (pageId: string) => `page-content:${pageId}`;
 const drawingKey = (pageId: string) => `page-drawing:${pageId}`;
 const imagesKey = (pageId: string) => `page-images:${pageId}`;
+const textsKey = (pageId: string) => `page-texts:${pageId}`;
 
 export async function loadPages(): Promise<Page[]> {
   return (await get<Page[]>(PAGES_KEY)) ?? [];
@@ -86,10 +88,20 @@ export async function savePageImages(pageId: string, images: FloatingImage[]): P
   await set(imagesKey(pageId), images);
 }
 
+// Frei platzierte Textfelder einer Seite (Format siehe drawing/texts.ts).
+export async function loadPageTexts(pageId: string): Promise<FloatingText[]> {
+  return (await get<FloatingText[]>(textsKey(pageId))) ?? [];
+}
+
+export async function savePageTexts(pageId: string, texts: FloatingText[]): Promise<void> {
+  await set(textsKey(pageId), texts);
+}
+
 export async function deletePageData(pageId: string): Promise<void> {
   await del(contentKey(pageId));
   await del(drawingKey(pageId));
   await del(imagesKey(pageId));
+  await del(textsKey(pageId));
 }
 
 // ---------- PDFs ----------

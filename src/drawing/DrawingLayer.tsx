@@ -4,17 +4,20 @@
 // Jeder Strich merkt sich den Textblock darüber und wandert mit, wenn sich der Text verschiebt.
 // Außerdem liegen hier die frei platzierbaren Bilder (eingefügt mit ⌘V), die genauso mitwandern.
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
+import { flushSync } from "react-dom";
 
 import { usePaneFocused } from "../components/PaneContext";
 import { usePinchZoom } from "../components/usePinchZoom";
-import { savePageDrawing, savePageImages } from "../storage/db";
+import { savePageDrawing, savePageImages, savePageTexts } from "../storage/db";
 import { publish, useLiveSync } from "../storage/liveSync";
 import { DrawingToolbar } from "./DrawingToolbar";
 import { FloatingImages } from "./FloatingImages";
+import { FloatingTexts } from "./FloatingTexts";
 import { fileToDataUrl, initialImageSize, type FloatingImage } from "./images";
 import { LassoOverlay } from "./LassoOverlay";
 import { boundsOfPolygon, captureRegion, copySnipToClipboard } from "./snip";
 import { PEN_COLORS, strokeToPath, type Stroke, type Tool } from "./strokes";
+import { DEFAULT_TEXT_WIDTH, type FloatingText } from "./texts";
 import { eraserRadius, strokeSize, useToolSettings } from "./toolSettings";
 import { usePenShortcuts, useStrokeInput } from "./useStrokeInput";
 
@@ -23,6 +26,7 @@ type Props = {
   scrollRef: RefObject<HTMLDivElement | null>; // der scrollende Bereich der Seite
   initialStrokes: Stroke[];
   initialImages: FloatingImage[];
+  initialTexts: FloatingText[];
   // Titel + Editor. Darüber liegt die Zeichenschicht.
   children: ReactNode;
 };
@@ -55,7 +59,7 @@ type Layout = {
   blockTops: Record<string, number>; // Block-ID -> aktuelle Höhe auf der Seite
 };
 
-export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages, children }: Props) {
+export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages, initialTexts, children }: Props) {
   const textRef = useRef<HTMLDivElement>(null); // daraus lesen wir, wo die Textblöcke liegen
   const svgRef = useRef<SVGSVGElement>(null);
   const sizerRef = useRef<HTMLDivElement>(null);
@@ -102,6 +106,8 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
   }, [scrollRef]);
   const [strokes, setStrokes] = useState(initialStrokes);
   const [images, setImages] = useState(initialImages);
+  const [texts, setTexts] = useState(initialTexts);
+  const [textHeights, setTextHeights] = useState<Record<string, number>>({}); // gemessen, fürs Lasso
   const [layout, setLayout] = useState<Layout>({ columnLeft: 0, blockTops: {} });
 
   const [penMode, setPenMode] = useState(false);
@@ -160,6 +166,7 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
   const paneFocused = usePaneFocused();
   const strokesSyncId = useLiveSync<Stroke[]>(`page-drawing:${pageId}`, setStrokes);
   const imagesSyncId = useLiveSync<FloatingImage[]>(`page-images:${pageId}`, setImages);
+  const textsSyncId = useLiveSync<FloatingText[]>(`page-texts:${pageId}`, setTexts);
 
   // ---------- Ändern + Speichern ----------
   const save = (next: Stroke[]) => {
@@ -211,6 +218,34 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
       publish(`page-images:${pageId}`, imagesSyncId, next);
       return next;
     });
+
+  // ---------- Frei platzierte Textfelder ----------
+  const updateTexts = (change: (current: FloatingText[]) => FloatingText[]) =>
+    setTexts((current) => {
+      const next = change(current);
+      savePageTexts(pageId, next);
+      publish(`page-texts:${pageId}`, textsSyncId, next);
+      return next;
+    });
+
+  const anchorText = (text: FloatingText): FloatingText => {
+    const y = text.y + offsetOf(text);
+    return { ...text, y, ...findAnchor(y) };
+  };
+
+  // Text-Werkzeug: neues Textfeld an der angetippten Stelle und sofort hineinschreiben.
+  const placeText = (x: number, y: number) => {
+    const id = crypto.randomUUID();
+    const top = y - 12; // Zeile ungefähr mittig auf die Tipp-Stelle
+    flushSync(() =>
+      updateTexts((current) => [
+        ...current,
+        { id, text: "", x, y: top, width: DEFAULT_TEXT_WIDTH, ...findAnchor(top) },
+      ]),
+    );
+    // direkt (noch im Tipp-Ereignis) fokussieren, sonst öffnet das iPad die Tastatur nicht
+    document.querySelector<HTMLTextAreaElement>(`[data-text-id="${id}"]`)?.focus({ preventScroll: true });
+  };
 
   // Bild an der Stelle festmachen, wo es gerade angezeigt wird.
   const anchorImage = (image: FloatingImage): FloatingImage => {
@@ -284,6 +319,11 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
     // Verschobene Striche hängen danach am Text an ihrer neuen Stelle.
     onMoveDone: (next, movedIds, dx, dy) => {
       commit(next.map((s) => (movedIds.has(s.id) ? anchorStroke(s) : s)));
+      if (texts.some((t) => movedIds.has(t.id))) {
+        updateTexts((current) =>
+          current.map((t) => (movedIds.has(t.id) ? anchorText({ ...t, x: t.x + dx, y: t.y + dy }) : t)),
+        );
+      }
       if (images.some((img) => movedIds.has(img.id))) {
         updateImages((current) =>
           current.map((img) => (movedIds.has(img.id) ? anchorImage({ ...img, x: img.x + dx, y: img.y + dy }) : img)),
@@ -292,15 +332,25 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
     },
     onDeleteSelection: (next, selectedIds) => {
       commit(next);
+      if (texts.some((t) => selectedIds.has(t.id))) {
+        updateTexts((current) => current.filter((t) => !selectedIds.has(t.id)));
+      }
       if (images.some((img) => selectedIds.has(img.id))) {
         updateImages((current) => current.filter((img) => !selectedIds.has(img.id)));
       }
     },
     // Bilder kann das Lasso mit auswählen.
-    items: images.map((img) => ({
-      id: img.id,
-      box: { x: img.x, y: img.y + offsetOf(img), width: img.width, height: img.height },
-    })),
+    items: [
+      ...images.map((img) => ({
+        id: img.id,
+        box: { x: img.x, y: img.y + offsetOf(img), width: img.width, height: img.height },
+      })),
+      ...texts.map((t) => ({
+        id: t.id,
+        box: { x: t.x, y: t.y + offsetOf(t), width: t.width, height: textHeights[t.id] ?? 24 },
+      })),
+    ],
+    onPlaceText: placeText,
     onSnip: (polygon) => {
       const box = boundsOfPolygon(polygon);
       const element = svgRef.current!.parentElement!; // die ganze Seite (Text + Zeichnungen)
@@ -313,6 +363,7 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
     0,
     ...strokes.map((s) => Math.max(...s.points.map((p) => p[1])) + offsetOf(s)),
     ...images.map((img) => img.y + img.height + offsetOf(img)),
+    ...texts.map((t) => t.y + (textHeights[t.id] ?? 24) + offsetOf(t)),
   );
 
   // SVG-Formen nur neu berechnen, wenn sich die Striche ändern.
@@ -352,6 +403,7 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
           onResetZoom={() => setZoom(1)}
           settings={toolSettings}
           onSettingsChange={updateToolSettings}
+          allowText
         />
       </div>
 
@@ -406,6 +458,28 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
           <LassoOverlay lasso={lasso} box={selectionBox} onDelete={deleteSelection} />
         </g>
       </svg>
+
+      {/* Über der Zeichenschicht, damit man im Text-Werkzeug in vorhandene Felder tippen kann. */}
+      <FloatingTexts
+        texts={texts}
+        columnLeft={layout.columnLeft}
+        zoom={zoom}
+        offsetOf={offsetOf}
+        interactive={!penMode || tool === "text"}
+        lassoSelected={selection}
+        lassoOffset={dragOffset}
+        onChange={(id, value) => updateTexts((current) => current.map((t) => (t.id === id ? { ...t, text: value } : t)))}
+        onMove={(id, dx, dy) =>
+          updateTexts((current) =>
+            current.map((t) => (t.id === id ? anchorText({ ...t, x: t.x + dx, y: t.y + dy }) : t)),
+          )
+        }
+        onResize={(id, width) => updateTexts((current) => current.map((t) => (t.id === id ? { ...t, width } : t)))}
+        onDelete={(id) => updateTexts((current) => current.filter((t) => t.id !== id))}
+        onMeasure={(id, height) =>
+          setTextHeights((current) => (current[id] === height ? current : { ...current, [id]: height }))
+        }
+      />
       </div>
       </div>
     </>

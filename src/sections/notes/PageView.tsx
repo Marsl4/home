@@ -5,8 +5,9 @@ import { ScrollIndicator } from "../../components/ScrollIndicator";
 import { DrawingLayer } from "../../drawing/DrawingLayer";
 import type { FloatingImage } from "../../drawing/images";
 import type { Stroke } from "../../drawing/strokes";
+import type { FloatingText } from "../../drawing/texts";
 import { removeUnknownBlocks, type EditorBlock } from "../../editor/schema";
-import { loadPageContent, loadPageDrawing, loadPageImages, type Page } from "../../storage/db";
+import { loadPageContent, loadPageDrawing, loadPageImages, loadPageTexts, type Page } from "../../storage/db";
 import { useNotes } from "./NotesContext";
 import { PageEditor } from "./PageEditor";
 
@@ -15,6 +16,7 @@ type LoadedPage = {
   blocks: EditorBlock[] | undefined;
   strokes: Stroke[];
   images: FloatingImage[];
+  texts: FloatingText[];
 };
 
 type Props = {
@@ -34,13 +36,15 @@ export function PageView({ page, breadcrumb }: Props) {
       loadPageContent(page.id),
       loadPageDrawing(page.id),
       loadPageImages(page.id),
-    ]).then(([blocks, strokes, images]) => {
+      loadPageTexts(page.id),
+    ]).then(([blocks, strokes, images, texts]) => {
       if (cancelled) return;
       setLoaded({
         pageId: page.id,
         blocks: blocks && removeUnknownBlocks(blocks as EditorBlock[]),
         strokes,
         images,
+        texts,
       });
     });
     return () => {
@@ -61,6 +65,7 @@ export function PageView({ page, breadcrumb }: Props) {
         scrollRef={scrollRef}
         initialStrokes={loaded.strokes}
         initialImages={loaded.images}
+        initialTexts={loaded.texts}
       >
         {breadcrumb && <div className="page-breadcrumb">{breadcrumb}</div>}
         <input
