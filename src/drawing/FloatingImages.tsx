@@ -8,6 +8,7 @@ import { MIN_IMAGE_WIDTH, type FloatingImage } from "./images";
 type Props = {
   images: FloatingImage[];
   columnLeft: number; // Abstand der Textspalte vom linken Rand
+  zoom: number; // Zoom des Blatts: Mausbewegungen werden dadurch geteilt
   offsetOf: (image: FloatingImage) => number; // Verschiebung, weil der Text darüber gewandert ist
   interactive: boolean; // im Stift-Modus nicht anfassbar (dann wird darüber gezeichnet)
   onMove: (id: string, dx: number, dy: number) => void;
@@ -18,7 +19,7 @@ type Props = {
 type Drag = { id: string; mode: "move" | "resize"; startX: number; startY: number; dx: number; dy: number };
 
 export function FloatingImages(props: Props) {
-  const { images, columnLeft, offsetOf, interactive } = props;
+  const { images, columnLeft, offsetOf, interactive, zoom } = props;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
 
@@ -45,7 +46,7 @@ export function FloatingImages(props: Props) {
 
   const onPointerMove = (event: React.PointerEvent) => {
     if (!drag) return;
-    setDrag({ ...drag, dx: event.clientX - drag.startX, dy: event.clientY - drag.startY });
+    setDrag({ ...drag, dx: (event.clientX - drag.startX) / zoom, dy: (event.clientY - drag.startY) / zoom });
   };
 
   // Größe während des Ziehens an der Ecke (Seitenverhältnis bleibt gleich).
@@ -56,8 +57,8 @@ export function FloatingImages(props: Props) {
     if (!drag) return;
     setDrag(null);
     // Endposition direkt vom Loslassen nehmen (die letzte Bewegung ist evtl. noch nicht im Zustand).
-    const dx = event.clientX - drag.startX;
-    const dy = event.clientY - drag.startY;
+    const dx = (event.clientX - drag.startX) / zoom;
+    const dy = (event.clientY - drag.startY) / zoom;
     if (dx === 0 && dy === 0) return; // nur angeklickt
     if (drag.mode === "move") {
       props.onMove(image.id, dx, dy);

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Star } from "lucide-react";
 
+import { usePinchZoom } from "../../components/usePinchZoom";
 import { DrawingToolbar } from "../../drawing/DrawingToolbar";
 import { PEN_COLORS, type Stroke, type Tool } from "../../drawing/strokes";
 import { usePenShortcuts } from "../../drawing/useStrokeInput";
@@ -38,7 +39,11 @@ export function PdfViewer({ pdf }: { pdf: PdfDoc }) {
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
-  const displayWidth = Math.min(availableWidth - 48, MAX_PAGE_WIDTH);
+  // Zoom nur im PDF (zwei Finger / Trackpad). Die Seiten werden danach in der neuen Größe scharf gezeichnet.
+  const pagesRef = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState(1);
+  usePinchZoom({ scrollRef, contentRef: pagesRef, zoom, setZoom, min: 0.5, max: 4 });
+  const displayWidth = Math.min(availableWidth - 48, MAX_PAGE_WIDTH) * zoom;
 
   // PDF-Datei und Zeichnungen laden.
   useEffect(() => {
@@ -110,6 +115,8 @@ export function PdfViewer({ pdf }: { pdf: PdfDoc }) {
       </header>
 
       <div className="pdf-scroll" ref={scrollRef}>
+        {/* Abstände zoomen mit, damit die Stelle unter den Fingern beim Zoomen an ihrem Platz bleibt. */}
+        <div className="pdf-pages" ref={pagesRef} style={{ gap: 16 * zoom, padding: `${24 * zoom}px ${24 * zoom}px 80px` }}>
         {error && <p className="pdf-error">PDF konnte nicht geöffnet werden: {error}</p>}
         {loaded &&
           displayWidth > 0 &&
@@ -132,6 +139,7 @@ export function PdfViewer({ pdf }: { pdf: PdfDoc }) {
               onEraseDone={(before) => setHistory([...history, withPage(index, before)])}
             />
           ))}
+        </div>
       </div>
 
       <DrawingToolbar
@@ -143,6 +151,8 @@ export function PdfViewer({ pdf }: { pdf: PdfDoc }) {
         onColorChange={setColor}
         canUndo={history.length > 0}
         onUndo={undo}
+        zoom={zoom}
+        onResetZoom={() => setZoom(1)}
       />
     </div>
   );

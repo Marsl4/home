@@ -370,8 +370,25 @@ button {
    ========================================================= */
 .page {
   flex: 1;
-  overflow-y: auto;
+  overflow: auto; /* gezoomt auch seitlich scrollbar */
   padding-top: 48px;
+}
+
+/* Zoom: Finger-Zoomen übernimmt die App (nur Blatt/PDF), nicht der Browser. */
+.page,
+.pdf-scroll {
+  touch-action: pan-x pan-y;
+}
+
+.zoom-sizer {
+  position: relative;
+  overflow: hidden;
+}
+
+.zoom-button {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
 }
 
 .page-title-input {
@@ -401,7 +418,6 @@ button {
 /* ---------- Zeichenschicht ---------- */
 .page-content {
   position: relative; /* Bezugspunkt für die Zeichenschicht */
-  min-height: 100%;
   padding-bottom: 40vh; /* Platz zum Zeichnen unter dem Text */
 }
 
@@ -488,6 +504,7 @@ path.selected {
 .toolbar-dock {
   position: sticky;
   top: 0;
+  left: 0; /* bleibt auch beim seitlichen Scrollen (gezoomt) an ihrem Platz */
   height: 0;
   z-index: 10;
 }
@@ -983,13 +1000,17 @@ path.selected {
 
 .pdf-scroll {
   flex: 1;
-  overflow-y: auto;
+  overflow: auto; /* gezoomt auch seitlich scrollbar */
+  background: var(--pdf-bg);
+}
+
+/* Seiten untereinander, mittig; gezoomt breiter als der Bereich -> seitlich scrollbar. */
+.pdf-pages {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 24px 0 80px;
-  background: var(--pdf-bg);
+  width: max-content;
+  min-width: 100%;
 }
 
 .pdf-page {

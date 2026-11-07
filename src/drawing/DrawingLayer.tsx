@@ -3,9 +3,10 @@
 // - Stift-Modus an: Maus/Trackpad/Stift malen auf der Seite.
 // Jeder Strich merkt sich den Textblock darüber und wandert mit, wenn sich der Text verschiebt.
 // Außerdem liegen hier die frei platzierbaren Bilder (eingefügt mit ⌘V), die genauso mitwandern.
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 
 import { usePaneFocused } from "../components/PaneContext";
+import { usePinchZoom } from "../components/usePinchZoom";
 import { savePageDrawing, savePageImages } from "../storage/db";
 import { publish, useLiveSync } from "../storage/liveSync";
 import { DrawingToolbar } from "./DrawingToolbar";
@@ -18,11 +19,32 @@ import { usePenShortcuts, useStrokeInput } from "./useStrokeInput";
 
 type Props = {
   pageId: string;
+  scrollRef: RefObject<HTMLDivElement | null>; // der scrollende Bereich der Seite
   initialStrokes: Stroke[];
   initialImages: FloatingImage[];
   // Titel + Editor. Darüber liegt die Zeichenschicht.
   children: ReactNode;
 };
+
+// Position eines Elements innerhalb eines umgebenden Elements – unabhängig von Zoom/Transform.
+function offsetWithin(element: HTMLElement, ancestor: HTMLElement) {
+  let top = 0;
+  let left = 0;
+  let current: HTMLElement | null = element;
+  while (current && current !== ancestor) {
+    top += current.offsetTop;
+    left += current.offsetLeft;
+    const parent = current.offsetParent as HTMLElement | null;
+    // Liegt der Vorfahre nicht in der offsetParent-Kette, mit seinem eigenen Abstand ausgleichen.
+    if (parent && !ancestor.contains(parent)) {
+      top -= ancestor.offsetTop;
+      left -= ancestor.offsetLeft;
+      break;
+    }
+    current = parent;
+  }
+  return { top, left };
+}
 
 // Alles, was an einem Textblock hängt (Striche und Bilder).
 type Anchored = { anchorBlockId: string | null; anchorTop: number };
@@ -32,9 +54,36 @@ type Layout = {
   blockTops: Record<string, number>; // Block-ID -> aktuelle Höhe auf der Seite
 };
 
-export function DrawingLayer({ pageId, initialStrokes, initialImages, children }: Props) {
+export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages, children }: Props) {
   const textRef = useRef<HTMLDivElement>(null); // daraus lesen wir, wo die Textblöcke liegen
   const svgRef = useRef<SVGSVGElement>(null);
+  const sizerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // ---------- Zoom (nur das Blatt, nicht die ganze App) ----------
+  // Das Blatt wird per "transform: scale" vergrößert, ohne dass sich der Zeilenumbruch ändert.
+  // Alle Positionen (Striche, Bilder) bleiben in ungezoomten Einheiten gespeichert.
+  const [zoom, setZoom] = useState(1);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+  const [viewport, setViewport] = useState({ width: 0, height: 0 }); // sichtbarer Bereich, ungezoomt
+  const [contentHeight, setContentHeight] = useState(0);
+  usePinchZoom({ scrollRef, contentRef: sizerRef, zoom, setZoom, min: 1, max: 4 });
+
+  useEffect(() => {
+    const scroller = scrollRef.current;
+    const content = contentRef.current;
+    if (!scroller || !content) return;
+    const observer = new ResizeObserver(() => {
+      const paddingTop = parseFloat(getComputedStyle(scroller).paddingTop) || 0;
+      setViewport({ width: scroller.clientWidth, height: scroller.clientHeight - paddingTop });
+      setContentHeight(content.offsetHeight);
+    });
+    observer.observe(scroller);
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, [scrollRef]);
+  const zoomed = zoom !== 1;
   const [strokes, setStrokes] = useState(initialStrokes);
   const [images, setImages] = useState(initialImages);
   const [layout, setLayout] = useState<Layout>({ columnLeft: 0, blockTops: {} });
@@ -55,14 +104,16 @@ export function DrawingLayer({ pageId, initialStrokes, initialImages, children }
     const measure = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const origin = svg.getBoundingClientRect();
-        const column = text.querySelector(".bn-container");
+        // Gemessen wird über das Layout (offsetTop), nicht über die Bildschirmposition –
+        // so stimmt es auch beim Zoomen und während einer Zoom-Geste.
+        const page = svg.parentElement!;
+        const column = text.querySelector<HTMLElement>(".bn-container");
         const blockTops: Record<string, number> = {};
         text.querySelectorAll<HTMLElement>(".bn-block-outer[data-id]").forEach((el) => {
-          blockTops[el.dataset.id!] = el.getBoundingClientRect().top - origin.top;
+          blockTops[el.dataset.id!] = offsetWithin(el, page).top;
         });
         setLayout({
-          columnLeft: column ? column.getBoundingClientRect().left - origin.left : 0,
+          columnLeft: column ? offsetWithin(column, page).left : 0,
           blockTops,
         });
       });
@@ -156,10 +207,11 @@ export function DrawingLayer({ pageId, initialStrokes, initialImages, children }
     const node = window.getSelection()?.anchorNode;
     const element = node instanceof Element ? node : node?.parentElement;
     const block = element?.closest(".bn-block-outer");
+    const z = zoomRef.current;
     if (block && textRef.current?.contains(block)) {
-      return block.getBoundingClientRect().bottom - origin.top + 8;
+      return (block.getBoundingClientRect().bottom - origin.top) / z + 8;
     }
-    return Math.max(0, -origin.top + 120);
+    return Math.max(0, -origin.top / z + 120);
   };
 
   // ⌘V mit einem Bild (z. B. einem Ausschnitt) -> als frei verschiebbare Box einfügen.
@@ -201,8 +253,8 @@ export function DrawingLayer({ pageId, initialStrokes, initialImages, children }
     toPoint: (event) => {
       const origin = svgRef.current!.getBoundingClientRect();
       return [
-        event.clientX - origin.left - layout.columnLeft,
-        event.clientY - origin.top,
+        (event.clientX - origin.left) / zoom - layout.columnLeft,
+        (event.clientY - origin.top) / zoom,
         event.pressure || 0.5,
       ];
     },
@@ -241,8 +293,8 @@ export function DrawingLayer({ pageId, initialStrokes, initialImages, children }
   };
 
   return (
-    <div className="page-content">
-      {/* Die Werkzeugleiste "klebt" oben rechts an der Seite, auch beim Scrollen. */}
+    <>
+      {/* Die Werkzeugleiste "klebt" oben rechts an der Seite, auch beim Scrollen – und zoomt nicht mit. */}
       <div className="toolbar-dock">
         <DrawingToolbar
           penMode={penMode}
@@ -253,9 +305,25 @@ export function DrawingLayer({ pageId, initialStrokes, initialImages, children }
           onColorChange={setColor}
           canUndo={history.length > 0}
           onUndo={undo}
+          zoom={zoom}
+          onResetZoom={() => setZoom(1)}
         />
       </div>
 
+      {/* "sizer" hat die gezoomte Größe (damit man scrollen kann), darin das vergrößerte Blatt. */}
+      <div
+        className="zoom-sizer"
+        ref={sizerRef}
+        style={zoomed ? { width: viewport.width * zoom, height: contentHeight * zoom } : undefined}
+      >
+      <div
+        className="page-content"
+        ref={contentRef}
+        style={{
+          minHeight: viewport.height || undefined,
+          ...(zoomed && { width: viewport.width, transform: `scale(${zoom})`, transformOrigin: "0 0" }),
+        }}
+      >
       <div className="page-text" ref={textRef}>
         {children}
       </div>
@@ -263,6 +331,7 @@ export function DrawingLayer({ pageId, initialStrokes, initialImages, children }
       <FloatingImages
         images={images}
         columnLeft={layout.columnLeft}
+        zoom={zoom}
         offsetOf={offsetOf}
         interactive={!penMode}
         onMove={(id, dx, dy) =>
@@ -287,6 +356,8 @@ export function DrawingLayer({ pageId, initialStrokes, initialImages, children }
           <LassoOverlay lasso={lasso} box={selectionBox} onDelete={deleteSelection} />
         </g>
       </svg>
-    </div>
+      </div>
+      </div>
+    </>
   );
 }

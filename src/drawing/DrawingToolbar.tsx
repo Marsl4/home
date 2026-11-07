@@ -12,6 +12,8 @@ type Props = {
   onColorChange: (color: string) => void;
   canUndo: boolean;
   onUndo: () => void;
+  zoom: number; // aktueller Zoom der Ansicht (1 = 100 %)
+  onResetZoom: () => void;
 };
 
 const TOOLS: { tool: Tool; label: string; icon: LucideIcon }[] = [
@@ -25,9 +27,17 @@ const TOOLS: { tool: Tool; label: string; icon: LucideIcon }[] = [
 export function DrawingToolbar(props: Props) {
   const { penMode, tool, color } = props;
 
+  // Nur sichtbar, wenn gezoomt ist: Prozentzahl, antippen = zurück auf 100 %.
+  const zoomButton = Math.abs(props.zoom - 1) > 0.01 && (
+    <button className="toolbar-button zoom-button" onClick={props.onResetZoom} title="Zoom zurücksetzen (100 %)">
+      {Math.round(props.zoom * 100)} %
+    </button>
+  );
+
   if (!penMode) {
     return (
       <div className="drawing-toolbar">
+        {zoomButton}
         <button className="toolbar-button" onClick={props.onTogglePenMode} title="Zeichnen (Stift-Modus)">
           <Pencil size={16} /> Zeichnen
         </button>
@@ -46,6 +56,7 @@ export function DrawingToolbar(props: Props) {
 
   return (
     <div className="drawing-toolbar">
+      {zoomButton}
       {TOOLS.map((t) => (
         <button
           key={t.tool}

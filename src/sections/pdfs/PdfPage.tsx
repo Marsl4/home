@@ -10,6 +10,8 @@ import { RenderingCancelledException, type PDFDocumentProxy } from "./pdfjs";
 
 // Auflösung für Ausschnitte: 4 Bildpunkte pro PDF-Einheit (≈ 290 dpi, sehr scharf).
 const SNIP_SCALE = 4;
+// Höchstens so viele Bildpunkte pro Seite (das iPad schafft ~16 Mio. pro Canvas, und Speicher ist knapp).
+const MAX_CANVAS_PIXELS = 10_000_000;
 
 type Props = {
   doc: PDFDocumentProxy;
@@ -51,7 +53,8 @@ export function PdfPage(props: Props) {
 
     doc.getPage(index + 1).then((page) => {
       if (cancelled) return;
-      const scale = (displayWidth / width) * window.devicePixelRatio;
+      const sharpScale = (displayWidth / width) * window.devicePixelRatio;
+      const scale = Math.min(sharpScale, Math.sqrt(MAX_CANVAS_PIXELS / (width * height)));
       const viewport = page.getViewport({ scale });
       const canvas = canvasRef.current!;
       canvas.width = Math.floor(viewport.width);

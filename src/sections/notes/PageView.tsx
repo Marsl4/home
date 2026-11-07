@@ -1,5 +1,5 @@
 // Zeigt EINE Notizseite: Titel, Editor und Zeichenschicht. Wird von Notizen und Uni benutzt.
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { DrawingLayer } from "../../drawing/DrawingLayer";
 import type { FloatingImage } from "../../drawing/images";
@@ -24,6 +24,7 @@ type Props = {
 export function PageView({ page, breadcrumb }: Props) {
   const { renamePage } = useNotes();
   const [loaded, setLoaded] = useState<LoadedPage | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null); // der scrollende Bereich (für den Zoom)
 
   // Text und Zeichnungen der Seite laden.
   useEffect(() => {
@@ -50,11 +51,12 @@ export function PageView({ page, breadcrumb }: Props) {
 
   return (
     // light-surface: das Schreibblatt bleibt auch im dunklen Design hell.
-    <div className="page light-surface">
+    <div className="page light-surface" ref={scrollRef}>
       {/* key: beim Seitenwechsel Editor und Zeichenschicht komplett neu aufbauen */}
       <DrawingLayer
         key={page.id}
         pageId={page.id}
+        scrollRef={scrollRef}
         initialStrokes={loaded.strokes}
         initialImages={loaded.images}
       >
