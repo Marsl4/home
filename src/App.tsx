@@ -1,10 +1,18 @@
 // Grundlayout: [Bereiche-Leiste] [zweite Leiste mit Unterbereichen] [Hauptansicht]
+import type { ReactNode } from "react";
 import { PanelLeftClose } from "lucide-react";
 
 import { SectionRail } from "./components/SectionRail";
 import { sections } from "./sections";
-import { NotesProvider } from "./sections/notes/NotesProvider";
 import { usePersistentState } from "./storage/uiState";
+
+// Alle Daten-Provider der Bereiche ineinander schachteln, damit jeder Bereich seine Daten hat.
+function SectionProviders({ children }: { children: ReactNode }) {
+  return sections.reduceRight<ReactNode>(
+    (inner, { id, Provider }) => (Provider ? <Provider key={id}>{inner}</Provider> : inner),
+    children,
+  );
+}
 
 export default function App() {
   const [activeId, setActiveId] = usePersistentState("ui:section", sections[0].id);
@@ -35,7 +43,7 @@ export default function App() {
   const { Panel, View } = section;
 
   return (
-    <NotesProvider>
+    <SectionProviders>
       <div className="app">
         <SectionRail sections={sections} activeId={section.id} onClick={handleRailClick} />
 
@@ -59,6 +67,6 @@ export default function App() {
           <View key={section.id} {...sectionProps} />
         </main>
       </div>
-    </NotesProvider>
+    </SectionProviders>
   );
 }

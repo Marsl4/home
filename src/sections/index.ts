@@ -4,9 +4,13 @@
 import { CalendarDays, Dumbbell, FileText, GraduationCap, ListTodo, NotebookPen } from "lucide-react";
 
 import { NotesPanel } from "./notes/NotesPanel";
+import { NotesProvider } from "./notes/NotesProvider";
 import { NotesView } from "./notes/NotesView";
 import { PlaceholderPanel } from "./placeholder/PlaceholderPanel";
 import { PlaceholderView } from "./placeholder/PlaceholderView";
+import { TodosPanel } from "./todos/TodosPanel";
+import { TodosProvider } from "./todos/TodosProvider";
+import { TodosView } from "./todos/TodosView";
 import type { Section } from "./types";
 
 export const sections: Section[] = [
@@ -16,6 +20,7 @@ export const sections: Section[] = [
     icon: NotebookPen,
     Panel: NotesPanel,
     View: NotesView,
+    Provider: NotesProvider,
   },
   {
     id: "uni",
@@ -58,13 +63,9 @@ export const sections: Section[] = [
     id: "todos",
     label: "ToDos",
     icon: ListTodo,
-    subItems: [
-      { id: "today", label: "Heute" },
-      { id: "upcoming", label: "Anstehend" },
-      { id: "done", label: "Erledigt" },
-    ],
-    Panel: PlaceholderPanel,
-    View: PlaceholderView,
+    Panel: TodosPanel,
+    View: TodosView,
+    Provider: TodosProvider,
   },
   {
     id: "fitness",

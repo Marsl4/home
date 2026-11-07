@@ -30,6 +30,26 @@ export async function savePageContent(pageId: string, blocks: unknown[]): Promis
   await set(contentKey(pageId), blocks);
 }
 
+// ---------- ToDos ----------
+export type Todo = {
+  id: string;
+  title: string;
+  done: boolean;
+  dueDate: string | null; // "JJJJ-MM-TT" oder null = ohne Datum
+  createdAt: number;
+  doneAt: number | null;
+};
+
+const TODOS_KEY = "todos";
+
+export async function loadTodos(): Promise<Todo[]> {
+  return (await get<Todo[]>(TODOS_KEY)) ?? [];
+}
+
+export async function saveTodos(todos: Todo[]): Promise<void> {
+  await set(TODOS_KEY, todos);
+}
+
 // Freihand-Zeichnungen einer Seite (Liste von Strichen, Format siehe drawing/strokes.ts).
 export async function loadPageDrawing(pageId: string): Promise<Stroke[]> {
   return (await get<Stroke[]>(drawingKey(pageId))) ?? [];

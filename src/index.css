@@ -398,3 +398,202 @@ button {
   margin: 0 4px;
   background: var(--border);
 }
+
+/* =========================================================
+   ToDos
+   ========================================================= */
+.panel-item-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding-right: 4px;
+}
+
+.todos {
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 32px 120px;
+}
+
+.todos-header h1 {
+  margin: 0;
+  font-size: 32px;
+}
+
+.todos-header p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+}
+
+.todo-new {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 24px 0 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.todo-new:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.todo-new-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.todo-new-title {
+  flex: 1;
+  border: none;
+  outline: none;
+  font: inherit;
+  font-size: 15px;
+  padding: 6px 0;
+  background: transparent;
+}
+
+.todo-date-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.todo-date-input:hover {
+  background: var(--hover);
+}
+
+.todo-date-input.overdue {
+  color: #dc2626;
+}
+
+/* Ohne Datum: Datumsfeld nur beim Drüberfahren zeigen, damit die Liste ruhig bleibt */
+.todo-row .todo-date-input.empty {
+  opacity: 0;
+}
+
+.todo-row:hover .todo-date-input.empty,
+.todo-row .todo-date-input.empty:focus {
+  opacity: 1;
+}
+
+.todos-empty {
+  margin-top: 32px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.todo-group {
+  margin-top: 20px;
+}
+
+.todo-group h2 {
+  margin: 0 0 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.todo-group h2.overdue {
+  color: #dc2626;
+}
+
+.todo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 4px 4px 2px;
+  border-radius: 8px;
+}
+
+.todo-row:hover {
+  background: var(--panel-bg);
+}
+
+.todo-check {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1.5px solid #c4c3bf;
+  border-radius: 50%;
+  background: #fff;
+  color: #fff;
+  cursor: pointer;
+}
+
+.todo-check:hover {
+  border-color: var(--accent);
+}
+
+.todo-row.done .todo-check {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.todo-title {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  padding: 6px 0;
+}
+
+.todo-row.done .todo-title {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.todo-delete {
+  display: flex;
+  border: none;
+  background: none;
+  padding: 4px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  visibility: hidden;
+}
+
+.todo-row:hover .todo-delete {
+  visibility: visible;
+}
+
+.todo-delete:hover {
+  background: var(--active);
+  color: var(--text);
+}
+
+.text-button {
+  margin-top: 16px;
+  border: none;
+  background: none;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.text-button:hover {
+  background: var(--hover);
+  color: var(--text);
+}

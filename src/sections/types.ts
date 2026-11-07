@@ -1,4 +1,4 @@
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 
 // Ein Unterbereich in der zweiten Seitenleiste (z. B. "Woche" im Kalender).
@@ -22,4 +22,6 @@ export type Section = {
   subItems?: SubItem[]; // feste Unterbereiche (für Bereiche ohne eigene Leiste)
   Panel: FC<SectionProps>; // Inhalt der zweiten Seitenleiste
   View: FC<SectionProps>; // Inhalt der großen Fläche rechts
+  // Optional: lädt die Daten des Bereichs und stellt sie Leiste + Ansicht zur Verfügung.
+  Provider?: FC<{ children: ReactNode }>;
 };
