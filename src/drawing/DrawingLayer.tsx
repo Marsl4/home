@@ -6,7 +6,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { savePageDrawing } from "../storage/db";
 import { DrawingToolbar } from "./DrawingToolbar";
-import { hitsStroke, PEN_COLORS, strokeToPath, type Stroke, type Tool } from "./strokes";
+import { PEN_COLORS, strokeToPath, type Stroke, type Tool } from "./strokes";
+import { usePenShortcuts, useStrokeInput } from "./useStrokeInput";
 
 type Props = {
   pageId: string;
@@ -14,8 +15,6 @@ type Props = {
   // Titel + Editor. Darüber liegt die Zeichenschicht.
   children: ReactNode;
 };
-
-type PointerPosition = { clientX: number; clientY: number; pressure: number };
 
 type Layout = {
   columnLeft: number; // Abstand der Textspalte vom linken Rand
@@ -26,7 +25,6 @@ export function DrawingLayer({ pageId, initialStrokes, children }: Props) {
   const textRef = useRef<HTMLDivElement>(null); // daraus lesen wir, wo die Textblöcke liegen
   const svgRef = useRef<SVGSVGElement>(null);
   const [strokes, setStrokes] = useState(initialStrokes);
-  const [draft, setDraft] = useState<Stroke | null>(null); // Strich, der gerade gezeichnet wird
   const [layout, setLayout] = useState<Layout>({ columnLeft: 0, blockTops: {} });
 
   const [penMode, setPenMode] = useState(false);
@@ -34,8 +32,6 @@ export function DrawingLayer({ pageId, initialStrokes, children }: Props) {
   const [color, setColor] = useState(PEN_COLORS[0]);
 
   const [history, setHistory] = useState<Stroke[][]>([]); // frühere Stände für "Rückgängig"
-  // Stand vor dem Radieren (null = gerade wird nicht radiert).
-  const strokesBeforeErasing = useRef<Stroke[] | null>(null);
 
   // ---------- Positionen der Textblöcke messen ----------
   useEffect(() => {
@@ -97,86 +93,38 @@ export function DrawingLayer({ pageId, initialStrokes, children }: Props) {
     setHistory(history.slice(0, -1));
   };
 
-  // Tastatur im Stift-Modus: Esc = fertig, Cmd+Z = rückgängig.
-  useEffect(() => {
-    if (!penMode) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setPenMode(false);
-      if (event.key === "z" && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        undo();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  });
+  usePenShortcuts(penMode, () => setPenMode(false), undo);
 
   // ---------- Zeichnen mit Maus / Trackpad / Stift ----------
-  const toPoint = (event: PointerPosition): [number, number, number] => {
-    const origin = svgRef.current!.getBoundingClientRect();
-    return [
-      event.clientX - origin.left - layout.columnLeft,
-      event.clientY - origin.top,
-      event.pressure || 0.5,
-    ];
-  };
-
-  const eraseAt = (event: PointerPosition) => {
-    const [x, y] = toPoint(event);
-    const remaining = strokes.filter((s) => !hitsStroke(s, x, y, offsetOf(s)));
-    if (remaining.length !== strokes.length) save(remaining);
-  };
-
-  const onPointerDown = (event: React.PointerEvent) => {
-    event.currentTarget.setPointerCapture(event.pointerId);
-    if (tool === "eraser") {
-      strokesBeforeErasing.current = strokes;
-      eraseAt(event);
-      return;
-    }
-    setDraft({
-      id: crypto.randomUUID(),
-      tool,
-      color,
-      points: [toPoint(event)],
-      anchorBlockId: null,
-      anchorTop: 0,
-      realPressure: event.pointerType === "pen",
-    });
-  };
-
-  const onPointerMove = (event: React.PointerEvent) => {
-    if (strokesBeforeErasing.current) return eraseAt(event);
-    if (!draft) return;
-    // "Coalesced events" = alle Zwischenpunkte, für glattere Linien (v. a. mit dem Stift).
-    const events = event.nativeEvent.getCoalescedEvents?.() ?? [];
-    const points = (events.length ? events : [event]).map(toPoint);
-    setDraft({ ...draft, points: [...draft.points, ...points] });
-  };
-
-  const onPointerUp = () => {
-    const before = strokesBeforeErasing.current;
-    if (before) {
-      strokesBeforeErasing.current = null;
-      // Nur in den Verlauf, wenn wirklich etwas wegradiert wurde.
-      if (before !== strokes) setHistory([...history, before]);
-      return;
-    }
-    if (!draft) return;
-    setDraft(null);
-
-    // Anker suchen: der unterste Textblock, der oberhalb des Strichs beginnt.
-    const strokeTop = Math.min(...draft.points.map(([, y]) => y));
-    let anchorBlockId: string | null = null;
-    let anchorTop = 0;
-    for (const [id, top] of Object.entries(layout.blockTops)) {
-      if (top <= strokeTop && (anchorBlockId === null || top >= anchorTop)) {
-        anchorBlockId = id;
-        anchorTop = top;
+  const { draft, handlers } = useStrokeInput({
+    tool,
+    color,
+    strokes,
+    offsetOf,
+    toPoint: (event) => {
+      const origin = svgRef.current!.getBoundingClientRect();
+      return [
+        event.clientX - origin.left - layout.columnLeft,
+        event.clientY - origin.top,
+        event.pressure || 0.5,
+      ];
+    },
+    onErase: save,
+    onEraseDone: (before) => setHistory([...history, before]),
+    onStrokeDone: (stroke) => {
+      // Anker suchen: der unterste Textblock, der oberhalb des Strichs beginnt.
+      const strokeTop = Math.min(...stroke.points.map(([, y]) => y));
+      let anchorBlockId: string | null = null;
+      let anchorTop = 0;
+      for (const [id, top] of Object.entries(layout.blockTops)) {
+        if (top <= strokeTop && (anchorBlockId === null || top >= anchorTop)) {
+          anchorBlockId = id;
+          anchorTop = top;
+        }
       }
-    }
-    commit([...strokes, { ...draft, anchorBlockId, anchorTop }]);
-  };
+      commit([...strokes, { ...stroke, anchorBlockId, anchorTop }]);
+    },
+  });
 
   // SVG-Formen nur neu berechnen, wenn sich die Striche ändern.
   const paths = useMemo(() => new Map(strokes.map((s) => [s.id, strokeToPath(s)])), [strokes]);
@@ -200,10 +148,7 @@ export function DrawingLayer({ pageId, initialStrokes, children }: Props) {
       <svg
         ref={svgRef}
         className={`drawing-layer ${penMode ? "active" : ""} ${tool === "eraser" ? "erasing" : ""}`}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
+        {...handlers}
       >
         {strokes.map((s) => renderStroke(s, paths.get(s.id) ?? ""))}
         {draft && renderStroke({ ...draft, anchorBlockId: null }, strokeToPath(draft))}

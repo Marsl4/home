@@ -23,48 +23,52 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
   if (pages === null || subjects === null) return null; // kurz beim Start
 
-  // Jede Änderung sofort speichern.
-  const updatePages = (next: Page[]) => {
-    setPages(next);
-    savePages(next);
-  };
-  const updateSubjects = (next: Subject[]) => {
-    setSubjects(next);
-    saveSubjects(next);
-  };
+  // Jede Änderung baut auf dem neuesten Stand auf und wird sofort gespeichert.
+  const updatePages = (change: (current: Page[]) => Page[]) =>
+    setPages((current) => {
+      const next = change(current ?? []);
+      savePages(next);
+      return next;
+    });
+  const updateSubjects = (change: (current: Subject[]) => Subject[]) =>
+    setSubjects((current) => {
+      const next = change(current ?? []);
+      saveSubjects(next);
+      return next;
+    });
 
   const createPage = (subjectId: string | null = null) => {
     const page: Page = { id: crypto.randomUUID(), title: "", subjectId };
-    updatePages([...pages, page]);
+    updatePages((current) => [...current, page]);
     return page;
   };
 
   const renamePage = (id: string, title: string) => {
-    updatePages(pages.map((p) => (p.id === id ? { ...p, title } : p)));
+    updatePages((current) => current.map((p) => (p.id === id ? { ...p, title } : p)));
   };
 
   const deletePage = (id: string) => {
     const remaining = pages.filter((p) => p.id !== id);
-    updatePages(remaining);
+    updatePages((current) => current.filter((p) => p.id !== id));
     deletePageData(id);
     return remaining;
   };
 
   const createSubject = () => {
     const subject: Subject = { id: crypto.randomUUID(), name: "" };
-    updateSubjects([...subjects, subject]);
+    updateSubjects((current) => [...current, subject]);
     return subject;
   };
 
   const renameSubject = (id: string, name: string) => {
-    updateSubjects(subjects.map((s) => (s.id === id ? { ...s, name } : s)));
+    updateSubjects((current) => current.map((s) => (s.id === id ? { ...s, name } : s)));
   };
 
   const deleteSubject = (id: string) => {
     const doomed = pages.filter((p) => p.subjectId === id);
     doomed.forEach((p) => deletePageData(p.id));
-    updatePages(pages.filter((p) => p.subjectId !== id));
-    updateSubjects(subjects.filter((s) => s.id !== id));
+    updatePages((current) => current.filter((p) => p.subjectId !== id));
+    updateSubjects((current) => current.filter((s) => s.id !== id));
   };
 
   return (

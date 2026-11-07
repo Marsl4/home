@@ -79,3 +79,49 @@ export async function deletePageData(pageId: string): Promise<void> {
   await del(contentKey(pageId));
   await del(drawingKey(pageId));
 }
+
+// ---------- PDFs ----------
+export type PdfDoc = {
+  id: string;
+  name: string;
+  addedAt: number;
+  lastOpenedAt: number | null;
+  favorite: boolean;
+};
+
+// Striche auf einem PDF: Seitennummer (ab 0) -> Striche in PDF-Koordinaten.
+export type PdfInk = Record<number, Stroke[]>;
+
+const PDFS_KEY = "pdfs";
+const pdfFileKey = (id: string) => `pdf-file:${id}`;
+const pdfInkKey = (id: string) => `pdf-ink:${id}`;
+
+export async function loadPdfs(): Promise<PdfDoc[]> {
+  return (await get<PdfDoc[]>(PDFS_KEY)) ?? [];
+}
+
+export async function savePdfs(pdfs: PdfDoc[]): Promise<void> {
+  await set(PDFS_KEY, pdfs);
+}
+
+// Die PDF-Datei selbst (wird als Ganzes im Browser gespeichert).
+export async function loadPdfFile(id: string): Promise<Blob | undefined> {
+  return get<Blob>(pdfFileKey(id));
+}
+
+export async function savePdfFile(id: string, file: Blob): Promise<void> {
+  await set(pdfFileKey(id), file);
+}
+
+export async function loadPdfInk(id: string): Promise<PdfInk> {
+  return (await get<PdfInk>(pdfInkKey(id))) ?? {};
+}
+
+export async function savePdfInk(id: string, ink: PdfInk): Promise<void> {
+  await set(pdfInkKey(id), ink);
+}
+
+export async function deletePdfData(id: string): Promise<void> {
+  await del(pdfFileKey(id));
+  await del(pdfInkKey(id));
+}

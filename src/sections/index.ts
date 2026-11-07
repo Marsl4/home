@@ -15,6 +15,9 @@ import {
 import { NotesPanel } from "./notes/NotesPanel";
 import { NotesProvider } from "./notes/NotesProvider";
 import { NotesView } from "./notes/NotesView";
+import { PdfsPanel } from "./pdfs/PdfsPanel";
+import { PdfsProvider } from "./pdfs/PdfsProvider";
+import { PdfsView } from "./pdfs/PdfsView";
 import { PlaceholderPanel } from "./placeholder/PlaceholderPanel";
 import { PlaceholderView } from "./placeholder/PlaceholderView";
 import { TodosPanel } from "./todos/TodosPanel";
@@ -50,13 +53,9 @@ export const sections: Section[] = [
     id: "pdfs",
     label: "PDFs",
     icon: FileText,
-    subItems: [
-      { id: "all", label: "Alle PDFs" },
-      { id: "recent", label: "Zuletzt geöffnet" },
-      { id: "favorites", label: "Favoriten" },
-    ],
-    Panel: PlaceholderPanel,
-    View: PlaceholderView,
+    Panel: PdfsPanel,
+    View: PdfsView,
+    Provider: PdfsProvider,
   },
   {
     id: "calendar",

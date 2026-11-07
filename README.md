@@ -17,8 +17,11 @@ Dann im Browser **http://localhost:5173** öffnen. Beenden mit `Ctrl + C` im Ter
 ## Bedienung
 
 - **Bereiche** (ganz links): Notizen, Uni, PDFs, Kalender, ToDos, Fitness. Klick öffnet die zweite
-  Leiste mit den Unterbereichen, nochmal klicken klappt sie zu. (Bisher funktioniert nur Notizen,
-  die anderen sind Platzhalter.)
+  Leiste, nochmal klicken klappt sie zu. Kalender und Fitness sind noch Platzhalter.
+- **Uni:** "+ Neues Fach" anlegen, im Fach "+" für neue Seiten. Fächer lassen sich auf-/zuklappen.
+- **ToDos:** Aufgabe eintippen + Enter, optional Datum. Kreis anklicken = erledigt.
+- **PDFs:** "PDF importieren" oder PDF einfach ins Fenster ziehen. Mit "Zeichnen" darauf schreiben,
+  Stern = Favorit.
 - **Neue Seite:** in Notizen "+ Neue Seite" unten in der zweiten Leiste
 - **Umbenennen:** oben auf der Seite in den großen Titel klicken
 - **Löschen:** in der Leiste mit der Maus über die Seite fahren → "×"
@@ -35,10 +38,13 @@ Dann im Browser **http://localhost:5173** öffnen. Beenden mit `Ctrl + C` im Ter
 | `src/App.tsx` | Grundlayout: Bereiche-Leiste, zweite Leiste, Hauptansicht |
 | `src/sections/index.ts` | **Liste aller Bereiche** – neuen Bereich hier eintragen |
 | `src/sections/notes/` | Notizen: Seitenliste, Editor, Seitenansicht |
+| `src/sections/uni/` | Uni: Fächer (nutzt die Notizseiten mit) |
+| `src/sections/todos/` | ToDos |
+| `src/sections/pdfs/` | PDFs: Import, Anzeige (pdf.js), Schreiben auf Seiten |
 | `src/sections/placeholder/` | Platzhalter-Ansicht für Bereiche, die noch kommen |
 | `src/components/SectionRail.tsx` | Leiste ganz links |
 | `src/editor/schema.ts` | Welche Blöcke es im Editor gibt |
-| `src/drawing/` | Zeichenschicht, Werkzeugleiste, Striche |
+| `src/drawing/` | Zeichenschicht, Werkzeugleiste, Striche, gemeinsame Stift-Logik |
 | `src/storage/db.ts` | Alles rund ums Speichern der Daten |
 | `src/storage/uiState.ts` | Merkt sich, welcher Bereich zuletzt offen war |
 

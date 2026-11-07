@@ -13,23 +13,25 @@ export function TodosProvider({ children }: { children: ReactNode }) {
 
   if (todos === null) return null;
 
-  // Jede Änderung sofort speichern.
-  const update = (next: Todo[]) => {
-    setTodos(next);
-    saveTodos(next);
-  };
+  // Jede Änderung baut auf dem neuesten Stand auf und wird sofort gespeichert.
+  const update = (change: (current: Todo[]) => Todo[]) =>
+    setTodos((current) => {
+      const next = change(current ?? []);
+      saveTodos(next);
+      return next;
+    });
 
   const value = {
     todos,
     addTodo: (title: string, dueDate: string | null) =>
-      update([
-        ...todos,
+      update((current) => [
+        ...current,
         { id: crypto.randomUUID(), title, done: false, dueDate, createdAt: Date.now(), doneAt: null },
       ]),
     updateTodo: (id: string, changes: Partial<Todo>) =>
-      update(todos.map((t) => (t.id === id ? { ...t, ...changes } : t))),
-    deleteTodo: (id: string) => update(todos.filter((t) => t.id !== id)),
-    clearDone: () => update(todos.filter((t) => !t.done)),
+      update((current) => current.map((t) => (t.id === id ? { ...t, ...changes } : t))),
+    deleteTodo: (id: string) => update((current) => current.filter((t) => t.id !== id)),
+    clearDone: () => update((current) => current.filter((t) => !t.done)),
   };
 
   return <TodosContext.Provider value={value}>{children}</TodosContext.Provider>;
