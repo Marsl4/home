@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { strokeToPath, type Stroke, type Tool } from "../../drawing/strokes";
+import { LassoOverlay } from "../../drawing/LassoOverlay";
 import { useStrokeInput } from "../../drawing/useStrokeInput";
 import { RenderingCancelledException, type PDFDocumentProxy } from "./pdfjs";
 
@@ -64,7 +65,9 @@ export function PdfPage(props: Props) {
   }, [doc, index, width, displayWidth, nearViewport]);
 
   // Zeichnen: Koordinaten in PDF-Einheiten, damit Striche beim Zoomen mitskalieren.
-  const { draft, handlers } = useStrokeInput({
+  const { draft, handlers, lasso, selection, selectionBox, deleteSelection, dragOffset } =
+    useStrokeInput({
+    enabled: penMode,
     tool,
     color,
     strokes,
@@ -79,18 +82,25 @@ export function PdfPage(props: Props) {
     onStrokeDone: (stroke) => props.onCommit([...strokes, stroke]),
     onErase: props.onErase,
     onEraseDone: props.onEraseDone,
+    onMoveDone: (next) => props.onCommit(next),
+    onDeleteSelection: props.onCommit,
   });
 
   const paths = useMemo(() => new Map(strokes.map((s) => [s.id, strokeToPath(s)])), [strokes]);
 
-  const renderStroke = (stroke: Stroke, path: string) => (
-    <path
-      key={stroke.id}
-      d={path}
-      fill={stroke.color}
-      className={stroke.tool === "highlighter" ? "highlighter-stroke" : undefined}
-    />
-  );
+  const renderStroke = (stroke: Stroke, path: string) => {
+    const isSelected = selection.has(stroke.id);
+    const classes = [stroke.tool === "highlighter" ? "highlighter-stroke" : "", isSelected ? "selected" : ""];
+    return (
+      <path
+        key={stroke.id}
+        d={path}
+        fill={stroke.color}
+        transform={isSelected ? `translate(${dragOffset.dx} ${dragOffset.dy})` : undefined}
+        className={classes.join(" ").trim() || undefined}
+      />
+    );
+  };
 
   return (
     <div
@@ -102,11 +112,17 @@ export function PdfPage(props: Props) {
       <svg
         ref={svgRef}
         viewBox={`0 0 ${width} ${height}`}
-        className={`pdf-ink ${penMode ? "active" : ""} ${tool === "eraser" ? "erasing" : ""}`}
+        className={`pdf-ink ${penMode ? "active" : ""} tool-${tool}`}
         {...handlers}
       >
         {strokes.map((s) => renderStroke(s, paths.get(s.id) ?? ""))}
         {draft && renderStroke(draft, strokeToPath(draft))}
+        <LassoOverlay
+          lasso={lasso}
+          box={selectionBox}
+          onDelete={deleteSelection}
+          scale={width / displayWidth}
+        />
       </svg>
     </div>
   );

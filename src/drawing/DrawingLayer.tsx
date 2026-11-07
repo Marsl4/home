@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { savePageDrawing } from "../storage/db";
 import { DrawingToolbar } from "./DrawingToolbar";
+import { LassoOverlay } from "./LassoOverlay";
 import { PEN_COLORS, strokeToPath, type Stroke, type Tool } from "./strokes";
 import { usePenShortcuts, useStrokeInput } from "./useStrokeInput";
 
@@ -95,8 +96,31 @@ export function DrawingLayer({ pageId, initialStrokes, children }: Props) {
 
   usePenShortcuts(penMode, () => setPenMode(false), undo);
 
+  // Anker suchen: der unterste Textblock, der oberhalb von "top" beginnt.
+  const findAnchor = (top: number) => {
+    let anchorBlockId: string | null = null;
+    let anchorTop = 0;
+    for (const [id, blockTop] of Object.entries(layout.blockTops)) {
+      if (blockTop <= top && (anchorBlockId === null || blockTop >= anchorTop)) {
+        anchorBlockId = id;
+        anchorTop = blockTop;
+      }
+    }
+    return { anchorBlockId, anchorTop };
+  };
+
+  // Strich an der Stelle festmachen, wo er gerade angezeigt wird (nach Zeichnen oder Verschieben).
+  const anchorStroke = (stroke: Stroke): Stroke => {
+    const dy = offsetOf(stroke);
+    const points = stroke.points.map(([x, y, p]) => [x, y + dy, p] as [number, number, number]);
+    const top = Math.min(...points.map(([, y]) => y));
+    return { ...stroke, points, ...findAnchor(top) };
+  };
+
   // ---------- Zeichnen mit Maus / Trackpad / Stift ----------
-  const { draft, handlers } = useStrokeInput({
+  const { draft, handlers, lasso, selection, selectionBox, deleteSelection, dragOffset } =
+    useStrokeInput({
+    enabled: penMode,
     tool,
     color,
     strokes,
@@ -111,33 +135,31 @@ export function DrawingLayer({ pageId, initialStrokes, children }: Props) {
     },
     onErase: save,
     onEraseDone: (before) => setHistory([...history, before]),
-    onStrokeDone: (stroke) => {
-      // Anker suchen: der unterste Textblock, der oberhalb des Strichs beginnt.
-      const strokeTop = Math.min(...stroke.points.map(([, y]) => y));
-      let anchorBlockId: string | null = null;
-      let anchorTop = 0;
-      for (const [id, top] of Object.entries(layout.blockTops)) {
-        if (top <= strokeTop && (anchorBlockId === null || top >= anchorTop)) {
-          anchorBlockId = id;
-          anchorTop = top;
-        }
-      }
-      commit([...strokes, { ...stroke, anchorBlockId, anchorTop }]);
-    },
+    onStrokeDone: (stroke) => commit([...strokes, anchorStroke(stroke)]),
+    // Verschobene Striche hängen danach am Text an ihrer neuen Stelle.
+    onMoveDone: (next, movedIds) =>
+      commit(next.map((s) => (movedIds.has(s.id) ? anchorStroke(s) : s))),
+    onDeleteSelection: commit,
   });
 
   // SVG-Formen nur neu berechnen, wenn sich die Striche ändern.
   const paths = useMemo(() => new Map(strokes.map((s) => [s.id, strokeToPath(s)])), [strokes]);
 
-  const renderStroke = (stroke: Stroke, path: string) => (
-    <path
-      key={stroke.id}
-      d={path}
-      fill={stroke.color}
-      transform={`translate(${layout.columnLeft} ${offsetOf(stroke)})`}
-      className={stroke.tool === "highlighter" ? "highlighter-stroke" : undefined}
-    />
-  );
+  const renderStroke = (stroke: Stroke, path: string) => {
+    const isSelected = selection.has(stroke.id);
+    const dx = isSelected ? dragOffset.dx : 0;
+    const dy = offsetOf(stroke) + (isSelected ? dragOffset.dy : 0);
+    const classes = [stroke.tool === "highlighter" ? "highlighter-stroke" : "", isSelected ? "selected" : ""];
+    return (
+      <path
+        key={stroke.id}
+        d={path}
+        fill={stroke.color}
+        transform={`translate(${layout.columnLeft + dx} ${dy})`}
+        className={classes.join(" ").trim() || undefined}
+      />
+    );
+  };
 
   return (
     <div className="page-content">
@@ -147,11 +169,14 @@ export function DrawingLayer({ pageId, initialStrokes, children }: Props) {
 
       <svg
         ref={svgRef}
-        className={`drawing-layer ${penMode ? "active" : ""} ${tool === "eraser" ? "erasing" : ""}`}
+        className={`drawing-layer ${penMode ? "active" : ""} tool-${tool}`}
         {...handlers}
       >
         {strokes.map((s) => renderStroke(s, paths.get(s.id) ?? ""))}
         {draft && renderStroke({ ...draft, anchorBlockId: null }, strokeToPath(draft))}
+        <g transform={`translate(${layout.columnLeft} 0)`}>
+          <LassoOverlay lasso={lasso} box={selectionBox} onDelete={deleteSelection} />
+        </g>
       </svg>
 
       <DrawingToolbar

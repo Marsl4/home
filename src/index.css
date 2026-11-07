@@ -320,8 +320,57 @@ button {
   touch-action: none; /* auf dem iPad: Stift malt, statt die Seite zu scrollen */
 }
 
-.drawing-layer.active.erasing {
+.drawing-layer.active.tool-eraser,
+.pdf-ink.active.tool-eraser {
   cursor: cell;
+}
+
+/* ---------- Lasso ---------- */
+.lasso-line {
+  fill: rgba(79, 70, 229, 0.06);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  vector-effect: non-scaling-stroke; /* gleich dünn, egal wie groß die PDF angezeigt wird */
+}
+
+.lasso-box {
+  fill: rgba(79, 70, 229, 0.04);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+  vector-effect: non-scaling-stroke;
+  cursor: move;
+}
+
+.lasso-delete {
+  cursor: pointer;
+}
+
+.lasso-delete circle {
+  fill: #fff;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.lasso-delete path {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.lasso-delete:hover circle {
+  fill: var(--accent);
+}
+
+.lasso-delete:hover path {
+  stroke: #fff;
+}
+
+path.selected {
+  filter: drop-shadow(0 0 2px rgba(79, 70, 229, 0.8));
 }
 
 .highlighter-stroke {
@@ -851,9 +900,6 @@ button {
   touch-action: none;
 }
 
-.pdf-ink.active.erasing {
-  cursor: cell;
-}
 
 .pdf-error {
   color: #dc2626;

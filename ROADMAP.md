@@ -15,7 +15,7 @@
       auch zweimal denselben Bereich bzw. dieselbe Seite.
 - [ ] **Markier-Modus (Screenshot)**: mit dem Stift einen Kreis um einen Bereich ziehen,
       diesen als Bild kopieren und woanders einfügen.
-- [ ] **Lasso im Zeichen-Modus**: Gezeichnetes, Geschriebenes und Eingefügtes auswählen
+- [~] **Lasso im Zeichen-Modus** (Striche: erledigt; Text/Bilder frei verschieben: offen): Gezeichnetes, Geschriebenes und Eingefügtes auswählen
       und frei auf dem Blatt verschieben.
 
 ### Startseite
