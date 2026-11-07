@@ -2,6 +2,7 @@
 import { Columns2, Sparkles } from "lucide-react";
 
 import type { Section } from "../sections/types";
+import { SyncButton } from "../sync/SyncButton";
 
 type Props = {
   sections: Section[];
@@ -11,9 +12,10 @@ type Props = {
   onToggleSplit: () => void;
   aiOpen: boolean;
   onToggleAi: () => void;
+  onOpenSyncSettings: () => void;
 };
 
-export function SectionRail({ sections, activeId, onClick, isSplit, onToggleSplit, aiOpen, onToggleAi }: Props) {
+export function SectionRail({ sections, activeId, onClick, isSplit, onToggleSplit, aiOpen, onToggleAi, onOpenSyncSettings }: Props) {
   const renderItem = (section: Section) => {
     const Icon = section.icon;
     return (
@@ -33,6 +35,7 @@ export function SectionRail({ sections, activeId, onClick, isSplit, onToggleSpli
     <nav className="rail">
       {sections.filter((s) => s.placement !== "bottom").map(renderItem)}
       <div className="rail-spacer" />
+      <SyncButton onOpenSettings={onOpenSyncSettings} />
       <button
         className={`rail-item ${aiOpen ? "active" : ""}`}
         onClick={onToggleAi}

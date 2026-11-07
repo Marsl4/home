@@ -2,10 +2,12 @@
 import { useEffect, useState, type ReactNode } from "react";
 
 import { loadTodos, saveTodos, type Todo } from "../../storage/db";
+import { useLiveSync } from "../../storage/liveSync";
 import { TodosContext } from "./TodosContext";
 
 export function TodosProvider({ children }: { children: ReactNode }) {
   const [todos, setTodos] = useState<Todo[] | null>(null); // null = lädt noch
+  useLiveSync<Todo[]>("todos", setTodos); // vom anderen Gerät (Sync)
 
   useEffect(() => {
     loadTodos().then(setTodos);

@@ -10,11 +10,15 @@ import {
   type Page,
   type Subject,
 } from "../../storage/db";
+import { useLiveSync } from "../../storage/liveSync";
 import { NotesContext } from "./NotesContext";
 
 export function NotesProvider({ children }: { children: ReactNode }) {
   const [pages, setPages] = useState<Page[] | null>(null); // null = lädt noch
   const [subjects, setSubjects] = useState<Subject[] | null>(null);
+  // Vom anderen Gerät (Sync) geänderte Listen sofort übernehmen.
+  useLiveSync<Page[]>("pages", setPages);
+  useLiveSync<Subject[]>("subjects", setSubjects);
 
   useEffect(() => {
     loadPages().then(setPages);

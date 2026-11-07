@@ -1,7 +1,8 @@
 // Alles, was die App speichert, läuft über diese Datei.
 // Gespeichert wird in IndexedDB (Datenbank im Browser) über die kleine Bibliothek idb-keyval.
 // Wenn wir später einen Server/Sync einbauen, müssen wir nur diese Datei austauschen.
-import { del, get, set } from "idb-keyval";
+import { get } from "idb-keyval";
+import { trackedDel as del, trackedSet as set } from "../sync/tracker"; // Speichern + für den Sync vermerken
 import type { FloatingImage } from "../drawing/images";
 import type { FloatingText } from "../drawing/texts";
 import type { Stroke } from "../drawing/strokes";

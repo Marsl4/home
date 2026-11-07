@@ -14,7 +14,7 @@ import {
   Settings,
   Sparkles,
   DatabaseBackup,
-  UserRound,
+  Cloud,
 } from "lucide-react";
 
 import { NotesPanel } from "./notes/NotesPanel";
@@ -105,7 +105,7 @@ export const sections: Section[] = [
       { id: "backup", label: "Daten & Backup", icon: DatabaseBackup },
       { id: "appearance", label: "Darstellung", icon: Palette },
       { id: "ai", label: "KI", icon: Sparkles },
-      { id: "account", label: "Konto", icon: UserRound },
+      { id: "account", label: "Konto & Sync", icon: Cloud },
     ],
     Panel: PlaceholderPanel,
     View: SettingsView,

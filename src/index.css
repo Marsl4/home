@@ -1857,3 +1857,47 @@ path.selected {
 .drawing-layer.active.tool-text {
   cursor: text;
 }
+
+/* ---------- Sync-Knopf (Ampel) ---------- */
+.sync-icon {
+  position: relative;
+  display: flex;
+}
+
+.sync-dot {
+  position: absolute;
+  right: -3px;
+  bottom: -2px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 2px solid var(--rail-bg);
+  background: var(--text-muted);
+}
+
+.sync-ok .sync-dot,
+.sync-syncing .sync-dot {
+  background: #22c55e;
+}
+
+.sync-needs-auth .sync-dot {
+  background: #f59e0b;
+}
+
+.sync-error .sync-dot {
+  background: #ef4444;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.settings-card h2 svg {
+  vertical-align: -2px;
+}

@@ -1,18 +1,19 @@
 // Einstellungen: "Daten & Backup", "Darstellung", "KI" und "Konto" (kommt später).
 import { useRef, useState } from "react";
-import { Download, HardDriveDownload, UserRound } from "lucide-react";
+import { Cloud, Download, HardDriveDownload } from "lucide-react";
 
 import { AiSettings } from "../../ai/AiSettings";
+import { SyncSettings } from "../../sync/SyncSettings";
 import { downloadBackup, restoreBackup } from "../../storage/backup";
+import { markAllDirty } from "../../sync/tracker";
 import { useNotes } from "../notes/NotesContext";
 import { usePdfs } from "../pdfs/PdfsContext";
-import { PlaceholderView } from "../placeholder/PlaceholderView";
 import { useTodos } from "../todos/TodosContext";
 import type { SectionProps } from "../types";
 import { AppearanceSettings } from "./AppearanceSettings";
 
 export function SettingsView(props: SectionProps) {
-  if (props.selectedId === "account") return <PlaceholderView {...props} />;
+  if (props.selectedId === "account") return <SyncSettings />;
   if (props.selectedId === "appearance") return <AppearanceSettings />;
   if (props.selectedId === "ai") return <AiSettings />;
   return <BackupSettings />;
@@ -45,6 +46,7 @@ function BackupSettings() {
     setBusy(true);
     try {
       await restoreBackup(file);
+      await markAllDirty(); // beim nächsten Sync gilt der wiederhergestellte Stand als neu
       window.location.reload(); // App neu laden, damit alle Bereiche die neuen Daten anzeigen
     } catch (e) {
       setStatus({ kind: "error", text: e instanceof Error ? e.message : String(e) });
@@ -102,7 +104,7 @@ function BackupSettings() {
       {status && <p className={`settings-status ${status.kind}`}>{status.text}</p>}
 
       <p className="settings-hint">
-        <UserRound size={14} /> Anmeldung & automatischer Sync kommen später (siehe „Konto“).
+        <Cloud size={14} /> Abgleich zwischen Mac und iPad: siehe „Konto & Sync“.
       </p>
     </div>
   );

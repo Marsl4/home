@@ -2,10 +2,12 @@
 import { useEffect, useState, type ReactNode } from "react";
 
 import { deletePdfData, loadPdfs, savePdfFile, savePdfs, type PdfDoc } from "../../storage/db";
+import { useLiveSync } from "../../storage/liveSync";
 import { PdfsContext } from "./PdfsContext";
 
 export function PdfsProvider({ children }: { children: ReactNode }) {
   const [pdfs, setPdfs] = useState<PdfDoc[] | null>(null); // null = lädt noch
+  useLiveSync<PdfDoc[]>("pdfs", setPdfs); // vom anderen Gerät (Sync)
 
   useEffect(() => {
     loadPdfs().then(setPdfs);

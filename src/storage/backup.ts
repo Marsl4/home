@@ -40,7 +40,11 @@ async function decode(value: unknown): Promise<unknown> {
 
 // Erstellt die Sicherungsdatei und lädt sie herunter.
 export async function downloadBackup(): Promise<void> {
-  const all = await entries<string, unknown>();
+  await downloadEntries(await entries<string, unknown>(), "backup");
+}
+
+// Beliebige Einträge (z. B. die Sicherheitskopie vor dem ersten Sync) als Sicherungsdatei herunterladen.
+export async function downloadEntries(all: [string, unknown][], label: string): Promise<void> {
   const backup: BackupFile = {
     app: APP_ID,
     version: FORMAT_VERSION,
@@ -52,7 +56,7 @@ export async function downloadBackup(): Promise<void> {
   const date = new Date().toISOString().slice(0, 10);
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = `studium-backup-${date}.json`;
+  link.download = `studium-${label}-${date}.json`;
   link.click();
   URL.revokeObjectURL(link.href);
 }

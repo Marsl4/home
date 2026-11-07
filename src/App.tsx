@@ -1,7 +1,7 @@
 // Grundlayout: [Bereiche-Leiste] [zweite Leiste mit Unterbereichen] [eine oder zwei Hälften]
 // Im Split-Modus zeigt jede Hälfte ("Pane") ihren eigenen Bereich. Die Leisten links steuern
 // immer die aktive Hälfte (die, in die zuletzt geklickt wurde).
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { PanelLeftClose, X } from "lucide-react";
 
 import { AiSidebar } from "./ai/AiSidebar";
@@ -10,6 +10,8 @@ import { SectionRail } from "./components/SectionRail";
 import { ToastHost } from "./components/ToastHost";
 import { sections } from "./sections";
 import { readStored, usePersistentState } from "./storage/uiState";
+import { initSync } from "./sync/engine";
+import { preloadGoogle } from "./sync/googleAuth";
 
 // Was in einer Hälfte offen ist: der Bereich und pro Bereich der zuletzt offene Unterbereich.
 type PaneState = {
@@ -42,6 +44,12 @@ export default function App() {
   const [aiOpen, setAiOpen] = usePersistentState("ui:aiOpen", false);
   const [splitRatio, setSplitRatio] = usePersistentState("ui:splitRatio", 0.5); // Anteil der linken Hälfte
   const mainRef = useRef<HTMLElement>(null);
+
+  // Sync: war er schon eingerichtet, beim Start weitermachen (bzw. orange anzeigen).
+  useEffect(() => {
+    preloadGoogle();
+    initSync();
+  }, []);
 
   const isSplit = panes.length > 1;
   const focused = Math.min(focusedIndex, panes.length - 1);
@@ -102,14 +110,15 @@ export default function App() {
     window.addEventListener("pointerup", onUp);
   };
 
-  // Aus der KI-Leiste zu Einstellungen → KI springen (in der aktiven Hälfte).
-  const openAiSettings = () => {
+  // Zu einer Einstellungsseite springen (in der aktiven Hälfte), z. B. aus der KI-Leiste.
+  const openSettings = (page: string) => {
     updatePane(focused, {
       sectionId: "settings",
-      selection: { ...focusedPane.selection, settings: "ai" },
+      selection: { ...focusedPane.selection, settings: page },
     });
     setPanelOpen(true);
   };
+  const openAiSettings = () => openSettings("ai");
 
   const { Panel } = focusedSection;
 
@@ -124,6 +133,7 @@ export default function App() {
           onToggleSplit={toggleSplit}
           aiOpen={aiOpen}
           onToggleAi={() => setAiOpen(!aiOpen)}
+          onOpenSyncSettings={() => openSettings("account")}
         />
 
         {panelOpen && (

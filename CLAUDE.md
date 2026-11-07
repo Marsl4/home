@@ -59,6 +59,11 @@ Nur für mich privat. Läuft auf Mac (Tippen) und später iPad (Apple Pencil).
   Seitenbreite. Tests: CDP `Input.dispatchMouseEvent` mit `pointerType: "pen"`, `dispatchTouchEvent`.
 - Freie Textfelder (`src/drawing/FloatingTexts.tsx`, Speicher `page-texts:`) liegen wie Bilder an Textblöcken;
   das Lasso wählt Striche, Bilder und Textfelder (`items` in `useStrokeInput`).
+- Sync (`src/sync/`): Google Drive App-Ordner, eine Datei pro IndexedDB-Schlüssel. db.ts schreibt über
+  `trackedSet`/`trackedDel` (vermerkt Änderungen + Grabsteine). Zusammenführen in `merge.ts` (Listen mit IDs
+  vereinigen, sonst neuerer Stand). Heruntergeladenes wird per `publish` in offene Ansichten gegeben – Provider
+  hören per `useLiveSync` auf ihre Listen. Neue gespeicherte Daten-Arten: in `merge.ts`/`isIdListKey` einordnen.
+  Google-Zugang gilt 1 Stunde (Web-Apps bekommen keinen Dauer-Zugang). Test: `test35.mjs` (zwei Profile + Drive-Nachbau).
 - Ältere Geräte: Das iPad läuft mit iPadOS 17.7 (Safari 17). pdf.js darum aus `pdfjs-dist/legacy/...`
   (die normale Ausgabe braucht Safari 18.4+). Neue Bibliotheken auf Safari-17-Tauglichkeit prüfen –
   Testskript `old-safari.mjs` im Scratchpad löscht neuere Browser-Funktionen in Chrome.

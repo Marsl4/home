@@ -56,6 +56,7 @@
 ### Konto & Sync
 - [ ] **Einstellungsseite mit Anmeldung**: Daten an ein Konto knüpfen.
       (Einstellungsseite existiert schon, „Konto“ ist noch Platzhalter.)
+- [~] **Sync Mac ↔ iPad über Google Drive** (Einstellungen → Konto & Sync; wartet auf Google-Einrichtung)
 - [ ] **iCloud als Ziel** (Wunsch: ohne Kosten → bis dahin Backup-Datei in iCloud Drive): Daten über iCloud speichern und zwischen Mac und iPad synchronisieren.
       (Hinweis: Dafür braucht es entweder Apples CloudKit-Schnittstelle oder eine
       eigene Mac/iPad-App-Hülle um die Web-App. Die Anmeldung wäre dann "Mit Apple anmelden".)
