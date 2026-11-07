@@ -18,17 +18,24 @@ export type Stroke = {
   realPressure: boolean;
   // true = automatisch begradigte Form (Linie, Rechteck, Kreis …): ohne Nachzieh-Glättung zeichnen.
   shape?: boolean;
+  // Strichdicke. Fehlt sie (ältere Striche), gilt die mittlere Dicke des Werkzeugs.
+  size?: number;
 };
 
 export const PEN_COLORS = ["#1f1f1f", "#2563eb", "#dc2626", "#16a34a"];
 export const HIGHLIGHTER_COLORS = ["#fde047", "#86efac", "#f9a8d4"];
 
+// Je drei Stufen: dünn, mittel (= frühere Standarddicke), dick.
+export const PEN_SIZES = [2, 3.5, 6];
+export const HIGHLIGHTER_SIZES = [10, 18, 28];
+export const ERASER_SIZES = [5, 12, 24]; // Radius des Radierers
+
 // Wandelt die Punkte eines Strichs in eine SVG-Form (gefüllte Kontur) um.
 export function strokeToPath(stroke: Stroke): string {
   const isHighlighter = stroke.tool === "highlighter";
   const outline = getStroke(stroke.points, {
-    size: isHighlighter ? 18 : 3.5,
-    thinning: isHighlighter ? 0 : 0.6,
+    size: stroke.size ?? (isHighlighter ? HIGHLIGHTER_SIZES[1] : PEN_SIZES[1]),
+    thinning: isHighlighter || stroke.shape ? 0 : 0.6, // Formen: gleichmäßig dick, saubere Ecken
     smoothing: 0.6,
     // wenig "Nachziehen": die Linie folgt dem Stift ohne sichtbare Verzögerung
     streamline: stroke.shape ? 0 : 0.2,
@@ -57,9 +64,63 @@ function outlineToPath(outline: number[][]): string {
 }
 
 // Trifft der Radierer an Position (x, y) diesen Strich? dy = aktuelle Verschiebung des Strichs.
+// Der Radius wächst mit der Strichdicke, damit auch dicke Striche am Rand getroffen werden.
 export function hitsStroke(stroke: Stroke, x: number, y: number, dy: number, radius = 10): boolean {
-  const r2 = radius * radius;
+  const r2 = (radius + strokeHalfWidth(stroke)) ** 2;
   return stroke.points.some(([px, py]) => (px - x) ** 2 + (py + dy - y) ** 2 <= r2);
+}
+
+function strokeHalfWidth(stroke: Stroke): number {
+  return (stroke.size ?? (stroke.tool === "highlighter" ? HIGHLIGHTER_SIZES[1] : PEN_SIZES[1])) / 2;
+}
+
+// Präzisions-Radierer: nur die getroffenen Punkte entfernen. Der Strich zerfällt dabei
+// in die Stücke davor und danach. null = Strich nicht getroffen.
+export function eraseFromStroke(stroke: Stroke, x: number, y: number, dy: number, radius: number): Stroke[] | null {
+  if (!hitsStroke(stroke, x, y, dy, radius)) return null;
+  const r2 = (radius + strokeHalfWidth(stroke) * 0.5) ** 2;
+  const pieces: [number, number, number][][] = [[]];
+  for (const point of stroke.points) {
+    const hit = (point[0] - x) ** 2 + (point[1] + dy - y) ** 2 <= r2;
+    if (hit) {
+      if (pieces[pieces.length - 1].length) pieces.push([]);
+    } else {
+      pieces[pieces.length - 1].push(point);
+    }
+  }
+  const kept = pieces.filter((piece) => piece.length >= 2);
+  // Nur ein Stück und nichts weggenommen? Dann nichts ändern (Treffer lag nur am Rand).
+  if (kept.length === 1 && kept[0].length === stroke.points.length) return null;
+  return kept.map((points, i) => ({ ...stroke, id: i === 0 ? stroke.id : crypto.randomUUID(), points }));
+}
+
+// Textmarker: Eine längere, ungefähr gerade Markierung wird zu einer sauberen geraden Linie
+// (fast waagerecht -> ganz waagerecht, auf mittlerer Höhe). Sonst null = so lassen.
+export function straightenHighlight(points: [number, number, number][]): [number, number, number][] | null {
+  if (points.length < 4) return null;
+  const start = points[0];
+  const end = points[points.length - 1];
+  const straight = Math.hypot(end[0] - start[0], end[1] - start[1]);
+  let length = 0;
+  for (let i = 1; i < points.length; i++) {
+    length += Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]);
+  }
+  if (straight < 40 || straight / length < 0.85) return null; // kurz oder eher gekritzelt
+  const pressure = 0.5;
+  const angle = (Math.atan2(end[1] - start[1], end[0] - start[0]) * 180) / Math.PI;
+  const nearHorizontal = Math.abs(angle) < 12 || Math.abs(Math.abs(angle) - 180) < 12;
+  const from: [number, number] = [start[0], start[1]];
+  const to: [number, number] = [end[0], end[1]];
+  if (nearHorizontal) {
+    const avgY = points.reduce((sum, p) => sum + p[1], 0) / points.length;
+    from[1] = to[1] = avgY;
+  }
+  const steps = Math.max(2, Math.ceil(straight / 4));
+  return Array.from({ length: steps + 1 }, (_, i) => [
+    from[0] + ((to[0] - from[0]) * i) / steps,
+    from[1] + ((to[1] - from[1]) * i) / steps,
+    pressure,
+  ]);
 }
 
 // ---------- Lasso ----------

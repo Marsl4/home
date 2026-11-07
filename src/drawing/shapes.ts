@@ -183,6 +183,39 @@ export function recognizeShape(input: StrokePoint[]): { kind: ShapeKind; points:
   return { kind, points: withPressure(sampleEdges(corners, true, step)) };
 }
 
+// Eingerastete Form weiterziehen: Linie -> Ende folgt dem Stift (Länge + Richtung),
+// geschlossene Form -> wird um ihre Mitte größer/kleiner, je nachdem wie weit der Stift von der Mitte weg ist.
+export function transformShape(
+  kind: ShapeKind,
+  base: StrokePoint[],
+  grab: Point,
+  pen: Point,
+): StrokePoint[] {
+  if (kind === "line") {
+    const start: Point = [base[0][0], base[0][1]];
+    const baseEnd: Point = [base[base.length - 1][0], base[base.length - 1][1]];
+    const end = snapAngle(start, pen);
+    // Ausgangslinie drehen + strecken, sodass ihr Ende beim Stift liegt.
+    const bx = baseEnd[0] - start[0];
+    const by = baseEnd[1] - start[1];
+    const ex = end[0] - start[0];
+    const ey = end[1] - start[1];
+    const d = bx * bx + by * by || 1;
+    const re = (ex * bx + ey * by) / d;
+    const im = (ey * bx - ex * by) / d;
+    return base.map(([x, y, p]) => {
+      const vx = x - start[0];
+      const vy = y - start[1];
+      return [start[0] + vx * re - vy * im, start[1] + vx * im + vy * re, p];
+    });
+  }
+  const xs = base.map((p) => p[0]);
+  const ys = base.map((p) => p[1]);
+  const center: Point = [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2];
+  const scale = Math.max(0.1, dist(pen, center) / Math.max(1, dist(grab, center)));
+  return base.map(([x, y, p]) => [center[0] + (x - center[0]) * scale, center[1] + (y - center[1]) * scale, p]);
+}
+
 function segmentDistance(p: Point, a: Point, b: Point): number {
   const lengthSquared = (b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2;
   if (lengthSquared === 0) return dist(p, a);

@@ -15,6 +15,7 @@ import { fileToDataUrl, initialImageSize, type FloatingImage } from "./images";
 import { LassoOverlay } from "./LassoOverlay";
 import { boundsOfPolygon, captureRegion, copySnipToClipboard } from "./snip";
 import { PEN_COLORS, strokeToPath, type Stroke, type Tool } from "./strokes";
+import { eraserRadius, strokeSize, useToolSettings } from "./toolSettings";
 import { usePenShortcuts, useStrokeInput } from "./useStrokeInput";
 
 type Props = {
@@ -91,6 +92,7 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
   const [penMode, setPenMode] = useState(false);
   const [tool, setTool] = useState<Tool>("pen");
   const [color, setColor] = useState(PEN_COLORS[0]);
+  const { settings: toolSettings, update: updateToolSettings } = useToolSettings();
 
   const [history, setHistory] = useState<Stroke[][]>([]); // frühere Stände für "Rückgängig"
 
@@ -242,9 +244,12 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
   });
 
   // ---------- Zeichnen mit Maus / Trackpad / Stift ----------
-  const { draft, draftPathRef, handlers, lasso, selection, selectionBox, deleteSelection, dragOffset } =
+  const { draft, draftPathRef, eraser, handlers, lasso, selection, selectionBox, deleteSelection, dragOffset } =
     useStrokeInput({
     enabled: penMode,
+    size: strokeSize(tool === "highlighter" ? "highlighter" : "pen", toolSettings),
+    eraserRadius: eraserRadius(toolSettings) / zoom, // gleich groß auf dem Bildschirm, auch gezoomt
+    eraserMode: toolSettings.eraserMode,
     surfaceRef: svgRef,
     tool,
     color,
@@ -307,6 +312,8 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
           onUndo={undo}
           zoom={zoom}
           onResetZoom={() => setZoom(1)}
+          settings={toolSettings}
+          onSettingsChange={updateToolSettings}
         />
       </div>
 
@@ -353,6 +360,7 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
         {strokes.map((s) => renderStroke(s, paths.get(s.id) ?? ""))}
         {draft && renderStroke({ ...draft, anchorBlockId: null }, strokeToPath(draft), draftPathRef)}
         <g transform={`translate(${layout.columnLeft} 0)`}>
+          {eraser && <circle className="eraser-cursor" cx={eraser.x} cy={eraser.y} r={eraser.r} />}
           <LassoOverlay lasso={lasso} box={selectionBox} onDelete={deleteSelection} />
         </g>
       </svg>

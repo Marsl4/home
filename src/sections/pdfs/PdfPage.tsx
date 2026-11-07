@@ -22,6 +22,9 @@ type Props = {
   penMode: boolean;
   tool: Tool;
   color: string;
+  strokeSize: number; // Strichdicke (in PDF-Einheiten)
+  eraserRadiusPx: number; // Radierer-Größe auf dem Bildschirm
+  eraserMode: "stroke" | "precise";
   onCommit: (strokes: Stroke[]) => void; // neuer Strich (kommt in den Verlauf)
   onErase: (strokes: Stroke[]) => void; // während des Radierens
   onEraseDone: (before: Stroke[]) => void;
@@ -72,9 +75,12 @@ export function PdfPage(props: Props) {
   }, [doc, index, width, displayWidth, nearViewport]);
 
   // Zeichnen: Koordinaten in PDF-Einheiten, damit Striche beim Zoomen mitskalieren.
-  const { draft, draftPathRef, handlers, lasso, selection, selectionBox, deleteSelection, dragOffset } =
+  const { draft, draftPathRef, eraser, handlers, lasso, selection, selectionBox, deleteSelection, dragOffset } =
     useStrokeInput({
     enabled: penMode,
+    size: props.strokeSize,
+    eraserRadius: (props.eraserRadiusPx * width) / displayWidth, // Bildschirm-Pixel -> PDF-Einheiten
+    eraserMode: props.eraserMode,
     surfaceRef: svgRef,
     tool,
     color,
@@ -145,6 +151,7 @@ export function PdfPage(props: Props) {
       >
         {strokes.map((s) => renderStroke(s, paths.get(s.id) ?? ""))}
         {draft && renderStroke(draft, strokeToPath(draft), draftPathRef)}
+        {eraser && <circle className="eraser-cursor" cx={eraser.x} cy={eraser.y} r={eraser.r} />}
         <LassoOverlay
           lasso={lasso}
           box={selectionBox}

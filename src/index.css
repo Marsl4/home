@@ -576,6 +576,41 @@ path.selected {
   box-shadow: 0 0 0 2px var(--text);
 }
 
+.size-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 34px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+
+.size-button:hover,
+.size-button.selected {
+  background: var(--active);
+}
+
+.size-dot {
+  border-radius: 50%;
+  background: var(--text);
+}
+
+.toolbar-button.text {
+  font-size: 13px;
+}
+
+/* Kreis, der beim Radieren zeigt, wie groß der Radierer ist */
+.eraser-cursor {
+  fill: rgba(127, 127, 127, 0.15);
+  stroke: rgba(80, 80, 80, 0.6);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
 .toolbar-divider {
   width: 1px;
   height: 22px;

@@ -5,6 +5,7 @@ import { Star } from "lucide-react";
 import { usePinchZoom } from "../../components/usePinchZoom";
 import { DrawingToolbar } from "../../drawing/DrawingToolbar";
 import { PEN_COLORS, type Stroke, type Tool } from "../../drawing/strokes";
+import { eraserRadius, strokeSize, useToolSettings } from "../../drawing/toolSettings";
 import { usePenShortcuts } from "../../drawing/useStrokeInput";
 import { loadPdfFile, loadPdfInk, savePdfInk, type PdfDoc, type PdfInk } from "../../storage/db";
 import { publish, useLiveSync } from "../../storage/liveSync";
@@ -29,6 +30,7 @@ export function PdfViewer({ pdf }: { pdf: PdfDoc }) {
   const [penMode, setPenMode] = useState(false);
   const [tool, setTool] = useState<Tool>("pen");
   const [color, setColor] = useState(PEN_COLORS[0]);
+  const { settings: toolSettings, update: updateToolSettings } = useToolSettings();
 
   // Verfügbare Breite messen, damit die Seiten hineinpassen.
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -131,6 +133,9 @@ export function PdfViewer({ pdf }: { pdf: PdfDoc }) {
               penMode={penMode}
               tool={tool}
               color={color}
+              strokeSize={strokeSize(tool === "highlighter" ? "highlighter" : "pen", toolSettings)}
+              eraserRadiusPx={eraserRadius(toolSettings)}
+              eraserMode={toolSettings.eraserMode}
               onCommit={(strokes) => {
                 setHistory([...history, ink]);
                 save(withPage(index, strokes));
@@ -153,6 +158,8 @@ export function PdfViewer({ pdf }: { pdf: PdfDoc }) {
         onUndo={undo}
         zoom={zoom}
         onResetZoom={() => setZoom(1)}
+        settings={toolSettings}
+        onSettingsChange={updateToolSettings}
       />
     </div>
   );

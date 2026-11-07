@@ -21,7 +21,8 @@
 ### iPad
 - [x] Nur Apple Pencil zeichnet, Finger scrollen; Zoom nur im Blatt/PDF (bis 600 %); flüssige, runde Linien
 - [x] Formerkennung beim Füller: am Ende 1 s stillhalten → gerade Linie, Kreis/Ellipse, Dreieck, Rechteck, Vieleck
-- [ ] Formerkennung für den Textmarker (abgewandelt – Wunsch folgt)
+- [x] Eingerastete Form mit dem Stift größer/kleiner ziehen; Textmarker-Markierungen werden automatisch gerade
+- [x] 3 Strichdicken (Füller, Textmarker), Radierer mit 3 Größen und Modus „Strich“ / „Genau"
 
 ### Startseite
 - [ ] **Startseite mit Widgets**: verschiedene Widgets (z. B. heutige ToDos, nächste Termine,

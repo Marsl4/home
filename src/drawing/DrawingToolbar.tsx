@@ -2,6 +2,7 @@
 import { Eraser, Highlighter, Lasso, Pencil, Scissors, Undo2, type LucideIcon } from "lucide-react";
 
 import { HIGHLIGHTER_COLORS, PEN_COLORS, type Tool } from "./strokes";
+import type { SizeLevel, ToolSettings } from "./toolSettings";
 
 type Props = {
   penMode: boolean;
@@ -14,7 +15,12 @@ type Props = {
   onUndo: () => void;
   zoom: number; // aktueller Zoom der Ansicht (1 = 100 %)
   onResetZoom: () => void;
+  settings: ToolSettings; // Strichdicken + Radierer-Art
+  onSettingsChange: (changes: Partial<ToolSettings>) => void;
 };
+
+const SIZE_LABELS = ["Dünn", "Mittel", "Dick"];
+const LEVELS: SizeLevel[] = [0, 1, 2];
 
 const TOOLS: { tool: Tool; label: string; icon: LucideIcon }[] = [
   { tool: "pen", label: "Stift", icon: Pencil },
@@ -46,6 +52,9 @@ export function DrawingToolbar(props: Props) {
   }
 
   const colors = tool === "highlighter" ? HIGHLIGHTER_COLORS : tool === "pen" ? PEN_COLORS : [];
+  // Welche Dicke wird gerade eingestellt?
+  const sizeKey =
+    tool === "pen" ? "penSize" : tool === "highlighter" ? "highlighterSize" : tool === "eraser" ? "eraserSize" : null;
 
   // Beim Werkzeugwechsel eine passende Farbe wählen.
   const selectTool = (next: Tool) => {
@@ -78,6 +87,39 @@ export function DrawingToolbar(props: Props) {
           title="Farbe"
         />
       ))}
+
+      {sizeKey && <span className="toolbar-divider" />}
+      {sizeKey &&
+        LEVELS.map((level) => (
+          <button
+            key={level}
+            className={`size-button ${props.settings[sizeKey] === level ? "selected" : ""}`}
+            onClick={() => props.onSettingsChange({ [sizeKey]: level })}
+            title={`${tool === "eraser" ? "Radierer" : "Strich"}: ${SIZE_LABELS[level]}`}
+          >
+            <span className="size-dot" style={{ width: 4 + level * 4, height: 4 + level * 4 }} />
+          </button>
+        ))}
+
+      {tool === "eraser" && (
+        <>
+          <span className="toolbar-divider" />
+          <button
+            className={`toolbar-button text ${props.settings.eraserMode === "stroke" ? "selected" : ""}`}
+            onClick={() => props.onSettingsChange({ eraserMode: "stroke" })}
+            title="Strich-Radierer: der ganze Strich verschwindet"
+          >
+            Strich
+          </button>
+          <button
+            className={`toolbar-button text ${props.settings.eraserMode === "precise" ? "selected" : ""}`}
+            onClick={() => props.onSettingsChange({ eraserMode: "precise" })}
+            title="Präzisions-Radierer: nur der überfahrene Teil verschwindet"
+          >
+            Genau
+          </button>
+        </>
+      )}
 
       <span className="toolbar-divider" />
       <button className="toolbar-button" onClick={props.onUndo} disabled={!props.canUndo} title="Rückgängig (⌘Z)">

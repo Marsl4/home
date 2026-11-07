@@ -5,10 +5,12 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 
 import { usePaneFocused } from "../components/PaneContext";
-import { recognizeShape } from "./shapes";
+import { recognizeShape, transformShape, type ShapeKind } from "./shapes";
 import {
   boundsOf,
+  eraseFromStroke,
   hitsStroke,
+  straightenHighlight,
   moveStroke,
   strokeInLasso,
   strokeToPath,
@@ -21,6 +23,9 @@ export type PointerPosition = { clientX: number; clientY: number; pressure: numb
 
 type Options = {
   enabled: boolean; // Stift-Modus an?
+  size: number; // Strichdicke für neue Striche
+  eraserRadius: number;
+  eraserMode: "stroke" | "precise"; // ganzer Strich weg / nur der überfahrene Teil
   surfaceRef: RefObject<Element | null>; // die Zeichenfläche (für die Stift-Erkennung auf dem iPad)
   tool: Tool;
   color: string;
@@ -55,6 +60,8 @@ export function useStrokeInput(options: Options) {
   const holdTimer = useRef(0);
   const holdOrigin = useRef({ x: 0, y: 0 }); // wo der Stift zuletzt "angekommen" ist
   const snapped = useRef(false); // Linie wurde schon zur Form gemacht
+  // Eingerastete Form: Ausgangsform + wo der Stift beim Einrasten war (für Größer/Kleiner-Ziehen).
+  const shapeEdit = useRef<{ kind: ShapeKind; base: Stroke["points"]; grab: [number, number] } | null>(null);
 
   // Stillhalten erkannt: Linie durch die erkannte Form ersetzen (falls eine passt).
   const startHoldTimer = (stroke: Stroke) => {
@@ -63,6 +70,8 @@ export function useStrokeInput(options: Options) {
     holdTimer.current = window.setTimeout(() => {
       const shape = recognizeShape(stroke.points);
       if (!shape) return;
+      const last = stroke.points[stroke.points.length - 1];
+      shapeEdit.current = { kind: shape.kind, base: shape.points, grab: [last[0], last[1]] };
       stroke.points.splice(0, stroke.points.length, ...shape.points);
       stroke.shape = true;
       snapped.current = true;
@@ -137,10 +146,31 @@ export function useStrokeInput(options: Options) {
   }, [enabled, options.surfaceRef]);
 
   // ---------- Radierer ----------
+  const erasing = useRef<Stroke[]>([]); // neuester Stand während des Radierens
+  const lastErasePoint = useRef<[number, number] | null>(null);
+  const [eraserAt, setEraserAt] = useState<[number, number] | null>(null); // Kreis unter dem Stift
+
+  const eraseOnce = (list: Stroke[], x: number, y: number): Stroke[] => {
+    const radius = options.eraserRadius;
+    if (options.eraserMode === "stroke") return list.filter((s) => !hitsStroke(s, x, y, offsetOf(s), radius));
+    return list.flatMap((s) => eraseFromStroke(s, x, y, offsetOf(s), radius) ?? [s]);
+  };
+
   const eraseAt = (event: PointerPosition) => {
     const [x, y] = toPoint(event);
-    const remaining = strokes.filter((s) => !hitsStroke(s, x, y, offsetOf(s)));
-    if (remaining.length !== strokes.length) options.onErase(remaining);
+    setEraserAt([x, y]);
+    // Bei schnellen Bewegungen auch die Strecke dazwischen radieren (sonst bleiben Lücken).
+    const from = lastErasePoint.current ?? [x, y];
+    const steps = Math.max(1, Math.ceil(Math.hypot(x - from[0], y - from[1]) / (options.eraserRadius / 2)));
+    let next = erasing.current;
+    for (let i = 1; i <= steps; i++) {
+      next = eraseOnce(next, from[0] + ((x - from[0]) * i) / steps, from[1] + ((y - from[1]) * i) / steps);
+    }
+    lastErasePoint.current = [x, y];
+    if (next !== erasing.current && changed(next, erasing.current)) {
+      erasing.current = next;
+      options.onErase(next);
+    }
   };
 
   // ---------- Zeiger-Ereignisse ----------
@@ -168,6 +198,8 @@ export function useStrokeInput(options: Options) {
 
     if (tool === "eraser") {
       strokesBeforeErasing.current = strokes;
+      erasing.current = strokes;
+      lastErasePoint.current = null;
       eraseAt(event);
       return;
     }
@@ -180,8 +212,10 @@ export function useStrokeInput(options: Options) {
       anchorBlockId: null,
       anchorTop: 0,
       realPressure: event.pointerType === "pen",
+      size: options.size,
     };
     snapped.current = false;
+    shapeEdit.current = null;
     holdOrigin.current = { x: event.clientX, y: event.clientY };
     startHoldTimer(stroke);
     setDraft(stroke);
@@ -200,7 +234,16 @@ export function useStrokeInput(options: Options) {
       return;
     }
     if (strokesBeforeErasing.current) return eraseAt(event);
-    if (!draft || snapped.current) return; // fertige Form bleibt, bis der Stift abgehoben wird
+    if (!draft) return;
+    if (snapped.current) {
+      // Eingerastete Form: Stift weiterbewegen = Form größer/kleiner ziehen (Linie: Ende folgt dem Stift).
+      const edit = shapeEdit.current;
+      if (!edit) return;
+      const [x, y] = toPoint(event);
+      draft.points.splice(0, draft.points.length, ...transformShape(edit.kind, edit.base, edit.grab, [x, y]));
+      draftPathRef.current?.setAttribute("d", strokeToPath(draft));
+      return;
+    }
     // Bewegt sich der Stift (mehr als nur Zittern), beginnt das Warten aufs Stillhalten von vorn.
     if (Math.hypot(event.clientX - holdOrigin.current.x, event.clientY - holdOrigin.current.y) > STILL_DISTANCE) {
       holdOrigin.current = { x: event.clientX, y: event.clientY };
@@ -245,17 +288,22 @@ export function useStrokeInput(options: Options) {
     const before = strokesBeforeErasing.current;
     if (before) {
       strokesBeforeErasing.current = null;
+      setEraserAt(null);
       if (before !== strokes) options.onEraseDone(before);
       return;
     }
     if (!draft) return;
     setDraft(null);
-    options.onStrokeDone({ ...draft, points: [...draft.points] });
+    // Textmarker: längere, ungefähr gerade Markierungen werden sauber gerade.
+    const straight = draft.tool === "highlighter" ? straightenHighlight(draft.points) : null;
+    options.onStrokeDone({ ...draft, points: straight ?? [...draft.points], shape: draft.shape || !!straight });
   };
 
   return {
     draft,
     draftPathRef, // an das <path> der entstehenden Linie hängen
+    // Radierer-Kreis (Mitte + Radius in eigenen Koordinaten), solange radiert wird
+    eraser: eraserAt && { x: eraserAt[0], y: eraserAt[1], r: options.eraserRadius },
     handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp },
     lasso,
     selection,
@@ -264,6 +312,11 @@ export function useStrokeInput(options: Options) {
     // Verschiebung, die ausgewählte Striche gerade (während des Ziehens) zusätzlich bekommen.
     dragOffset: drag ? { dx: drag.dx, dy: drag.dy } : { dx: 0, dy: 0 },
   };
+}
+
+// Hat sich die Strich-Liste geändert? (Anzahl oder einzelne Striche)
+function changed(a: Stroke[], b: Stroke[]): boolean {
+  return a.length !== b.length || a.some((s, i) => s !== b[i]);
 }
 
 // Tastenkürzel im Stift-Modus: Esc = fertig, Cmd+Z = rückgängig.
