@@ -73,6 +73,23 @@ export async function listGeminiModels(apiKey: string): Promise<string[]> {
   return names.sort();
 }
 
+// Sucht aus den verfügbaren Modellen ein passendes aus: das neueste normale "Flash"-Modell
+// (schnell und gratis), ohne Sonderversionen wie "lite", "preview" oder "image".
+export function pickModel(names: string[]): string | null {
+  const plainFlash = names
+    .filter((n) => /^gemini-[\d.]+-flash$/.test(n))
+    .sort((a, b) => parseFloat(b.slice(7)) - parseFloat(a.slice(7)));
+  if (plainFlash[0]) return plainFlash[0];
+  if (names.includes("gemini-flash-latest")) return "gemini-flash-latest";
+  const anyFlash = names.find((n) => n.includes("flash") && !/lite|image|tts|live|audio/.test(n));
+  return anyFlash ?? names[0] ?? null;
+}
+
+// Gibt es das eingestellte Modell nicht (mehr)?
+export function isModelMissing(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 404;
+}
+
 // Verständliche Fehlermeldung statt technischem Text.
 export function describeAiError(error: unknown): string {
   if (!navigator.onLine) return "Keine Internetverbindung – die KI braucht Internet.";

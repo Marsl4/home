@@ -8,9 +8,16 @@ import { useNotes } from "../sections/notes/NotesContext";
 import { usePdfs } from "../sections/pdfs/PdfsContext";
 import { usePersistentState } from "../storage/uiState";
 import { AiMarkdown } from "./AiMarkdown";
-import { useAiSettings } from "./aiConfig";
+import { saveAiSettings, useAiSettings } from "./aiConfig";
 import { findSource, loadAttachment } from "./context";
-import { askGemini, describeAiError, type ChatMessage } from "./gemini";
+import {
+  askGemini,
+  describeAiError,
+  isModelMissing,
+  listGeminiModels,
+  pickModel,
+  type ChatMessage,
+} from "./gemini";
 
 // Schnell-Aktionen für das mitgeschickte Material.
 const QUICK_ACTIONS = [
@@ -79,17 +86,28 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
     let answer = "";
     try {
       const attachment = attached ? await loadAttachment(attached) : null;
-      await askGemini({
-        apiKey,
-        model,
-        history,
-        attachment,
-        signal: controller.signal,
-        onText: (soFar) => {
-          answer = soFar;
-          setMessages([...history, { role: "assistant", text: soFar }]);
-        },
-      });
+      const ask = (modelName: string) =>
+        askGemini({
+          apiKey,
+          model: modelName,
+          history,
+          attachment,
+          signal: controller.signal,
+          onText: (soFar) => {
+            answer = soFar;
+            setMessages([...history, { role: "assistant", text: soFar }]);
+          },
+        });
+      try {
+        await ask(model);
+      } catch (e) {
+        // Modell gibt es nicht (mehr)? Dann selbst ein passendes aussuchen, merken und nochmal fragen.
+        if (!isModelMissing(e)) throw e;
+        const replacement = pickModel(await listGeminiModels(apiKey));
+        if (!replacement || replacement === model) throw e;
+        saveAiSettings({ apiKey, model: replacement });
+        await ask(replacement);
+      }
     } catch (e) {
       if (controller.signal.aborted) {
         if (!answer) setMessages(history); // gestoppt, bevor etwas kam: nur die Frage bleibt stehen

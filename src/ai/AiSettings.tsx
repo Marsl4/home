@@ -3,7 +3,7 @@ import { useState } from "react";
 import { CheckCircle2, ExternalLink, KeyRound, ShieldCheck } from "lucide-react";
 
 import { DEFAULT_MODEL, saveAiSettings, useAiSettings } from "./aiConfig";
-import { describeAiError, listGeminiModels } from "./gemini";
+import { describeAiError, listGeminiModels, pickModel } from "./gemini";
 
 export function AiSettings() {
   const settings = useAiSettings();
@@ -21,7 +21,11 @@ export function AiSettings() {
     try {
       const available = await listGeminiModels(apiKey);
       setModels(available);
-      saveAiSettings({ ...settings, apiKey });
+      // Eingestelltes Modell gibt es nicht? Dann automatisch ein passendes wählen.
+      const model = available.includes(settings.model)
+        ? settings.model
+        : (pickModel(available) ?? settings.model);
+      saveAiSettings({ apiKey, model });
       setStatus({ kind: "ok", text: "Verbindung klappt – der Schlüssel ist gespeichert." });
     } catch (e) {
       setStatus({ kind: "error", text: describeAiError(e) });
@@ -36,7 +40,7 @@ export function AiSettings() {
     setStatus({ kind: "ok", text: "Schlüssel wurde von diesem Gerät entfernt." });
   };
 
-  const modelOptions = [...new Set([DEFAULT_MODEL, settings.model, ...models])];
+  const modelOptions = models.length ? models : [...new Set([settings.model, DEFAULT_MODEL])];
 
   return (
     <div className="settings">
@@ -93,8 +97,8 @@ export function AiSettings() {
         <div>
           <h2>Modell</h2>
           <p>
-            „{DEFAULT_MODEL}“ ist Googles aktuelles schnelles Modell und gratis nutzbar. Weitere
-            Modelle erscheinen nach „Testen“.
+            Beim Testen wird automatisch das neueste schnelle „Flash“-Modell gewählt (gratis
+            nutzbar). Nach „Testen“ kannst du hier auch ein anderes auswählen.
           </p>
         </div>
         <select
