@@ -24,7 +24,7 @@ export function PdfsProvider({ children }: { children: ReactNode }) {
       return next;
     });
 
-  const importFiles = async (files: File[]) => {
+  const importFiles = async (files: File[], folderId: string | null = null) => {
     const added: PdfDoc[] = [];
     for (const file of files) {
       if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) continue;
@@ -34,6 +34,7 @@ export function PdfsProvider({ children }: { children: ReactNode }) {
         addedAt: Date.now(),
         lastOpenedAt: null,
         favorite: false,
+        folderId,
       };
       await savePdfFile(doc.id, file);
       added.push(doc);

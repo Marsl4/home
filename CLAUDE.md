@@ -57,6 +57,8 @@ Nur für mich privat. Läuft auf Mac (Tippen) und später iPad (Apple Pencil).
   Zoom (`src/components/usePinchZoom.ts`) nur im Blatt/PDF: Notizen per `transform: scale` (Positionen
   bleiben ungezoomt, Messung über `offsetTop`, Bildschirm-Deltas durch `zoom` teilen), PDFs per größerer
   Seitenbreite. Tests: CDP `Input.dispatchMouseEvent` mit `pointerType: "pen"`, `dispatchTouchEvent`.
+- Ordner: `Subject` mit optionalem `parentId` (Speicher `subjects`), Notizen über `Page.subjectId`, PDFs über
+  `PdfDoc.folderId`. Hilfen in `src/sections/uni/folders.ts`, Baum `FolderTree.tsx` (Uni + PDFs), `MoveDialog.tsx`.
 - Freie Textfelder (`src/drawing/FloatingTexts.tsx`, Speicher `page-texts:`) liegen wie Bilder an Textblöcken;
   das Lasso wählt Striche, Bilder und Textfelder (`items` in `useStrokeInput`).
 - Sync (`src/sync/`): Google Drive App-Ordner, eine Datei pro IndexedDB-Schlüssel. db.ts schreibt über

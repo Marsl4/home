@@ -23,6 +23,10 @@ export function findSource(
   if (sectionId === "notes") return note(resolvePageId(generalPages(pages), selectedId));
   if (sectionId === "uni") {
     const selection = parseSelection(selectedId);
+    if (selection.kind === "pdf") {
+      const pdf = pdfs.find((p) => p.id === selection.id);
+      return pdf ? { kind: "pdf", id: pdf.id, title: pdf.name } : null;
+    }
     return selection.kind === "page" ? note(selection.id) : null;
   }
   if (sectionId === "pdfs") {

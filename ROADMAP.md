@@ -3,7 +3,7 @@
 ## Erledigt
 
 - [x] **ToDos**: Aufgaben anlegen, abhaken, Heute / Anstehend / Erledigt
-- [x] **Uni → Fächer**: jedes Fach hat eigene Notizseiten
+- [x] **Uni → Ordner**: beliebig verschachtelte Ordner (früher „Fächer“) mit Notizen und PDFs; gleiche Ordner im PDF-Bereich; Verschieben
 - [x] **PDFs**: PDFs importieren, ansehen und mit dem Stift darauf schreiben
 - [x] **Backup/Export**: Einstellungen → Daten & Backup (Sicherung herunterladen/wiederherstellen)
 - [x] **Installierbare App „Home“**: https://marsl4.github.io/home/ (offline, Icon, eigenes Fenster)

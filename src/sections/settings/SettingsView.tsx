@@ -65,7 +65,7 @@ function BackupSettings() {
 
       <div className="settings-stats">
         <Stat label="Notizseiten" value={pages.length} />
-        <Stat label="Fächer" value={subjects.length} />
+        <Stat label="Ordner" value={subjects.length} />
         <Stat label="ToDos" value={todos.length} />
         <Stat label="PDFs" value={pdfs.length} />
       </div>

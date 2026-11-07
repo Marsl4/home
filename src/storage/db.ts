@@ -13,10 +13,13 @@ export type Page = {
   subjectId?: string | null; // gehört zu einem Uni-Fach (oder null = allgemeine Notiz)
 };
 
-// Ein Uni-Fach, z. B. "Analysis". Seine Seiten sind normale Pages mit subjectId.
+// Ein Ordner im Uni-Bereich, z. B. "Semester 7" oder darin "Steuern" (früher hieß das "Fach").
+// Seine Notizen sind normale Pages mit subjectId, seine PDFs PdfDocs mit folderId.
+// Ordner ohne parentId (ältere Daten) liegen auf oberster Ebene.
 export type Subject = {
   id: string;
   name: string;
+  parentId?: string | null;
 };
 
 const PAGES_KEY = "pages";
@@ -112,6 +115,7 @@ export type PdfDoc = {
   addedAt: number;
   lastOpenedAt: number | null;
   favorite: boolean;
+  folderId?: string | null; // liegt in diesem Ordner (siehe Subject); fehlt = ohne Ordner
 };
 
 // Striche auf einem PDF: Seitennummer (ab 0) -> Striche in PDF-Koordinaten.

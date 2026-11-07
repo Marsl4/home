@@ -1,19 +1,30 @@
 // Zweite Seitenleiste im PDF-Bereich: Filter (Alle/Zuletzt/Favoriten), Liste, Import.
-import { FileText, Star, Upload, X } from "lucide-react";
+// "Alle" zeigt die gemeinsamen Ordner (wie im Uni-Bereich), nur mit den PDFs darin.
+import { FileText, FolderPlus, Star, Upload, X } from "lucide-react";
 
 import { usePersistentState } from "../../storage/uiState";
+import { useNotes } from "../notes/NotesContext";
 import type { SectionProps } from "../types";
+import { FolderTree } from "../uni/FolderTree";
+import { useMoveDialog } from "../uni/MoveDialog";
 import { ImportPdfButton } from "./ImportPdfButton";
 import { filterPdfs, PDF_FILTERS, usePdfs, type PdfFilter } from "./PdfsContext";
 
 export function PdfsPanel({ selectedId, onSelect }: SectionProps) {
   const { pdfs, updatePdf, deletePdf } = usePdfs();
+  const { subjects, pages, createSubject, renameSubject } = useNotes();
+  const [openMove, moveDialog] = useMoveDialog();
   const [filter, setFilter] = usePersistentState<PdfFilter>("ui:pdfFilter", "all");
   const visible = filterPdfs(pdfs, filter);
 
   const open = (id: string) => {
     updatePdf(id, { lastOpenedAt: Date.now() });
     onSelect(id);
+  };
+
+  const newFolder = () => {
+    const name = window.prompt("Name des neuen Ordners (z. B. „Semester 7“):");
+    if (name?.trim()) renameSubject(createSubject().id, name.trim());
   };
 
   const remove = (id: string, name: string) => {
@@ -37,7 +48,22 @@ export function PdfsPanel({ selectedId, onSelect }: SectionProps) {
       </div>
 
       <nav className="panel-list">
-        {visible.length === 0 && (
+        {filter === "all" ? (
+          <>
+            {pdfs.length === 0 && subjects.length === 0 && <p className="panel-hint">Noch keine PDFs importiert.</p>}
+            <FolderTree
+              mode="pdfs"
+              folders={subjects}
+              pages={pages}
+              pdfs={pdfs}
+              activeId={selectedId}
+              onOpenPdf={open}
+              onImported={(added) => added[0] && open(added[0].id)}
+              onMove={openMove}
+              onDeletePdf={(pdf) => remove(pdf.id, pdf.name)}
+            />
+          </>
+        ) : visible.length === 0 && (
           <p className="panel-hint">
             {filter === "favorites"
               ? "Noch keine Favoriten. Markiere ein PDF mit dem Stern."
@@ -46,7 +72,7 @@ export function PdfsPanel({ selectedId, onSelect }: SectionProps) {
                 : "Noch keine PDFs importiert."}
           </p>
         )}
-        {visible.map((pdf) => (
+        {filter !== "all" && visible.map((pdf) => (
           <div
             key={pdf.id}
             className={`panel-item ${pdf.id === selectedId ? "active" : ""}`}
@@ -75,6 +101,10 @@ export function PdfsPanel({ selectedId, onSelect }: SectionProps) {
       >
         <Upload size={15} /> PDF importieren
       </ImportPdfButton>
+      <button className="panel-add-button" onClick={newFolder}>
+        <FolderPlus size={15} /> Neuer Ordner
+      </button>
+      {moveDialog}
     </>
   );
 }

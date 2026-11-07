@@ -1,4 +1,4 @@
-// Gemeinsamer Zustand für alle Notizseiten und Uni-Fächer.
+// Gemeinsamer Zustand für alle Notizseiten und Uni-Ordner (früher "Fächer").
 // Wird vom Notizen-Bereich und vom Uni-Bereich benutzt.
 import { createContext, useContext } from "react";
 import type { Page, Subject } from "../../storage/db";
@@ -9,9 +9,13 @@ export type NotesState = {
   createPage: (subjectId?: string | null) => Page;
   renamePage: (id: string, title: string) => void;
   deletePage: (id: string) => Page[]; // gibt die übrigen Seiten zurück
-  createSubject: () => Subject;
+  movePage: (id: string, folderId: string | null) => void;
+  createSubject: (parentId?: string | null) => Subject; // neuer Ordner (optional in einem Ordner)
   renameSubject: (id: string, name: string) => void;
-  deleteSubject: (id: string) => void; // löscht auch alle Seiten des Fachs
+  moveSubject: (id: string, parentId: string | null) => void;
+  // Löscht den Ordner samt Unterordnern und deren Notizen. Gibt die IDs aller gelöschten Ordner
+  // zurück (damit auch die PDFs darin entfernt werden können).
+  deleteSubject: (id: string) => Set<string>;
 };
 
 export const NotesContext = createContext<NotesState | null>(null);

@@ -4,7 +4,7 @@ import type { PdfDoc } from "../../storage/db";
 
 export type PdfsState = {
   pdfs: PdfDoc[];
-  importFiles: (files: File[]) => Promise<PdfDoc[]>; // gibt die neuen PDFs zurück
+  importFiles: (files: File[], folderId?: string | null) => Promise<PdfDoc[]>; // gibt die neuen PDFs zurück
   updatePdf: (id: string, changes: Partial<PdfDoc>) => void;
   deletePdf: (id: string) => void;
 };

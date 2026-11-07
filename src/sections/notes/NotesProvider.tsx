@@ -11,6 +11,7 @@ import {
   type Subject,
 } from "../../storage/db";
 import { useLiveSync } from "../../storage/liveSync";
+import { descendantIds } from "../uni/folders";
 import { NotesContext } from "./NotesContext";
 
 export function NotesProvider({ children }: { children: ReactNode }) {
@@ -58,8 +59,12 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     return remaining;
   };
 
-  const createSubject = () => {
-    const subject: Subject = { id: crypto.randomUUID(), name: "" };
+  const movePage = (id: string, folderId: string | null) => {
+    updatePages((current) => current.map((p) => (p.id === id ? { ...p, subjectId: folderId } : p)));
+  };
+
+  const createSubject = (parentId: string | null = null) => {
+    const subject: Subject = { id: crypto.randomUUID(), name: "", parentId };
     updateSubjects((current) => [...current, subject]);
     return subject;
   };
@@ -68,11 +73,19 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     updateSubjects((current) => current.map((s) => (s.id === id ? { ...s, name } : s)));
   };
 
+  const moveSubject = (id: string, parentId: string | null) => {
+    // Nie in sich selbst oder einen eigenen Unterordner (sonst entstünde eine Schleife).
+    if (parentId === id || (parentId && descendantIds(subjects, id).has(parentId))) return;
+    updateSubjects((current) => current.map((s) => (s.id === id ? { ...s, parentId } : s)));
+  };
+
   const deleteSubject = (id: string) => {
-    const doomed = pages.filter((p) => p.subjectId === id);
+    const folderIds = new Set([id, ...descendantIds(subjects, id)]);
+    const doomed = pages.filter((p) => p.subjectId && folderIds.has(p.subjectId));
     doomed.forEach((p) => deletePageData(p.id));
-    updatePages((current) => current.filter((p) => p.subjectId !== id));
-    updateSubjects((current) => current.filter((s) => s.id !== id));
+    updatePages((current) => current.filter((p) => !(p.subjectId && folderIds.has(p.subjectId))));
+    updateSubjects((current) => current.filter((s) => !folderIds.has(s.id)));
+    return folderIds;
   };
 
   return (
@@ -83,8 +96,10 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         createPage,
         renamePage,
         deletePage,
+        movePage,
         createSubject,
         renameSubject,
+        moveSubject,
         deleteSubject,
       }}
     >
