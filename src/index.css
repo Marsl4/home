@@ -96,8 +96,57 @@ button {
   flex: 1;
   min-width: 0;
   overflow: hidden;
+  display: flex; /* eine oder zwei Hälften nebeneinander */
+}
+
+/* ---------- Hälften (Split-Modus) ---------- */
+.pane {
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
+  position: relative;
+  background: var(--main-bg);
+}
+
+.pane-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  flex-shrink: 0;
+  padding: 0 4px 0 12px;
+  border-bottom: 1px solid var(--border);
+  border-top: 2px solid transparent;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--panel-bg);
+}
+
+.pane-header span {
+  flex: 1;
+}
+
+.pane.focused .pane-header {
+  border-top-color: var(--accent);
+  color: var(--text);
+}
+
+.pane-divider {
+  flex: 0 0 5px;
+  cursor: col-resize;
+  background: var(--border);
+  touch-action: none;
+}
+
+.pane-divider:hover {
+  background: var(--accent);
+}
+
+.panel-pane-hint {
+  font-weight: 400;
+  color: var(--text-muted);
 }
 
 /* ---------- Bereiche-Leiste (ganz links) ---------- */
@@ -429,8 +478,22 @@ path.selected {
   mix-blend-mode: multiply; /* Text bleibt unter dem Textmarker lesbar */
 }
 
+/* Klebt oben an der Seite (auch beim Scrollen), nimmt selbst keinen Platz ein.
+   Der Klebe-Abstand zählt ab dem Innenabstand der Seite (.page padding-top: 48px);
+   mit top -36px sitzt die Leiste deshalb immer 12px unter der Oberkante. */
+.toolbar-dock {
+  position: sticky;
+  top: 0;
+  height: 0;
+  z-index: 10;
+}
+
+.toolbar-dock .drawing-toolbar {
+  top: -36px;
+}
+
 .drawing-toolbar {
-  position: fixed;
+  position: absolute; /* oben rechts in der eigenen Hälfte */
   top: 12px;
   right: 16px;
   z-index: 10;
@@ -870,6 +933,7 @@ path.selected {
 }
 
 .pdf-viewer {
+  position: relative; /* Bezugspunkt für die Werkzeugleiste */
   flex: 1;
   min-height: 0;
   display: flex;

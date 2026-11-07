@@ -45,6 +45,10 @@ Nur für mich privat. Läuft auf Mac (Tippen) und später iPad (Apple Pencil).
   auch die frei platzierbaren Bilder `FloatingImages`), Werkzeugleiste, Ausschnitte (`snip.ts`).
   Striche und Bilder hängen an einem Textblock (`anchorBlockId`/`anchorTop`) und wandern mit.
 - Editor: BlockNote (`src/editor/schema.ts`). PDFs: pdf.js (`src/sections/pdfs/`).
+- Split-Modus (`App.tsx`): ein oder zwei „Panes“, jede mit eigenem Bereich + Auswahl. Tastenkürzel und
+  ⌘V nur in der aktiven Hälfte (`usePaneFocused()` aus `src/components/PaneContext.ts`). Ist derselbe
+  Inhalt zweimal offen, gleichen sich die Ansichten über `src/storage/liveSync.ts` ab – neue Ansichten,
+  die etwas speichern, müssen das auch tun (sonst überschreiben sie sich gegenseitig).
 - Farben nur über die Variablen oben in `src/index.css` (`var(--text)`, `var(--surface)` …), keine
   festen Farbwerte – sonst passt es nicht zum dunklen Design. Schreibflächen (Notizblatt) bekommen
   die Klasse `light-surface` und bleiben immer hell. Hell/Dunkel/System: `src/sections/settings/ThemeProvider.tsx`.

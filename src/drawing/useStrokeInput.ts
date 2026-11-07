@@ -3,6 +3,7 @@
 // Benutzt von der Zeichenschicht auf Notizseiten und von den PDF-Seiten.
 import { useEffect, useRef, useState } from "react";
 
+import { usePaneFocused } from "../components/PaneContext";
 import {
   boundsOf,
   hitsStroke,
@@ -38,6 +39,7 @@ const NO_SELECTION = new Set<string>();
 
 export function useStrokeInput(options: Options) {
   const { enabled, tool, color, strokes, toPoint, offsetOf = () => 0 } = options;
+  const paneFocused = usePaneFocused(); // Tastenkürzel nur in der aktiven Hälfte
   const [draft, setDraft] = useState<Stroke | null>(null); // Strich, der gerade entsteht
   const strokesBeforeErasing = useRef<Stroke[] | null>(null); // null = es wird nicht radiert
 
@@ -74,7 +76,7 @@ export function useStrokeInput(options: Options) {
 
   // Entf/⌫ löscht die Auswahl (nicht, wenn gerade in einem Textfeld getippt wird).
   useEffect(() => {
-    if (!enabled || selection.size === 0) return;
+    if (!enabled || !paneFocused || selection.size === 0) return;
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
       if (target.isContentEditable || ["INPUT", "TEXTAREA"].includes(target.tagName)) return;
@@ -200,8 +202,9 @@ export function useStrokeInput(options: Options) {
 
 // Tastenkürzel im Stift-Modus: Esc = fertig, Cmd+Z = rückgängig.
 export function usePenShortcuts(penMode: boolean, onExit: () => void, onUndo: () => void) {
+  const paneFocused = usePaneFocused(); // im Split-Modus nur die aktive Hälfte
   useEffect(() => {
-    if (!penMode) return;
+    if (!penMode || !paneFocused) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onExit();
       if (event.key === "z" && (event.metaKey || event.ctrlKey)) {

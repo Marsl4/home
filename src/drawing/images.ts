@@ -27,11 +27,14 @@ export function fileToDataUrl(file: Blob): Promise<string> {
 }
 
 // Anfangsgröße eines neuen Bildes: Ausschnitte sind hochaufgelöst (2–4 Bildpunkte pro Pixel),
-// darum halbe Originalbreite, aber höchstens MAX_INITIAL_WIDTH.
-export async function initialImageSize(src: string): Promise<{ width: number; height: number }> {
+// darum halbe Originalbreite, aber höchstens MAX_INITIAL_WIDTH bzw. der verfügbare Platz.
+export async function initialImageSize(
+  src: string,
+  availableWidth: number,
+): Promise<{ width: number; height: number }> {
   const image = new Image();
   image.src = src;
   await image.decode();
-  const width = Math.min(image.naturalWidth / 2, MAX_INITIAL_WIDTH);
+  const width = Math.max(MIN_IMAGE_WIDTH, Math.min(image.naturalWidth / 2, MAX_INITIAL_WIDTH, availableWidth));
   return { width, height: (width * image.naturalHeight) / image.naturalWidth };
 }

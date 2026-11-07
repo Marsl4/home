@@ -6,6 +6,7 @@ import { DrawingToolbar } from "../../drawing/DrawingToolbar";
 import { PEN_COLORS, type Stroke, type Tool } from "../../drawing/strokes";
 import { usePenShortcuts } from "../../drawing/useStrokeInput";
 import { loadPdfFile, loadPdfInk, savePdfInk, type PdfDoc, type PdfInk } from "../../storage/db";
+import { publish, useLiveSync } from "../../storage/liveSync";
 import { getDocument, type PDFDocumentProxy } from "./pdfjs";
 import { PdfPage } from "./PdfPage";
 import { usePdfs } from "./PdfsContext";
@@ -71,9 +72,13 @@ export function PdfViewer({ pdf }: { pdf: PdfDoc }) {
   }, [pdf.id]);
 
   // ---------- Zeichnungen ändern + speichern ----------
+  // Ist dieselbe PDF im Split-Modus zweimal offen, gleichen sich beide live ab.
+  const inkSyncId = useLiveSync<PdfInk>(`pdf-ink:${pdf.id}`, setInk);
+
   const save = (next: PdfInk) => {
     setInk(next);
     savePdfInk(pdf.id, next);
+    publish(`pdf-ink:${pdf.id}`, inkSyncId, next);
   };
 
   const withPage = (index: number, strokes: Stroke[]) => ({ ...ink, [index]: strokes });

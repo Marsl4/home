@@ -2,7 +2,7 @@
 // Nicht für echte Daten gedacht – die liegen in db.ts.
 import { useState } from "react";
 
-function read<T>(key: string, fallback: T): T {
+export function readStored<T>(key: string, fallback: T): T {
   try {
     const stored = localStorage.getItem(key);
     return stored === null ? fallback : (JSON.parse(stored) as T);
@@ -21,7 +21,7 @@ function write(key: string, value: unknown) {
 
 // Wie useState, aber der Wert bleibt nach dem Neuladen erhalten.
 export function usePersistentState<T>(key: string, fallback: T) {
-  const [value, setValue] = useState<T>(() => read(key, fallback));
+  const [value, setValue] = useState<T>(() => readStored(key, fallback));
   const update = (next: T) => {
     setValue(next);
     write(key, next);

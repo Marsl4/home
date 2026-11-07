@@ -11,8 +11,8 @@
 ## Später – nicht vergessen!
 
 ### Arbeiten & Zeichnen
-- [ ] **Split-Modus**: zwei Seiten oder Bereiche nebeneinander öffnen, ansehen und bearbeiten,
-      auch zweimal denselben Bereich bzw. dieselbe Seite.
+- [x] **Split-Modus**: „Teilen“ unten links – zwei Hälften nebeneinander, auch dieselbe Seite
+      doppelt (gleicht sich live ab), Trennlinie verschiebbar.
 - [x] **Markier-Modus (Screenshot)**: Werkzeug „Ausschnitt“ (Schere) – Bereich einkreisen,
       wird als Bild kopiert, mit ⌘V einfügen.
 - [~] **Lasso im Zeichen-Modus** (Striche: erledigt; eingefügte Bilder als freie Boxen: erledigt; Text frei verschieben + Bilder per Lasso: offen): Gezeichnetes, Geschriebenes und Eingefügtes auswählen

@@ -5,7 +5,9 @@
 // Außerdem liegen hier die frei platzierbaren Bilder (eingefügt mit ⌘V), die genauso mitwandern.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
+import { usePaneFocused } from "../components/PaneContext";
 import { savePageDrawing, savePageImages } from "../storage/db";
+import { publish, useLiveSync } from "../storage/liveSync";
 import { DrawingToolbar } from "./DrawingToolbar";
 import { FloatingImages } from "./FloatingImages";
 import { fileToDataUrl, initialImageSize, type FloatingImage } from "./images";
@@ -86,10 +88,16 @@ export function DrawingLayer({ pageId, initialStrokes, initialImages, children }
     return top === undefined ? 0 : top - item.anchorTop;
   };
 
+  // Ist dieselbe Seite im Split-Modus zweimal offen, gleichen sich beide live ab.
+  const paneFocused = usePaneFocused();
+  const strokesSyncId = useLiveSync<Stroke[]>(`page-drawing:${pageId}`, setStrokes);
+  const imagesSyncId = useLiveSync<FloatingImage[]>(`page-images:${pageId}`, setImages);
+
   // ---------- Ändern + Speichern ----------
   const save = (next: Stroke[]) => {
     setStrokes(next);
     savePageDrawing(pageId, next);
+    publish(`page-drawing:${pageId}`, strokesSyncId, next);
   };
 
   const commit = (next: Stroke[]) => {
@@ -132,6 +140,7 @@ export function DrawingLayer({ pageId, initialStrokes, initialImages, children }
     setImages((current) => {
       const next = change(current);
       savePageImages(pageId, next);
+      publish(`page-images:${pageId}`, imagesSyncId, next);
       return next;
     });
 
@@ -155,6 +164,7 @@ export function DrawingLayer({ pageId, initialStrokes, initialImages, children }
 
   // ⌘V mit einem Bild (z. B. einem Ausschnitt) -> als frei verschiebbare Box einfügen.
   useEffect(() => {
+    if (!paneFocused) return; // im Split-Modus nur die aktive Hälfte
     const onPaste = (event: ClipboardEvent) => {
       const target = event.target as HTMLElement;
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
@@ -163,9 +173,11 @@ export function DrawingLayer({ pageId, initialStrokes, initialImages, children }
       event.preventDefault();
       event.stopPropagation();
       const y = pastePositionY();
+      // Nicht breiter als der Platz von der Textspalte bis zum rechten Rand (wichtig im Split-Modus).
+      const availableWidth = svgRef.current!.clientWidth - layout.columnLeft - 24;
       (async () => {
         const src = await fileToDataUrl(file);
-        const size = await initialImageSize(src);
+        const size = await initialImageSize(src, availableWidth);
         updateImages((current) => [
           ...current,
           { id: crypto.randomUUID(), src, x: 0, y, ...size, ...findAnchor(y) },
@@ -228,6 +240,20 @@ export function DrawingLayer({ pageId, initialStrokes, initialImages, children }
 
   return (
     <div className="page-content">
+      {/* Die Werkzeugleiste "klebt" oben rechts an der Seite, auch beim Scrollen. */}
+      <div className="toolbar-dock">
+        <DrawingToolbar
+          penMode={penMode}
+          onTogglePenMode={() => setPenMode(!penMode)}
+          tool={tool}
+          onToolChange={setTool}
+          color={color}
+          onColorChange={setColor}
+          canUndo={history.length > 0}
+          onUndo={undo}
+        />
+      </div>
+
       <div className="page-text" ref={textRef}>
         {children}
       </div>
@@ -259,17 +285,6 @@ export function DrawingLayer({ pageId, initialStrokes, initialImages, children }
           <LassoOverlay lasso={lasso} box={selectionBox} onDelete={deleteSelection} />
         </g>
       </svg>
-
-      <DrawingToolbar
-        penMode={penMode}
-        onTogglePenMode={() => setPenMode(!penMode)}
-        tool={tool}
-        onToolChange={setTool}
-        color={color}
-        onColorChange={setColor}
-        canUndo={history.length > 0}
-        onUndo={undo}
-      />
     </div>
   );
 }

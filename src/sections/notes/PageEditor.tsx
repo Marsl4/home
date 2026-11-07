@@ -6,6 +6,7 @@ import "@blocknote/mantine/style.css";
 
 import { schema, type EditorBlock } from "../../editor/schema";
 import { savePageContent } from "../../storage/db";
+import { hasOtherViewers, publish, useLiveSync } from "../../storage/liveSync";
 
 type Props = {
   pageId: string;
@@ -13,6 +14,7 @@ type Props = {
 };
 
 const SAVE_DELAY_MS = 500;
+const SYNC_DELAY_MS = 150; // Abgleich mit der zweiten Hälfte, wenn dieselbe Seite zweimal offen ist
 
 // Wandelt eine Datei in einen Text ("data URL") um, der mit der Seite gespeichert wird.
 function fileToDataUrl(file: File): Promise<string> {
@@ -34,10 +36,26 @@ export function PageEditor({ pageId, initialContent }: Props) {
     initialContent: initialContent?.length ? initialContent : undefined,
   });
 
+  // Live-Abgleich: Ist dieselbe Seite im Split-Modus zweimal offen, übernimmt die andere Hälfte
+  // Änderungen sofort. "applyingRemote" verhindert, dass die Übernahme wieder zurückgeschickt wird.
+  const syncKey = `page-content:${pageId}`;
+  const applyingRemote = useRef(false);
+  const syncTimer = useRef<number | undefined>(undefined);
+  const syncId = useLiveSync<EditorBlock[]>(syncKey, (blocks) => {
+    applyingRemote.current = true;
+    editor.replaceBlocks(editor.document, blocks);
+    applyingRemote.current = false;
+  });
+
   // Automatisch speichern: erst wenn 0,5 s lang nichts geändert wurde (spart Arbeit beim Tippen).
   const saveTimer = useRef<number | undefined>(undefined);
 
   const scheduleSave = () => {
+    if (applyingRemote.current) return; // kam von der anderen Hälfte, die speichert selbst
+    if (hasOtherViewers(syncKey)) {
+      window.clearTimeout(syncTimer.current);
+      syncTimer.current = window.setTimeout(() => publish(syncKey, syncId, editor.document), SYNC_DELAY_MS);
+    }
     window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => {
       saveTimer.current = undefined;
@@ -56,6 +74,7 @@ export function PageEditor({ pageId, initialContent }: Props) {
     window.addEventListener("pagehide", flush);
     return () => {
       window.removeEventListener("pagehide", flush);
+      window.clearTimeout(syncTimer.current);
       flush();
     };
   }, [editor, pageId]);
