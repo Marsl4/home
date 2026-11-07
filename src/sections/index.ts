@@ -7,6 +7,7 @@ import {
   Dumbbell,
   FileText,
   GraduationCap,
+  Languages,
   ListTodo,
   NotebookPen,
   PenLine,
@@ -17,6 +18,9 @@ import {
   Cloud,
 } from "lucide-react";
 
+import { EnglishPanel } from "./english/EnglishPanel";
+import { EnglishProvider } from "./english/EnglishProvider";
+import { EnglishView } from "./english/EnglishView";
 import { NotesPanel } from "./notes/NotesPanel";
 import { NotesProvider } from "./notes/NotesProvider";
 import { NotesView } from "./notes/NotesView";
@@ -63,6 +67,14 @@ export const sections: Section[] = [
     Panel: PdfsPanel,
     View: PdfsView,
     Provider: PdfsProvider,
+  },
+  {
+    id: "english",
+    label: "Englisch",
+    icon: Languages,
+    Panel: EnglishPanel,
+    View: EnglishView,
+    Provider: EnglishProvider,
   },
   {
     id: "calendar",

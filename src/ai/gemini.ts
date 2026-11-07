@@ -79,6 +79,47 @@ function attachmentParts(attachment: Attachment): Part[] {
   return [{ text: `Mitgeschicktes Material: ${attachment.label}\n\n${attachment.text}` }];
 }
 
+// Fragt die KI nach strukturierten Daten (JSON nach einem Schema), z. B. für Tests oder Lernpläne.
+// Antwortet das Modell trotzdem nicht im richtigen Format, wird einmal nachgefragt.
+export async function askGeminiJson<T>(options: {
+  apiKey: string;
+  model: string;
+  prompt: string;
+  schema: Record<string, unknown>; // JSON-Schema der Antwort
+  fast: boolean;
+  signal?: AbortSignal;
+}): Promise<T> {
+  const ai = new GoogleGenAI({ apiKey: options.apiKey });
+  const thinking = thinkingFor(options.model, options.fast);
+  const request = (thinkingConfig: ThinkingConfig | undefined) =>
+    ai.models.generateContent({
+      model: options.model,
+      contents: [{ role: "user", parts: [{ text: options.prompt }] }],
+      config: {
+        abortSignal: options.signal,
+        responseMimeType: "application/json",
+        responseJsonSchema: options.schema,
+        ...(thinkingConfig && { thinkingConfig }),
+      },
+    });
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    let response;
+    try {
+      response = await request(thinking);
+    } catch (error) {
+      if (!thinking || !(error instanceof ApiError) || error.status !== 400 || !/think/i.test(error.message)) throw error;
+      response = await request(undefined);
+    }
+    try {
+      return JSON.parse(response.text ?? "") as T;
+    } catch (error) {
+      lastError = error; // kaputtes JSON: nochmal fragen
+    }
+  }
+  throw new Error(`Die KI hat keine verwertbare Antwort geliefert (${String(lastError)}). Bitte nochmal versuchen.`);
+}
+
 // Prüft den Schlüssel und liefert die Modelle, die Text erzeugen können.
 export async function listGeminiModels(apiKey: string): Promise<string[]> {
   const ai = new GoogleGenAI({ apiKey });

@@ -2452,3 +2452,440 @@ path.selected {
     content: none !important;
   }
 }
+
+/* =========================================================
+   Englisch
+   ========================================================= */
+.english {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.english-inner {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 40px 32px 120px;
+}
+
+.english-inner > .browser-title {
+  display: block;
+  margin-bottom: 24px;
+}
+
+.english-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  line-height: 1.5;
+}
+
+.english-card.center {
+  align-items: center;
+  text-align: center;
+}
+
+.english-card h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.english-card h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.english-card p {
+  margin: 0;
+}
+
+.english-card .primary-button,
+.english-card .secondary-button {
+  align-self: flex-start;
+}
+
+.english-card.center .primary-button {
+  align-self: center;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.english-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.english-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.english-choice button,
+.english-option {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--main-bg);
+  font-size: 15px;
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.english-choice button.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.english-option:hover,
+.english-choice button:hover {
+  border-color: var(--accent);
+}
+
+.english-progress {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--hover);
+  overflow: hidden;
+}
+
+.english-progress span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s;
+}
+
+.english-question {
+  white-space: pre-wrap;
+}
+
+.english-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.english-test-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.english-writing {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--main-bg);
+  font: inherit;
+  color: var(--text);
+  resize: vertical;
+}
+
+.english-level-big {
+  align-self: flex-start;
+  padding: 6px 16px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.english-card.center .english-level-big {
+  align-self: center;
+}
+
+.english-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.english-columns ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+/* Lernplan */
+.english-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.english-unit {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.english-unit.locked {
+  opacity: 0.7;
+}
+
+.english-unit-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  background: none;
+  font-size: 15px;
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.english-unit-title {
+  flex: 1;
+  font-weight: 600;
+}
+
+.unit-done {
+  color: #16a34a;
+}
+
+.unit-active {
+  color: var(--accent);
+}
+
+.english-unit-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 16px 16px 44px;
+}
+
+.english-unit-body p {
+  margin: 0;
+}
+
+.english-words {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 4px 16px;
+}
+
+.english-word {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.english-word span {
+  color: var(--text-muted);
+}
+
+.english-unit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.speak-button {
+  padding: 3px;
+  color: var(--text-muted);
+}
+
+/* Vokabelkarte */
+.vocab-card {
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  border-radius: 14px;
+  background: var(--main-bg);
+  text-align: center;
+  cursor: pointer;
+}
+
+.vocab-front,
+.vocab-answer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.vocab-back {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.vocab-answer {
+  color: var(--accent);
+}
+
+.vocab-example {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.vocab-flip {
+  align-self: center !important;
+}
+
+.vocab-ratings {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.vocab-rating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--main-bg);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.vocab-rating small {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.vocab-rating.again {
+  border-color: #ef4444;
+}
+
+.vocab-rating.hard {
+  border-color: #f59e0b;
+}
+
+.vocab-rating.good {
+  border-color: #22c55e;
+}
+
+.vocab-rating.easy {
+  border-color: var(--accent);
+}
+
+/* Übersicht */
+.english-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.english-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.english-stat strong {
+  font-size: 26px;
+}
+
+.english-stat span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Vokabelliste */
+.english-add {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.5fr auto;
+  gap: 8px;
+}
+
+.english-add input,
+.english-search {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--main-bg);
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.english-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.english-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1.2fr 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.english-row-en {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-weight: 600;
+}
+
+.english-row-unit {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.english-status {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--hover);
+  font-size: 12px;
+}
+
+.english-status.sicher {
+  background: var(--ok-bg);
+  color: var(--ok-text);
+}
+
+@media (max-width: 700px) {
+  .english-add,
+  .english-columns,
+  .english-stats {
+    grid-template-columns: 1fr;
+  }
+}

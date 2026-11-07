@@ -37,9 +37,9 @@
       „Mit Claude öffnen“-Brücke fürs Pro-Abo.
 
 ### Lernen
-- [ ] **Englisch lernen** (wichtig, zeitnah!): eigener Bereich, z. B. Vokabeltrainer mit
-      Wiederholung nach Lernstand, Aussprache vorlesen lassen, Abfrage in beide Richtungen.
-      Baut auf den Karteikarten auf.
+- [x] **Englisch lernen**: Einstufungstest (KI) → Niveau + Lernplan mit 8 Einheiten und Vokabeln,
+      Vokabeltrainer mit Wiederholung nach Lernstand, beide Richtungen, Aussprache; eigene Vokabeln.
+      Offen: Grammatik-Übungen pro Einheit, Sprechen/Schreiben üben mit KI.
 - [ ] **Lern- und Abfragemodus (KI-gestützt)**: auf Basis der PDFs und Zusammenfassungen
       Fragen stellen lassen, Wissen abfragen, Erklärungen bekommen.
 - [ ] **Karteikarten**: eigene Karten anlegen (auch ohne KI möglich, mit Wiederholung nach

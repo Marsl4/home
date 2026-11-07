@@ -156,3 +156,61 @@ export async function deletePdfData(id: string): Promise<void> {
   await del(pdfFileKey(id));
   await del(pdfInkKey(id));
 }
+
+// ---------- Englisch ----------
+// Profil (Ziel, Niveau aus dem Einstufungstest) und Lernplan (Einheiten). Die Vokabeln liegen extra.
+export type EnglishLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
+
+export type EnglishUnit = {
+  id: string;
+  title: string; // z. B. "Unit 1: Past Simple & Reisen"
+  goal: string; // was man danach kann (Deutsch)
+  grammar: string; // Grammatik-Schwerpunkt
+  status: "locked" | "active" | "done";
+};
+
+export type EnglishState = {
+  goal: string; // wofür (Alltag, Studium/Beruf, Prüfung …)
+  minutesPerDay: number;
+  level: EnglishLevel | null;
+  assessedAt: number | null;
+  summary: string; // Auswertung des Tests in ein paar Sätzen
+  strengths: string[];
+  weaknesses: string[];
+  units: EnglishUnit[];
+  planCreatedAt: number | null;
+};
+
+// Eine Vokabelkarte mit Lernstand (Wiederholung nach Lernstand, ähnlich wie bei Anki).
+export type VocabCard = {
+  id: string;
+  unitId: string | null; // gehört zu dieser Einheit (null = selbst hinzugefügt)
+  en: string;
+  de: string;
+  example: string; // Beispielsatz auf Englisch
+  due: number | null; // wann wieder dran; null = noch gesperrt (Einheit nicht begonnen)
+  interval: number; // Abstand in Tagen
+  ease: number; // wie leicht die Karte fällt (Faktor)
+  reps: number; // wie oft hintereinander gewusst
+  lapses: number; // wie oft vergessen
+  createdAt: number;
+};
+
+const ENGLISH_KEY = "english";
+const VOCAB_KEY = "english-vocab";
+
+export async function loadEnglish(): Promise<EnglishState | null> {
+  return (await get<EnglishState>(ENGLISH_KEY)) ?? null;
+}
+
+export async function saveEnglish(state: EnglishState): Promise<void> {
+  await set(ENGLISH_KEY, state);
+}
+
+export async function loadVocab(): Promise<VocabCard[]> {
+  return (await get<VocabCard[]>(VOCAB_KEY)) ?? [];
+}
+
+export async function saveVocab(cards: VocabCard[]): Promise<void> {
+  await set(VOCAB_KEY, cards);
+}
