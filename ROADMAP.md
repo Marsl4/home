@@ -27,6 +27,13 @@
 - [ ] **KI-Integration**: Claude und andere KI-Assistenten direkt in der App nutzen
       (z. B. Zusammenfassungen, Fragen zu Notizen und PDFs, Lernkarten).
 
+### Lernen
+- [ ] **Lern- und Abfragemodus (KI-gestützt)**: auf Basis der PDFs und Zusammenfassungen
+      Fragen stellen lassen, Wissen abfragen, Erklärungen bekommen.
+- [ ] **Karteikarten**: eigene Karten anlegen (auch ohne KI möglich, mit Wiederholung nach
+      Lernstand) und Karten automatisch aus PDFs/Zusammenfassungen erzeugen lassen (mit KI).
+      Hinweis: KI-Dienste kosten meist pro Nutzung – vor dem Bau kostenlose Wege prüfen.
+
 ### Echte App (nicht im Browser) – ohne Kosten
 - Alternative mit Kosten (nur falls später gewünscht): native App-Hülle (Capacitor).
   Dauerhaft aufs iPad + iCloud-Sync braucht das Apple Developer Program (99 €/Jahr).
