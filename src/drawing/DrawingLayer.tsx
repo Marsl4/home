@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { savePageDrawing } from "../storage/db";
 import { DrawingToolbar } from "./DrawingToolbar";
 import { LassoOverlay } from "./LassoOverlay";
+import { boundsOfPolygon, captureRegion, copySnipToClipboard } from "./snip";
 import { PEN_COLORS, strokeToPath, type Stroke, type Tool } from "./strokes";
 import { usePenShortcuts, useStrokeInput } from "./useStrokeInput";
 
@@ -140,6 +141,11 @@ export function DrawingLayer({ pageId, initialStrokes, children }: Props) {
     onMoveDone: (next, movedIds) =>
       commit(next.map((s) => (movedIds.has(s.id) ? anchorStroke(s) : s))),
     onDeleteSelection: commit,
+    onSnip: (polygon) => {
+      const box = boundsOfPolygon(polygon);
+      const element = svgRef.current!.parentElement!; // die ganze Seite (Text + Zeichnungen)
+      copySnipToClipboard(captureRegion(element, { ...box, x: box.x + layout.columnLeft }));
+    },
   });
 
   // SVG-Formen nur neu berechnen, wenn sich die Striche ändern.

@@ -30,6 +30,8 @@ type Options = {
   // Lasso: ausgewählte Striche wurden verschoben (next = alle Striche, verschobene schon geändert)
   onMoveDone: (next: Stroke[], movedIds: Set<string>) => void;
   onDeleteSelection: (next: Stroke[]) => void; // ausgewählte Striche gelöscht
+  // Ausschnitt-Werkzeug: Bereich wurde eingekreist (Linie in eigenen Koordinaten)
+  onSnip: (polygon: [number, number][]) => void;
 };
 
 const NO_SELECTION = new Set<string>();
@@ -97,6 +99,11 @@ export function useStrokeInput(options: Options) {
     event.currentTarget.setPointerCapture(event.pointerId);
     const [x, y] = toPoint(event);
 
+    if (tool === "snip") {
+      setLasso([[x, y]]); // gleiche Linie wie beim Lasso, aber danach wird ein Bild kopiert
+      return;
+    }
+
     if (tool === "lasso") {
       if (selectionBox && isInside(selectionBox, x, y)) {
         setDrag({ start: [x, y], dx: 0, dy: 0 }); // Auswahl verschieben
@@ -154,6 +161,10 @@ export function useStrokeInput(options: Options) {
     }
     if (lasso) {
       setLasso(null);
+      if (tool === "snip") {
+        if (lasso.length > 2) options.onSnip(lasso);
+        return;
+      }
       if (lasso.length > 2) {
         const caught = strokes.filter((s) => strokeInLasso(s, offsetOf(s), lasso));
         setSelection(new Set(caught.map((s) => s.id)));

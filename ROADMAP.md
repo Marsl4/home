@@ -13,8 +13,8 @@
 ### Arbeiten & Zeichnen
 - [ ] **Split-Modus**: zwei Seiten oder Bereiche nebeneinander öffnen, ansehen und bearbeiten,
       auch zweimal denselben Bereich bzw. dieselbe Seite.
-- [ ] **Markier-Modus (Screenshot)**: mit dem Stift einen Kreis um einen Bereich ziehen,
-      diesen als Bild kopieren und woanders einfügen.
+- [x] **Markier-Modus (Screenshot)**: Werkzeug „Ausschnitt“ (Schere) – Bereich einkreisen,
+      wird als Bild kopiert, mit ⌘V einfügen.
 - [~] **Lasso im Zeichen-Modus** (Striche: erledigt; Text/Bilder frei verschieben: offen): Gezeichnetes, Geschriebenes und Eingefügtes auswählen
       und frei auf dem Blatt verschieben.
 

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { strokeToPath, type Stroke, type Tool } from "../../drawing/strokes";
 import { LassoOverlay } from "../../drawing/LassoOverlay";
+import { boundsOfPolygon, captureRegion, copySnipToClipboard } from "../../drawing/snip";
 import { useStrokeInput } from "../../drawing/useStrokeInput";
 import { RenderingCancelledException, type PDFDocumentProxy } from "./pdfjs";
 
@@ -84,6 +85,19 @@ export function PdfPage(props: Props) {
     onEraseDone: props.onEraseDone,
     onMoveDone: (next) => props.onCommit(next),
     onDeleteSelection: props.onCommit,
+    onSnip: (polygon) => {
+      // PDF-Einheiten -> Pixel der angezeigten Seite
+      const scale = displayWidth / width;
+      const box = boundsOfPolygon(polygon);
+      copySnipToClipboard(
+        captureRegion(wrapperRef.current!, {
+          x: box.x * scale,
+          y: box.y * scale,
+          width: box.width * scale,
+          height: box.height * scale,
+        }),
+      );
+    },
   });
 
   const paths = useMemo(() => new Map(strokes.map((s) => [s.id, strokeToPath(s)])), [strokes]);

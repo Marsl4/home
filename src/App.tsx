@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { PanelLeftClose } from "lucide-react";
 
 import { SectionRail } from "./components/SectionRail";
+import { ToastHost } from "./components/ToastHost";
 import { sections } from "./sections";
 import { usePersistentState } from "./storage/uiState";
 
@@ -67,6 +68,7 @@ export default function App() {
           <View key={section.id} {...sectionProps} />
         </main>
       </div>
+      <ToastHost />
     </SectionProviders>
   );
 }

@@ -1,5 +1,5 @@
 // Werkzeugleiste oben rechts: Stift-Modus an/aus, Werkzeug, Farbe, Rückgängig.
-import { Eraser, Highlighter, Lasso, Pencil, Undo2, type LucideIcon } from "lucide-react";
+import { Eraser, Highlighter, Lasso, Pencil, Scissors, Undo2, type LucideIcon } from "lucide-react";
 
 import { HIGHLIGHTER_COLORS, PEN_COLORS, type Tool } from "./strokes";
 
@@ -19,6 +19,7 @@ const TOOLS: { tool: Tool; label: string; icon: LucideIcon }[] = [
   { tool: "highlighter", label: "Textmarker", icon: Highlighter },
   { tool: "eraser", label: "Radierer", icon: Eraser },
   { tool: "lasso", label: "Lasso: einkreisen, dann verschieben (⌫ löscht)", icon: Lasso },
+  { tool: "snip", label: "Ausschnitt: Bereich einkreisen → als Bild kopieren", icon: Scissors },
 ];
 
 export function DrawingToolbar(props: Props) {
