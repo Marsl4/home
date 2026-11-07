@@ -1,5 +1,5 @@
 // Zeigt ein PDF: Kopfzeile (Name, Favorit), alle Seiten untereinander, Stift-Werkzeuge.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Star } from "lucide-react";
 
 import { ScrollIndicator } from "../../components/ScrollIndicator";
@@ -22,7 +22,8 @@ type Loaded = {
   sizes: [number, number][]; // Größe jeder Seite in PDF-Einheiten
 };
 
-export function PdfViewer({ pdf }: { pdf: PdfDoc }) {
+// breadcrumb: optional ein Pfad vor dem Namen (im Uni-Bereich: „Uni › 7. Semester ›“)
+export function PdfViewer({ pdf, breadcrumb }: { pdf: PdfDoc; breadcrumb?: ReactNode }) {
   const { updatePdf } = usePdfs();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -118,6 +119,12 @@ export function PdfViewer({ pdf }: { pdf: PdfDoc }) {
   return (
     <div className="pdf-viewer">
       <header className="pdf-header">
+        {breadcrumb && (
+          <span className="pdf-breadcrumb">
+            {breadcrumb}
+            <span className="breadcrumb-separator">›</span>
+          </span>
+        )}
         <input
           className="pdf-name-input"
           value={pdf.name}

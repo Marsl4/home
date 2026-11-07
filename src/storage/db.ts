@@ -11,6 +11,7 @@ export type Page = {
   id: string;
   title: string;
   subjectId?: string | null; // gehört zu einem Uni-Fach (oder null = allgemeine Notiz)
+  createdAt?: number; // fehlt bei älteren Seiten
 };
 
 // Ein Ordner im Uni-Bereich, z. B. "Semester 7" oder darin "Steuern" (früher hieß das "Fach").
@@ -20,6 +21,7 @@ export type Subject = {
   id: string;
   name: string;
   parentId?: string | null;
+  createdAt?: number; // fehlt bei älteren Ordnern
 };
 
 const PAGES_KEY = "pages";

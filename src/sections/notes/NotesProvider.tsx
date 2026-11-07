@@ -43,7 +43,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     });
 
   const createPage = (subjectId: string | null = null) => {
-    const page: Page = { id: crypto.randomUUID(), title: "", subjectId };
+    const page: Page = { id: crypto.randomUUID(), title: "", subjectId, createdAt: Date.now() };
     updatePages((current) => [...current, page]);
     return page;
   };
@@ -64,7 +64,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   };
 
   const createSubject = (parentId: string | null = null) => {
-    const subject: Subject = { id: crypto.randomUUID(), name: "", parentId };
+    const subject: Subject = { id: crypto.randomUUID(), name: "", parentId, createdAt: Date.now() };
     updateSubjects((current) => [...current, subject]);
     return subject;
   };
