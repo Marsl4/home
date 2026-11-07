@@ -49,6 +49,8 @@ export default function App() {
   useEffect(() => {
     preloadGoogle();
     initSync();
+    // Den Browser bitten, die gespeicherten Daten nie von selbst zu löschen (z. B. bei wenig Speicherplatz).
+    navigator.storage?.persist?.().catch(() => {});
   }, []);
 
   const isSplit = panes.length > 1;

@@ -38,19 +38,26 @@ export function PdfPage(props: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [nearViewport, setNearViewport] = useState(false);
 
-  // Erst rendern, wenn die Seite fast sichtbar ist.
+  // Nur Seiten in der Nähe des sichtbaren Bereichs werden gezeichnet. Weit entfernte Seiten geben ihr
+  // Bild wieder frei – so bleibt der Arbeitsspeicher auch bei sehr langen PDFs klein.
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => entry.isIntersecting && setNearViewport(true),
-      { rootMargin: "1200px 0px" },
-    );
+    const observer = new IntersectionObserver(([entry]) => setNearViewport(entry.isIntersecting), {
+      root: wrapperRef.current!.closest(".pdf-scroll"), // der scrollende Bereich (sonst wirkt der Rand nicht)
+      rootMargin: "1500px 0px",
+    });
     observer.observe(wrapperRef.current!);
     return () => observer.disconnect();
   }, []);
 
   // PDF-Seite ins Canvas zeichnen (scharf auch auf Retina-Bildschirmen).
   useEffect(() => {
-    if (!nearViewport || displayWidth <= 0) return;
+    if (!nearViewport) {
+      // weit weg: Bild freigeben (Breite 0 = Speicher sofort zurück, wichtig auf dem iPad)
+      const canvas = canvasRef.current;
+      if (canvas) canvas.width = canvas.height = 0;
+      return;
+    }
+    if (displayWidth <= 0) return;
     let task: ReturnType<Awaited<ReturnType<PDFDocumentProxy["getPage"]>>["render"]> | null = null;
     let cancelled = false;
 

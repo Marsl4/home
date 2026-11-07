@@ -1,5 +1,5 @@
 // Einstellungen: "Daten & Backup", "Darstellung", "KI" und "Konto" (kommt später).
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Cloud, Download, HardDriveDownload } from "lucide-react";
 
 import { AiSettings } from "../../ai/AiSettings";
@@ -70,6 +70,8 @@ function BackupSettings() {
         <Stat label="PDFs" value={pdfs.length} />
       </div>
 
+      <StorageInfo />
+
       <section className="settings-card">
         <div>
           <h2>Sicherung erstellen</h2>
@@ -116,5 +118,24 @@ function Stat({ label, value }: { label: string; value: number }) {
       <span className="settings-stat-value">{value}</span>
       <span className="settings-stat-label">{label}</span>
     </div>
+  );
+}
+
+// Wie viel Platz die App auf dem Gerät belegt und ob die Daten vor automatischem Löschen geschützt sind.
+function StorageInfo() {
+  const [info, setInfo] = useState<{ usedMb: number; persisted: boolean } | null>(null);
+  useEffect(() => {
+    (async () => {
+      const estimate = await navigator.storage?.estimate?.();
+      const persisted = (await navigator.storage?.persisted?.()) ?? false;
+      if (estimate) setInfo({ usedMb: (estimate.usage ?? 0) / 1024 / 1024, persisted });
+    })().catch(() => {});
+  }, []);
+  if (!info) return null;
+  return (
+    <p className="settings-hint storage-info">
+      Belegt auf diesem Gerät: <strong>{info.usedMb < 1 ? "< 1" : Math.round(info.usedMb)} MB</strong>
+      {info.persisted ? " · vor automatischem Löschen geschützt" : ""}
+    </p>
   );
 }
