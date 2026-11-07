@@ -13,7 +13,8 @@ export function LassoOverlay({ lasso, box, onDelete, scale = 1 }: Props) {
   return (
     <>
       {lasso && lasso.length > 1 && (
-        <polygon className="lasso-line" points={lasso.map(([x, y]) => `${x},${y}`).join(" ")} />
+        // Offene Linie: sie wird erst beim Loslassen geschlossen (oder wenn man selbst zum Anfang zurückfährt).
+        <polyline className="lasso-line" points={lasso.map(([x, y]) => `${x},${y}`).join(" ")} />
       )}
       {box && (
         <rect

@@ -327,7 +327,7 @@ button {
 
 /* ---------- Lasso ---------- */
 .lasso-line {
-  fill: rgba(79, 70, 229, 0.06);
+  fill: none;
   stroke: var(--accent);
   stroke-width: 1.5;
   stroke-dasharray: 5 4;

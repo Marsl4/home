@@ -58,10 +58,10 @@ export function pointInPolygon(x: number, y: number, polygon: [number, number][]
   return inside;
 }
 
-// Ein Strich gilt als eingefangen, wenn mindestens die Hälfte seiner Punkte im Lasso liegt.
+// Ein Strich gilt als eingefangen, sobald irgendein Teil von ihm im Lasso liegt.
+// (Das Lasso wird dafür gedanklich vom letzten zum ersten Punkt geschlossen.)
 export function strokeInLasso(stroke: Stroke, dy: number, lasso: [number, number][]): boolean {
-  const inside = stroke.points.filter(([x, y]) => pointInPolygon(x, y + dy, lasso)).length;
-  return inside >= stroke.points.length / 2;
+  return stroke.points.some(([x, y]) => pointInPolygon(x, y + dy, lasso));
 }
 
 // Rechteck um mehrere Striche (mit etwas Rand für die Strichdicke).
