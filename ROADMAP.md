@@ -28,6 +28,9 @@
       (z. B. Zusammenfassungen, Fragen zu Notizen und PDFs, Lernkarten).
 
 ### Lernen
+- [ ] **Englisch lernen** (wichtig, zeitnah!): eigener Bereich, z. B. Vokabeltrainer mit
+      Wiederholung nach Lernstand, Aussprache vorlesen lassen, Abfrage in beide Richtungen.
+      Baut auf den Karteikarten auf.
 - [ ] **Lern- und Abfragemodus (KI-gestützt)**: auf Basis der PDFs und Zusammenfassungen
       Fragen stellen lassen, Wissen abfragen, Erklärungen bekommen.
 - [ ] **Karteikarten**: eigene Karten anlegen (auch ohne KI möglich, mit Wiederholung nach
