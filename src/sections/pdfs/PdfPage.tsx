@@ -4,9 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { strokeToPath, type Stroke, type Tool } from "../../drawing/strokes";
 import { LassoOverlay } from "../../drawing/LassoOverlay";
-import { boundsOfPolygon, captureRegion, copySnipToClipboard } from "../../drawing/snip";
+import { boundsOfPolygon, capturePdfRegion, copySnipToClipboard } from "../../drawing/snip";
 import { useStrokeInput } from "../../drawing/useStrokeInput";
 import { RenderingCancelledException, type PDFDocumentProxy } from "./pdfjs";
+
+// Auflösung für Ausschnitte: 4 Bildpunkte pro PDF-Einheit (≈ 290 dpi, sehr scharf).
+const SNIP_SCALE = 4;
 
 type Props = {
   doc: PDFDocumentProxy;
@@ -85,20 +88,26 @@ export function PdfPage(props: Props) {
     onEraseDone: props.onEraseDone,
     onMoveDone: (next) => props.onCommit(next),
     onDeleteSelection: props.onCommit,
-    onSnip: (polygon) => {
-      // PDF-Einheiten -> Pixel der angezeigten Seite
-      const scale = displayWidth / width;
-      const box = boundsOfPolygon(polygon);
+    // Ausschnitt direkt aus dem PDF-Bild + den Strichen (alles in PDF-Einheiten).
+    // Die Seite wird dafür extra in hoher Auflösung gezeichnet, damit auch kleine Schrift scharf ist.
+    onSnip: (polygon) =>
       copySnipToClipboard(
-        captureRegion(wrapperRef.current!, {
-          x: box.x * scale,
-          y: box.y * scale,
-          width: box.width * scale,
-          height: box.height * scale,
-        }),
-      );
-    },
+        renderHighRes().then((canvas) =>
+          capturePdfRegion(canvas, width, strokes, boundsOfPolygon(polygon)),
+        ),
+      ),
   });
+
+  // Ganze Seite in hoher Auflösung (für Ausschnitte) zeichnen.
+  async function renderHighRes(): Promise<HTMLCanvasElement> {
+    const page = await doc.getPage(index + 1);
+    const viewport = page.getViewport({ scale: SNIP_SCALE });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.floor(viewport.width);
+    canvas.height = Math.floor(viewport.height);
+    await page.render({ canvas, viewport }).promise;
+    return canvas;
+  }
 
   const paths = useMemo(() => new Map(strokes.map((s) => [s.id, strokeToPath(s)])), [strokes]);
 
