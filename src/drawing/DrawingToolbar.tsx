@@ -1,7 +1,7 @@
 // Werkzeugleiste oben rechts: Stift-Modus an/aus, Werkzeug, Farbe, Rückgängig.
 import { Eraser, Highlighter, Lasso, Pencil, Scissors, Undo2, type LucideIcon } from "lucide-react";
 
-import { HIGHLIGHTER_COLORS, PEN_COLORS, type Tool } from "./strokes";
+import { ERASER_SIZES, HIGHLIGHTER_COLORS, HIGHLIGHTER_SIZES, PEN_COLORS, PEN_SIZES, type Tool } from "./strokes";
 import type { SizeLevel, ToolSettings } from "./toolSettings";
 
 type Props = {
@@ -97,7 +97,7 @@ export function DrawingToolbar(props: Props) {
             onClick={() => props.onSettingsChange({ [sizeKey]: level })}
             title={`${tool === "eraser" ? "Radierer" : "Strich"}: ${SIZE_LABELS[level]}`}
           >
-            <span className="size-dot" style={{ width: 4 + level * 4, height: 4 + level * 4 }} />
+            <SizePreview tool={tool} level={level} color={color} />
           </button>
         ))}
 
@@ -129,5 +129,30 @@ export function DrawingToolbar(props: Props) {
         Fertig
       </button>
     </div>
+  );
+}
+
+// Vorschau einer Dicke: kurzer Strich in der echten Farbe und Dicke (Radierer: Kreis in seiner Größe).
+function SizePreview({ tool, level, color }: { tool: Tool; level: SizeLevel; color: string }) {
+  if (tool === "eraser") {
+    const r = 3 + (ERASER_SIZES[level] / ERASER_SIZES[2]) * 7;
+    return (
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden>
+        <circle cx="12" cy="12" r={r} className="size-preview-eraser" />
+      </svg>
+    );
+  }
+  const width = tool === "highlighter" ? HIGHLIGHTER_SIZES[level] / 2.5 : PEN_SIZES[level];
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden>
+      <path
+        d="M4 15 C 9 6, 14 18, 20 9"
+        fill="none"
+        stroke={color}
+        strokeWidth={width}
+        strokeLinecap={tool === "highlighter" ? "butt" : "round"}
+        strokeOpacity={tool === "highlighter" ? 0.8 : 1}
+      />
+    </svg>
   );
 }

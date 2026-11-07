@@ -85,6 +85,21 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
     return () => observer.disconnect();
   }, [scrollRef]);
   const zoomed = zoom !== 1;
+
+  // ---------- Unendliches Blatt ----------
+  // Unter dem Text bzw. der tiefsten Zeichnung ist immer mindestens eine Bildschirmhöhe Platz.
+  // Scrollt man ans Ende, wächst das Blatt um eine weitere Bildschirmhöhe.
+  const [extraHeight, setExtraHeight] = useState(0);
+  useEffect(() => {
+    const scroller = scrollRef.current;
+    if (!scroller) return;
+    const onScroll = () => {
+      const remaining = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+      if (remaining < scroller.clientHeight / 2) setExtraHeight((h) => h + scroller.clientHeight / zoomRef.current);
+    };
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    return () => scroller.removeEventListener("scroll", onScroll);
+  }, [scrollRef]);
   const [strokes, setStrokes] = useState(initialStrokes);
   const [images, setImages] = useState(initialImages);
   const [layout, setLayout] = useState<Layout>({ columnLeft: 0, blockTops: {} });
@@ -277,6 +292,13 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
     },
   });
 
+  // Wie weit reichen Zeichnungen und Bilder nach unten? (Damit sie nach dem Neuladen erreichbar bleiben.)
+  const drawingBottom = Math.max(
+    0,
+    ...strokes.map((s) => Math.max(...s.points.map((p) => p[1])) + offsetOf(s)),
+    ...images.map((img) => img.y + img.height + offsetOf(img)),
+  );
+
   // SVG-Formen nur neu berechnen, wenn sich die Striche ändern.
   const paths = useMemo(() => new Map(strokes.map((s) => [s.id, strokeToPath(s)])), [strokes]);
 
@@ -327,7 +349,9 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
         className="page-content"
         ref={contentRef}
         style={{
-          minHeight: viewport.height || undefined,
+          // unter dem Text immer mindestens eine Bildschirmhöhe Platz, unter Zeichnungen auch
+          paddingBottom: viewport.height + extraHeight || undefined,
+          minHeight: drawingBottom + viewport.height + extraHeight || undefined,
           ...(zoomed && { width: viewport.width, transform: `scale(${zoom})`, transformOrigin: "0 0" }),
         }}
       >
