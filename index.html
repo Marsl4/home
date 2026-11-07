@@ -18,10 +18,27 @@
         const dark = choice === "dark" || (choice === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
         document.documentElement.dataset.theme = dark ? "dark" : "light";
       } catch {}
+
+      // Falls die App beim Start abstürzt: Fehler anzeigen statt leerer Seite.
+      // (Bleibt die Seite leer, fehlt sonst jeder Hinweis, was los ist.)
+      function showStartError(message) {
+        if (!document.getElementById("boot-loading")) return; // App läuft schon
+        const box = document.getElementById("start-error") || document.body.appendChild(document.createElement("pre"));
+        box.id = "start-error";
+        box.style.cssText = "margin:24px;padding:16px;white-space:pre-wrap;font:13px -apple-system,sans-serif;background:#fef2f2;color:#b91c1c;border-radius:8px";
+        box.textContent += "Die App konnte nicht starten:\n" + message + "\n\n";
+      }
+      window.addEventListener("error", (e) => showStartError(e.message || String(e.error)));
+      window.addEventListener("unhandledrejection", (e) => showStartError(String(e.reason?.stack || e.reason)));
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Wird angezeigt, bis die App geladen ist (beim ersten Öffnen kann das etwas dauern). -->
+      <div id="boot-loading" style="height:100vh;display:flex;align-items:center;justify-content:center;font:15px -apple-system,sans-serif;color:#8d8c88">
+        Home wird geladen …
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
