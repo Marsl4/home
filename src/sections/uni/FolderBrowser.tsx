@@ -1,5 +1,6 @@
-// Dokumenten-Übersicht im Uni-Bereich (wie in Goodnotes): große Kacheln für Ordner, Notizen und PDFs.
+// Dokumenten-Übersicht (wie in Goodnotes): große Kacheln für Ordner, Notizen und PDFs.
 // Oberste Ebene = alle obersten Ordner. Ordner antippen = hineingehen. Notiz/PDF antippen = öffnen.
+// Wird im Uni-Bereich (alles) und im PDF-Bereich (nur Ordner + PDFs) benutzt.
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { FolderPlus, MoreHorizontal, NotebookPen, Plus, Upload } from "lucide-react";
 
@@ -8,11 +9,19 @@ import { useNotes } from "../notes/NotesContext";
 import { usePdfs } from "../pdfs/PdfsContext";
 import { childFolders, folderPath } from "./folders";
 import { useMoveDialog } from "./MoveDialog";
-import { pageSelection, pdfSelection, subjectSelection } from "./selection";
+
+// Wohin ein Klick führt – je nach Bereich unterschiedlich.
+export type BrowserNavigation = {
+  root: () => void;
+  folder: (id: string) => void;
+  page: (id: string) => void;
+  pdf: (id: string) => void;
+};
 
 type Props = {
+  mode: "uni" | "pdfs";
   folder: Subject | null; // null = oberste Ebene
-  onSelect: (id: string | null) => void;
+  nav: BrowserNavigation;
 };
 
 const formatDate = (ms?: number | null) =>
@@ -20,7 +29,7 @@ const formatDate = (ms?: number | null) =>
     ? new Date(ms).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
     : "";
 
-export function FolderBrowser({ folder, onSelect }: Props) {
+export function FolderBrowser({ mode, folder, nav }: Props) {
   const { subjects, pages, createPage, createSubject, renameSubject, renamePage, deleteSubject, deletePage } = useNotes();
   const { pdfs, importFiles, updatePdf, deletePdf } = usePdfs();
   const [openMove, moveDialog] = useMoveDialog();
@@ -28,12 +37,18 @@ export function FolderBrowser({ folder, onSelect }: Props) {
   const folderId = folder?.id ?? null;
 
   const subfolders = childFolders(subjects, folderId);
-  const folderPages = folder ? pages.filter((p) => p.subjectId === folder.id) : [];
-  const folderPdfs = folder ? pdfs.filter((p) => p.folderId === folder.id) : [];
+  const folderPages = folder && mode === "uni" ? pages.filter((p) => p.subjectId === folder.id) : [];
+  // PDF-Bereich, oberste Ebene: auch PDFs ohne (vorhandenen) Ordner.
+  const folderPdfs = folder
+    ? pdfs.filter((p) => p.folderId === folder.id)
+    : mode === "pdfs"
+      ? pdfs.filter((p) => !p.folderId || !subjects.some((f) => f.id === p.folderId))
+      : [];
+  const rootLabel = mode === "uni" ? "Uni" : "PDFs";
 
   const openPdf = (id: string) => {
     updatePdf(id, { lastOpenedAt: Date.now() });
-    onSelect(pdfSelection(id));
+    nav.pdf(id);
   };
 
   const newFolder = () => {
@@ -47,7 +62,9 @@ export function FolderBrowser({ folder, onSelect }: Props) {
     if (!window.confirm(`Ordner "${target.name || "Ohne Namen"}" mit allem darin wirklich löschen?`)) return;
     const removed = deleteSubject(target.id);
     pdfs.filter((p) => p.folderId && removed.has(p.folderId)).forEach((p) => deletePdf(p.id));
-    if (target.id === folderId) onSelect(target.parentId ? subjectSelection(target.parentId) : null);
+    if (target.id !== folderId) return;
+    if (target.parentId) nav.folder(target.parentId);
+    else nav.root();
   };
 
   const path = folder ? folderPath(subjects, folder.id) : [];
@@ -59,13 +76,13 @@ export function FolderBrowser({ folder, onSelect }: Props) {
         {/* Pfad: Uni › 7. Semester › Steuern */}
         {folder && (
           <div className="browser-path">
-            <button className="breadcrumb-link" onClick={() => onSelect(null)}>
-              Uni
+            <button className="breadcrumb-link" onClick={nav.root}>
+              {rootLabel}
             </button>
             {path.slice(0, -1).map((f) => (
               <Fragment key={f.id}>
                 <span className="breadcrumb-separator">›</span>
-                <button className="breadcrumb-link" onClick={() => onSelect(subjectSelection(f.id))}>
+                <button className="breadcrumb-link" onClick={() => nav.folder(f.id)}>
                   {f.name || "Ohne Namen"}
                 </button>
               </Fragment>
@@ -83,7 +100,7 @@ export function FolderBrowser({ folder, onSelect }: Props) {
               onChange={(e) => renameSubject(folder.id, e.target.value)}
             />
           ) : (
-            <h1 className="browser-title">Uni</h1>
+            <h1 className="browser-title">{rootLabel}</h1>
           )}
           <div className="browser-actions">
             <Menu
@@ -94,11 +111,12 @@ export function FolderBrowser({ folder, onSelect }: Props) {
               }
               items={[
                 { label: "Ordner", icon: <FolderPlus size={15} />, onClick: newFolder },
-                ...(folder
-                  ? [
-                      { label: "Notiz", icon: <NotebookPen size={15} />, onClick: () => onSelect(pageSelection(createPage(folder.id).id)) },
-                      { label: "PDF importieren", icon: <Upload size={15} />, onClick: () => fileInput.current?.click() },
-                    ]
+                ...(folder && mode === "uni"
+                  ? [{ label: "Notiz", icon: <NotebookPen size={15} />, onClick: () => nav.page(createPage(folder.id).id) }]
+                  : []),
+                // Im Uni-Bereich gehören PDFs in einen Ordner; im PDF-Bereich geht es auch ganz oben.
+                ...(folder || mode === "pdfs"
+                  ? [{ label: "PDF importieren", icon: <Upload size={15} />, onClick: () => fileInput.current?.click() }]
                   : []),
               ]}
             />
@@ -134,7 +152,11 @@ export function FolderBrowser({ folder, onSelect }: Props) {
 
         {empty && (
           <p className="browser-empty">
-            {folder ? "Dieser Ordner ist noch leer – über „Neu“ kannst du Ordner, Notizen und PDFs hinzufügen." : "Noch keine Ordner. Lege über „Neu“ z. B. „7. Semester“ an."}
+            {folder
+              ? `Dieser Ordner ist noch leer – über „Neu“ kannst du ${mode === "uni" ? "Ordner, Notizen und PDFs" : "Ordner und PDFs"} hinzufügen.`
+              : mode === "uni"
+                ? "Noch keine Ordner. Lege über „Neu“ z. B. „7. Semester“ an."
+                : "Noch keine PDFs. Über „Neu“ kannst du PDFs importieren oder Ordner anlegen – oder ein PDF hierher ziehen."}
           </p>
         )}
 
@@ -145,7 +167,7 @@ export function FolderBrowser({ folder, onSelect }: Props) {
               kind="folder"
               name={sub.name || "Ohne Namen"}
               date={formatDate(sub.createdAt)}
-              onOpen={() => onSelect(subjectSelection(sub.id))}
+              onOpen={() => nav.folder(sub.id)}
               menu={[
                 { label: "Verschieben …", onClick: () => openMove({ kind: "folder", id: sub.id, name: sub.name, parentId: sub.parentId ?? null }) },
                 { label: "Löschen", danger: true, onClick: () => removeFolder(sub) },
@@ -158,7 +180,7 @@ export function FolderBrowser({ folder, onSelect }: Props) {
               kind="note"
               name={page.title || "Ohne Titel"}
               date={formatDate(page.createdAt)}
-              onOpen={() => onSelect(pageSelection(page.id))}
+              onOpen={() => nav.page(page.id)}
               menu={[
                 {
                   label: "Umbenennen …",

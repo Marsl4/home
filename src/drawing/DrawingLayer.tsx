@@ -3,7 +3,7 @@
 // - Stift-Modus an: Maus/Trackpad/Stift malen auf der Seite.
 // Jeder Strich merkt sich den Textblock darüber und wandert mit, wenn sich der Text verschiebt.
 // Außerdem liegen hier die frei platzierbaren Bilder (eingefügt mit ⌘V), die genauso mitwandern.
-import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { flushSync } from "react-dom";
 
 import { usePaneFocused } from "../components/PaneContext";
@@ -69,8 +69,10 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
   // Das Blatt wird per "transform: scale" vergrößert, ohne dass sich der Zeilenumbruch ändert.
   // Alle Positionen (Striche, Bilder) bleiben in ungezoomten Einheiten gespeichert.
   const [zoom, setZoom] = useState(1);
-  const zoomRef = useRef(zoom);
-  zoomRef.current = zoom;
+  const zoomRef = useRef(zoom); // aktueller Zoom für Ereignis-Funktionen
+  useLayoutEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
   const [viewport, setViewport] = useState({ width: 0, height: 0 }); // sichtbarer Bereich, ungezoomt
   const [contentHeight, setContentHeight] = useState(0);
   usePinchZoom({ scrollRef, contentRef: sizerRef, zoom, setZoom, min: 1, max: 6 });

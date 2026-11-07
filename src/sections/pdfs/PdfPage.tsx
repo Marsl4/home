@@ -79,7 +79,7 @@ export function PdfPage(props: Props) {
       cancelled = true;
       task?.cancel();
     };
-  }, [doc, index, width, displayWidth, nearViewport]);
+  }, [doc, index, width, height, displayWidth, nearViewport]);
 
   // Zeichnen: Koordinaten in PDF-Einheiten, damit Striche beim Zoomen mitskalieren.
   const { draft, draftPathRef, eraser, handlers, lasso, selection, selectionBox, deleteSelection, dragOffset } =

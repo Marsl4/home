@@ -61,10 +61,10 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
   const [busy, setBusy] = useState(false);
   // Während auf die erste Antwort gewartet wird: was passiert gerade, seit wann?
   const [waiting, setWaiting] = useState<{ text: string; since: number } | null>(null);
-  const [, setTick] = useState(0);
+  const [waitedSeconds, setWaitedSeconds] = useState(0);
   useEffect(() => {
     if (!waiting) return;
-    const timer = window.setInterval(() => setTick((t) => t + 1), 1000);
+    const timer = window.setInterval(() => setWaitedSeconds(Math.floor((Date.now() - waiting.since) / 1000)), 1000);
     return () => clearInterval(timer);
   }, [waiting]);
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +116,7 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
     let step = "Notiz/PDF vorbereiten"; // für die Fehlermeldung: wobei ist es schiefgegangen?
     const since = Date.now();
     const what = attached?.kind === "pdf" && range ? (range.from === range.to ? "1 Seite" : `${range.to - range.from + 1} Seiten`) : "die Notiz";
+    setWaitedSeconds(0);
     setWaiting({ text: attached ? `bereitet ${what} vor` : "denkt nach", since });
     try {
       const attachment = attached ? await loadAttachment(attached, range) : null;
@@ -255,7 +256,7 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
                   </>
                 ) : (
                   <span className="ai-typing">
-                    {waiting ? `${waiting.text} … ${Math.floor((Date.now() - waiting.since) / 1000)} s` : "denkt nach …"}
+                    {waiting ? `${waiting.text} … ${waitedSeconds} s` : "denkt nach …"}
                   </span>
                 )}
               </div>

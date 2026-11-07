@@ -38,3 +38,6 @@ export function filterPdfs(pdfs: PdfDoc[], filter: PdfFilter): PdfDoc[] {
       return pdfs.filter((p) => p.favorite).sort((a, b) => a.name.localeCompare(b.name, "de"));
   }
 }
+
+// Im PDF-Bereich steht die Auswahl eines Ordners als "folder:<id>" (sonst ist es die ID eines PDFs).
+export const pdfFolderSelection = (id: string) => `folder:${id}`;

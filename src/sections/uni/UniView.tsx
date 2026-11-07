@@ -9,7 +9,7 @@ import { PlaceholderView } from "../placeholder/PlaceholderView";
 import type { SectionProps } from "../types";
 import { FolderBrowser } from "./FolderBrowser";
 import { folderPath } from "./folders";
-import { parseSelection, subjectSelection } from "./selection";
+import { pageSelection, parseSelection, pdfSelection, subjectSelection } from "./selection";
 
 export function UniView(props: SectionProps) {
   const { selectedId, onSelect } = props;
@@ -51,5 +51,17 @@ export function UniView(props: SectionProps) {
 
   // Ordner-Übersicht: ausgewählter Ordner oder (nichts gewählt) die oberste Ebene mit allen Ordnern.
   const folder = selection.kind === "subject" ? (subjects.find((s) => s.id === selection.id) ?? null) : null;
-  return <FolderBrowser key={folder?.id ?? "root"} folder={folder} onSelect={onSelect} />;
+  return (
+    <FolderBrowser
+      key={folder?.id ?? "root"}
+      mode="uni"
+      folder={folder}
+      nav={{
+        root: () => onSelect(null),
+        folder: (id) => onSelect(subjectSelection(id)),
+        page: (id) => onSelect(pageSelection(id)),
+        pdf: (id) => onSelect(pdfSelection(id)),
+      }}
+    />
+  );
 }

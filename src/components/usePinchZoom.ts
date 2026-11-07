@@ -37,7 +37,9 @@ export function usePinchZoom({ scrollRef, contentRef, zoom, setZoom, min, max }:
   const wheelTimer = useRef(0);
   // Aktuelle Werte für die Ereignis-Funktionen (die nur einmal angemeldet werden).
   const latest = useRef({ zoom, setZoom, min, max });
-  latest.current = { zoom, setZoom, min, max };
+  useLayoutEffect(() => {
+    latest.current = { zoom, setZoom, min, max };
+  });
 
   // Nach dem Übernehmen des neuen Zooms: Vorschau entfernen und Scroll-Position setzen –
   // im selben Bild, damit nichts springt.

@@ -1,23 +1,45 @@
-// Hauptansicht im PDF-Bereich: geöffnetes PDF oder Startseite zum Importieren.
-// PDFs können auch einfach per Drag & Drop hierher gezogen werden.
-import { useState } from "react";
-import { FileText, Upload } from "lucide-react";
+// Hauptansicht im PDF-Bereich: Dokumenten-Übersicht (Ordner + PDFs als Kacheln) oder ein geöffnetes PDF.
+// Auswahl: null = oberste Ebene, "folder:<id>" = Ordner, sonst die ID eines PDFs.
+// PDFs können auch einfach per Drag & Drop hierher gezogen werden (landen im gerade offenen Ordner).
+import { Fragment, useState } from "react";
 
+import { useNotes } from "../notes/NotesContext";
 import type { SectionProps } from "../types";
-import { ImportPdfButton } from "./ImportPdfButton";
-import { usePdfs } from "./PdfsContext";
+import { FolderBrowser } from "../uni/FolderBrowser";
+import { folderPath } from "../uni/folders";
+import { pdfFolderSelection, usePdfs } from "./PdfsContext";
 import { PdfViewer } from "./PdfViewer";
 
 export function PdfsView({ selectedId, onSelect }: SectionProps) {
   const { pdfs, importFiles, updatePdf } = usePdfs();
-  const pdf = pdfs.find((p) => p.id === selectedId);
+  const { subjects } = useNotes();
   const [dragging, setDragging] = useState(false);
 
-  const openFirst = (added: { id: string }[]) => {
-    if (!added[0]) return;
-    updatePdf(added[0].id, { lastOpenedAt: Date.now() });
-    onSelect(added[0].id);
+  const folderId = selectedId?.startsWith("folder:") ? selectedId.slice(7) : null;
+  const folder = folderId ? (subjects.find((s) => s.id === folderId) ?? null) : null;
+  const pdf = folderId ? undefined : pdfs.find((p) => p.id === selectedId);
+
+  const openPdf = (id: string) => {
+    updatePdf(id, { lastOpenedAt: Date.now() });
+    onSelect(id);
   };
+
+  // Pfad über dem PDF: "PDFs › 7. Semester › Steuern"
+  const breadcrumb = pdf && (
+    <>
+      <button className="breadcrumb-link" onClick={() => onSelect(null)}>
+        PDFs
+      </button>
+      {folderPath(subjects, pdf.folderId).map((f) => (
+        <Fragment key={f.id}>
+          <span className="breadcrumb-separator">›</span>
+          <button className="breadcrumb-link" onClick={() => onSelect(pdfFolderSelection(f.id))}>
+            {f.name || "Ohne Namen"}
+          </button>
+        </Fragment>
+      ))}
+    </>
+  );
 
   return (
     <div
@@ -30,22 +52,24 @@ export function PdfsView({ selectedId, onSelect }: SectionProps) {
       onDrop={async (e) => {
         e.preventDefault();
         setDragging(false);
-        openFirst(await importFiles(Array.from(e.dataTransfer.files)));
+        const added = await importFiles(Array.from(e.dataTransfer.files), pdf ? (pdf.folderId ?? null) : folder?.id ?? null);
+        if (added[0]) openPdf(added[0].id);
       }}
     >
       {pdf ? (
-        <PdfViewer key={pdf.id} pdf={pdf} />
+        <PdfViewer key={pdf.id} pdf={pdf} breadcrumb={breadcrumb} />
       ) : (
-        <div className="placeholder-view">
-          <div className="placeholder-icon">
-            <FileText size={32} strokeWidth={1.5} />
-          </div>
-          <h1>{pdfs.length ? "Wähle ein PDF aus" : "Noch keine PDFs"}</h1>
-          <p>PDF hierher ziehen oder importieren – danach kannst du darauf schreiben.</p>
-          <ImportPdfButton className="primary-button" onImported={openFirst}>
-            <Upload size={16} /> PDF importieren
-          </ImportPdfButton>
-        </div>
+        <FolderBrowser
+          key={folder?.id ?? "root"}
+          mode="pdfs"
+          folder={folder}
+          nav={{
+            root: () => onSelect(null),
+            folder: (id) => onSelect(pdfFolderSelection(id)),
+            page: () => {},
+            pdf: openPdf,
+          }}
+        />
       )}
     </div>
   );

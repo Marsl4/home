@@ -8,7 +8,7 @@ import type { SectionProps } from "../types";
 import { FolderTree } from "../uni/FolderTree";
 import { useMoveDialog } from "../uni/MoveDialog";
 import { ImportPdfButton } from "./ImportPdfButton";
-import { filterPdfs, PDF_FILTERS, usePdfs, type PdfFilter } from "./PdfsContext";
+import { filterPdfs, PDF_FILTERS, pdfFolderSelection, usePdfs, type PdfFilter } from "./PdfsContext";
 
 export function PdfsPanel({ selectedId, onSelect }: SectionProps) {
   const { pdfs, updatePdf, deletePdf } = usePdfs();
@@ -56,7 +56,8 @@ export function PdfsPanel({ selectedId, onSelect }: SectionProps) {
               folders={subjects}
               pages={pages}
               pdfs={pdfs}
-              activeId={selectedId}
+              activeId={selectedId?.startsWith("folder:") ? selectedId.slice(7) : selectedId}
+              onOpenFolder={(id) => onSelect(pdfFolderSelection(id))}
               onOpenPdf={open}
               onImported={(added) => added[0] && open(added[0].id)}
               onMove={openMove}
