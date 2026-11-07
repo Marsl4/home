@@ -33,6 +33,9 @@
 - [ ] **Karteikarten**: eigene Karten anlegen (auch ohne KI möglich, mit Wiederholung nach
       Lernstand) und Karten automatisch aus PDFs/Zusammenfassungen erzeugen lassen (mit KI).
       Hinweis: KI-Dienste kosten meist pro Nutzung – vor dem Bau kostenlose Wege prüfen.
+- [ ] **Mindmaps**: Themen als Mindmap darstellen (Knoten anlegen, verbinden, verschieben),
+      z. B. als eigener Block auf Notizseiten oder eigener Bereich; später evtl. per KI
+      aus Zusammenfassungen erzeugen.
 
 ### Echte App (nicht im Browser) – ohne Kosten
 - Alternative mit Kosten (nur falls später gewünscht): native App-Hülle (Capacitor).
