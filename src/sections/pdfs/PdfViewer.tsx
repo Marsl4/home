@@ -42,7 +42,7 @@ export function PdfViewer({ pdf }: { pdf: PdfDoc }) {
   // Zoom nur im PDF (zwei Finger / Trackpad). Die Seiten werden danach in der neuen Größe scharf gezeichnet.
   const pagesRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
-  usePinchZoom({ scrollRef, contentRef: pagesRef, zoom, setZoom, min: 0.5, max: 4 });
+  usePinchZoom({ scrollRef, contentRef: pagesRef, zoom, setZoom, min: 0.5, max: 6 });
   const displayWidth = Math.min(availableWidth - 48, MAX_PAGE_WIDTH) * zoom;
 
   // PDF-Datei und Zeichnungen laden.

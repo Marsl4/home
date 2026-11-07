@@ -68,7 +68,7 @@ export function DrawingLayer({ pageId, scrollRef, initialStrokes, initialImages,
   zoomRef.current = zoom;
   const [viewport, setViewport] = useState({ width: 0, height: 0 }); // sichtbarer Bereich, ungezoomt
   const [contentHeight, setContentHeight] = useState(0);
-  usePinchZoom({ scrollRef, contentRef: sizerRef, zoom, setZoom, min: 1, max: 4 });
+  usePinchZoom({ scrollRef, contentRef: sizerRef, zoom, setZoom, min: 1, max: 6 });
 
   useEffect(() => {
     const scroller = scrollRef.current;

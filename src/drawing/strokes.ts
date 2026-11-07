@@ -16,6 +16,8 @@ export type Stroke = {
   anchorTop: number;
   // true = Druck kommt vom echten Stift (Apple Pencil), sonst wird er simuliert.
   realPressure: boolean;
+  // true = automatisch begradigte Form (Linie, Rechteck, Kreis …): ohne Nachzieh-Glättung zeichnen.
+  shape?: boolean;
 };
 
 export const PEN_COLORS = ["#1f1f1f", "#2563eb", "#dc2626", "#16a34a"];
@@ -27,14 +29,31 @@ export function strokeToPath(stroke: Stroke): string {
   const outline = getStroke(stroke.points, {
     size: isHighlighter ? 18 : 3.5,
     thinning: isHighlighter ? 0 : 0.6,
-    smoothing: 0.5,
-    streamline: 0.2, // wenig "Nachziehen": die Linie folgt dem Stift ohne sichtbare Verzögerung
+    smoothing: 0.6,
+    // wenig "Nachziehen": die Linie folgt dem Stift ohne sichtbare Verzögerung
+    streamline: stroke.shape ? 0 : 0.2,
     simulatePressure: !isHighlighter && !stroke.realPressure,
   });
-  if (outline.length === 0) return "";
+  return outlineToPath(outline);
+}
 
-  const [first, ...rest] = outline;
-  return `M ${first[0]} ${first[1]} ` + rest.map(([x, y]) => `L ${x} ${y}`).join(" ") + " Z";
+// Umriss -> SVG-Pfad mit weichen Kurven (statt vieler kurzer gerader Stücke, die eckig wirken).
+// Jeder Umrisspunkt wird Kontrollpunkt einer Kurve durch die Mittelpunkte zu den Nachbarn.
+function outlineToPath(outline: number[][]): string {
+  if (outline.length === 0) return "";
+  const r = (n: number) => Math.round(n * 100) / 100;
+  if (outline.length < 4) {
+    const [first, ...rest] = outline;
+    return `M ${r(first[0])} ${r(first[1])} ` + rest.map(([x, y]) => `L ${r(x)} ${r(y)}`).join(" ") + " Z";
+  }
+  const mid = (a: number[], b: number[]) => `${r((a[0] + b[0]) / 2)} ${r((a[1] + b[1]) / 2)}`;
+  let path = `M ${mid(outline[0], outline[1])}`;
+  for (let i = 1; i < outline.length; i++) {
+    const point = outline[i];
+    const next = outline[(i + 1) % outline.length];
+    path += ` Q ${r(point[0])} ${r(point[1])} ${mid(point, next)}`;
+  }
+  return path + " Z";
 }
 
 // Trifft der Radierer an Position (x, y) diesen Strich? dy = aktuelle Verschiebung des Strichs.

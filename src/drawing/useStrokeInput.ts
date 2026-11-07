@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 
 import { usePaneFocused } from "../components/PaneContext";
+import { recognizeShape } from "./shapes";
 import {
   boundsOf,
   hitsStroke,
@@ -40,6 +41,10 @@ type Options = {
 
 const NO_SELECTION = new Set<string>();
 
+// Formerkennung (nur Stift): so lange am Ende stillhalten, dann wird die Linie zur sauberen Form.
+const HOLD_TO_SNAP_MS = 1000;
+const STILL_DISTANCE = 4; // so viele Bildschirm-Pixel Zittern gelten noch als "stillhalten"
+
 export function useStrokeInput(options: Options) {
   const { enabled, tool, color, strokes, toPoint, offsetOf = () => 0 } = options;
   const paneFocused = usePaneFocused(); // Tastenkürzel nur in der aktiven Hälfte
@@ -47,6 +52,24 @@ export function useStrokeInput(options: Options) {
   const strokesBeforeErasing = useRef<Stroke[] | null>(null); // null = es wird nicht radiert
   const activePointer = useRef<number | null>(null); // der Stift/die Maus, die gerade zeichnet
   const draftPathRef = useRef<SVGPathElement>(null); // Linie, die gerade entsteht (direkt aktualisiert)
+  const holdTimer = useRef(0);
+  const holdOrigin = useRef({ x: 0, y: 0 }); // wo der Stift zuletzt "angekommen" ist
+  const snapped = useRef(false); // Linie wurde schon zur Form gemacht
+
+  // Stillhalten erkannt: Linie durch die erkannte Form ersetzen (falls eine passt).
+  const startHoldTimer = (stroke: Stroke) => {
+    clearTimeout(holdTimer.current);
+    if (stroke.tool !== "pen") return; // Textmarker: kommt später (abgewandelt)
+    holdTimer.current = window.setTimeout(() => {
+      const shape = recognizeShape(stroke.points);
+      if (!shape) return;
+      stroke.points.splice(0, stroke.points.length, ...shape.points);
+      stroke.shape = true;
+      snapped.current = true;
+      draftPathRef.current?.setAttribute("d", strokeToPath(stroke));
+    }, HOLD_TO_SNAP_MS);
+  };
+  useEffect(() => () => clearTimeout(holdTimer.current), []);
 
   // ---------- Lasso-Zustand ----------
   const [lasso, setLasso] = useState<[number, number][] | null>(null); // Linie, die gerade gezogen wird
@@ -149,7 +172,7 @@ export function useStrokeInput(options: Options) {
       return;
     }
 
-    setDraft({
+    const stroke: Stroke = {
       id: crypto.randomUUID(),
       tool,
       color,
@@ -157,7 +180,11 @@ export function useStrokeInput(options: Options) {
       anchorBlockId: null,
       anchorTop: 0,
       realPressure: event.pointerType === "pen",
-    });
+    };
+    snapped.current = false;
+    holdOrigin.current = { x: event.clientX, y: event.clientY };
+    startHoldTimer(stroke);
+    setDraft(stroke);
   };
 
   const onPointerMove = (event: React.PointerEvent) => {
@@ -173,7 +200,12 @@ export function useStrokeInput(options: Options) {
       return;
     }
     if (strokesBeforeErasing.current) return eraseAt(event);
-    if (!draft) return;
+    if (!draft || snapped.current) return; // fertige Form bleibt, bis der Stift abgehoben wird
+    // Bewegt sich der Stift (mehr als nur Zittern), beginnt das Warten aufs Stillhalten von vorn.
+    if (Math.hypot(event.clientX - holdOrigin.current.x, event.clientY - holdOrigin.current.y) > STILL_DISTANCE) {
+      holdOrigin.current = { x: event.clientX, y: event.clientY };
+      startHoldTimer(draft);
+    }
     // "Coalesced events" = alle Zwischenpunkte, für glattere Linien (v. a. mit dem Stift).
     const events = event.nativeEvent.getCoalescedEvents?.() ?? [];
     draft.points.push(...(events.length ? events : [event]).map(toPoint));
@@ -185,6 +217,7 @@ export function useStrokeInput(options: Options) {
   const onPointerUp = (event: React.PointerEvent) => {
     if (event.pointerId !== activePointer.current) return;
     activePointer.current = null;
+    clearTimeout(holdTimer.current);
     if (drag) {
       setDrag(null);
       // Endposition direkt vom Loslassen nehmen (die letzte Bewegung ist evtl. noch nicht im Zustand).

@@ -18,6 +18,11 @@
 - [~] **Lasso im Zeichen-Modus** (Striche: erledigt; eingefügte Bilder als freie Boxen: erledigt; Text frei verschieben + Bilder per Lasso: offen): Gezeichnetes, Geschriebenes und Eingefügtes auswählen
       und frei auf dem Blatt verschieben.
 
+### iPad
+- [x] Nur Apple Pencil zeichnet, Finger scrollen; Zoom nur im Blatt/PDF (bis 600 %); flüssige, runde Linien
+- [x] Formerkennung beim Füller: am Ende 1 s stillhalten → gerade Linie, Kreis/Ellipse, Dreieck, Rechteck, Vieleck
+- [ ] Formerkennung für den Textmarker (abgewandelt – Wunsch folgt)
+
 ### Startseite
 - [ ] **Startseite mit Widgets**: verschiedene Widgets (z. B. heutige ToDos, nächste Termine,
       zuletzt geöffnete Seiten/PDFs, Fitness), die man frei platzieren und anordnen kann.
