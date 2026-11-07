@@ -105,5 +105,14 @@ export function describeAiError(error: unknown): string {
     if (error.status >= 500) return "Google ist gerade überlastet. Bitte gleich nochmal versuchen.";
     return `Fehler von Gemini (${error.status}): ${error.message}`;
   }
+  // "Load failed" (Safari) / "Failed to fetch" (Chrome): Die Anfrage kam gar nicht bei Google an
+  // oder die Verbindung brach ab – z. B. durch einen Werbe-/Inhaltsblocker oder eine zu große Datei.
+  if (error instanceof TypeError && /load failed|failed to fetch|network/i.test(error.message)) {
+    return (
+      "Die Verbindung zu Google ist fehlgeschlagen. Mögliche Gründe: ein Werbe- oder Inhaltsblocker " +
+      "in Safari, ein sehr großes mitgeschicktes PDF oder eine wackelige Verbindung. " +
+      `Tipp: Frage einmal ohne Häkchen bei „Wird mitgeschickt“ stellen. (Technisch: ${error.message})`
+    );
+  }
   return `Fehler: ${error instanceof Error ? error.message : String(error)}`;
 }

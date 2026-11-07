@@ -34,7 +34,7 @@ export function findSource(
 
 // Große PDFs werden als Text geschickt; nur wenn kaum Text drin ist (eingescannt),
 // geht die Datei selbst mit – bis zu dieser Größe.
-const MAX_INLINE_PDF_BYTES = 15 * 1024 * 1024;
+const MAX_INLINE_PDF_BYTES = 10 * 1024 * 1024; // Google erlaubt ca. 20 MB pro Anfrage (inkl. Umwandlung)
 const MAX_TEXT_CHARS = 400_000; // grob 100.000 Wörter – mehr schickt die App nicht mit
 
 export async function loadAttachment(source: AiSource): Promise<Attachment> {

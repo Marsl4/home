@@ -30,6 +30,26 @@
       }
       window.addEventListener("error", (e) => showStartError(e.message || String(e.error)));
       window.addEventListener("unhandledrejection", (e) => showStartError(String(e.reason?.stack || e.reason)));
+
+      // Dauert der Start zu lange: Hilfe anzeigen. "Neu laden" leert nur den Zwischenspeicher
+      // der App-Dateien (Service Worker + Cache) – Notizen, PDFs usw. bleiben erhalten.
+      setTimeout(() => {
+        const loading = document.getElementById("boot-loading");
+        if (!loading) return;
+        loading.innerHTML =
+          '<div style="max-width:420px;padding:24px;text-align:center;line-height:1.5">' +
+          "<p><b>Home lädt ungewöhnlich lange.</b></p>" +
+          "<p>Deine Daten sind sicher. Tippe auf den Knopf, um die App-Dateien neu zu laden.</p>" +
+          '<p><button id="boot-reset" style="padding:10px 16px;border:none;border-radius:8px;background:#4f46e5;color:#fff;font-size:15px">App neu laden</button></p>' +
+          '<p style="font-size:11px;opacity:.7;word-break:break-all">' + navigator.userAgent + "</p></div>";
+        document.getElementById("boot-reset").onclick = async () => {
+          try {
+            for (const reg of (await navigator.serviceWorker?.getRegistrations()) || []) await reg.unregister();
+            for (const key of (await caches?.keys()) || []) await caches.delete(key);
+          } catch {}
+          location.reload();
+        };
+      }, 20000);
     </script>
   </head>
   <body>
