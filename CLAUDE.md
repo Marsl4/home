@@ -41,7 +41,9 @@ Nur für mich privat. Läuft auf Mac (Tippen) und später iPad (Apple Pencil).
   `View` (Hauptansicht) und optional `Provider` (Daten, über Context).
 - `src/storage/db.ts` – **alles** Speichern läuft hier (IndexedDB über idb-keyval).
   `src/storage/backup.ts` – Export/Import aller Daten. `src/storage/uiState.ts` – Ansichts-Einstellungen (localStorage).
-- `src/drawing/` – Stift-Logik (`useStrokeInput`), Zeichenschicht für Notizseiten, Werkzeugleiste.
+- `src/drawing/` – Stift-Logik (`useStrokeInput`), Zeichenschicht für Notizseiten (`DrawingLayer`, enthält
+  auch die frei platzierbaren Bilder `FloatingImages`), Werkzeugleiste, Ausschnitte (`snip.ts`).
+  Striche und Bilder hängen an einem Textblock (`anchorBlockId`/`anchorTop`) und wandern mit.
 - Editor: BlockNote (`src/editor/schema.ts`). PDFs: pdf.js (`src/sections/pdfs/`).
 - Farben nur über die Variablen oben in `src/index.css` (`var(--text)`, `var(--surface)` …), keine
   festen Farbwerte – sonst passt es nicht zum dunklen Design. Schreibflächen (Notizblatt) bekommen

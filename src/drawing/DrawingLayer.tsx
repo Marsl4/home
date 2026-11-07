@@ -2,10 +2,13 @@
 // - Stift-Modus aus: man tippt ganz normal im Editor, die Zeichnungen sind nur sichtbar.
 // - Stift-Modus an: Maus/Trackpad/Stift malen auf der Seite.
 // Jeder Strich merkt sich den Textblock darüber und wandert mit, wenn sich der Text verschiebt.
+// Außerdem liegen hier die frei platzierbaren Bilder (eingefügt mit ⌘V), die genauso mitwandern.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
-import { savePageDrawing } from "../storage/db";
+import { savePageDrawing, savePageImages } from "../storage/db";
 import { DrawingToolbar } from "./DrawingToolbar";
+import { FloatingImages } from "./FloatingImages";
+import { fileToDataUrl, initialImageSize, type FloatingImage } from "./images";
 import { LassoOverlay } from "./LassoOverlay";
 import { boundsOfPolygon, captureRegion, copySnipToClipboard } from "./snip";
 import { PEN_COLORS, strokeToPath, type Stroke, type Tool } from "./strokes";
@@ -14,19 +17,24 @@ import { usePenShortcuts, useStrokeInput } from "./useStrokeInput";
 type Props = {
   pageId: string;
   initialStrokes: Stroke[];
+  initialImages: FloatingImage[];
   // Titel + Editor. Darüber liegt die Zeichenschicht.
   children: ReactNode;
 };
+
+// Alles, was an einem Textblock hängt (Striche und Bilder).
+type Anchored = { anchorBlockId: string | null; anchorTop: number };
 
 type Layout = {
   columnLeft: number; // Abstand der Textspalte vom linken Rand
   blockTops: Record<string, number>; // Block-ID -> aktuelle Höhe auf der Seite
 };
 
-export function DrawingLayer({ pageId, initialStrokes, children }: Props) {
+export function DrawingLayer({ pageId, initialStrokes, initialImages, children }: Props) {
   const textRef = useRef<HTMLDivElement>(null); // daraus lesen wir, wo die Textblöcke liegen
   const svgRef = useRef<SVGSVGElement>(null);
   const [strokes, setStrokes] = useState(initialStrokes);
+  const [images, setImages] = useState(initialImages);
   const [layout, setLayout] = useState<Layout>({ columnLeft: 0, blockTops: {} });
 
   const [penMode, setPenMode] = useState(false);
@@ -73,9 +81,9 @@ export function DrawingLayer({ pageId, initialStrokes, children }: Props) {
   }, []);
 
   // Wie weit ein Strich verschoben werden muss, weil sein Textblock gewandert ist.
-  const offsetOf = (stroke: Stroke) => {
-    const top = stroke.anchorBlockId ? layout.blockTops[stroke.anchorBlockId] : undefined;
-    return top === undefined ? 0 : top - stroke.anchorTop;
+  const offsetOf = (item: Anchored) => {
+    const top = item.anchorBlockId ? layout.blockTops[item.anchorBlockId] : undefined;
+    return top === undefined ? 0 : top - item.anchorTop;
   };
 
   // ---------- Ändern + Speichern ----------
@@ -117,6 +125,57 @@ export function DrawingLayer({ pageId, initialStrokes, children }: Props) {
     const top = Math.min(...points.map(([, y]) => y));
     return { ...stroke, points, ...findAnchor(top) };
   };
+
+  // ---------- Frei platzierte Bilder ----------
+  // Jede Änderung baut auf dem neuesten Stand auf und wird sofort gespeichert.
+  const updateImages = (change: (current: FloatingImage[]) => FloatingImage[]) =>
+    setImages((current) => {
+      const next = change(current);
+      savePageImages(pageId, next);
+      return next;
+    });
+
+  // Bild an der Stelle festmachen, wo es gerade angezeigt wird.
+  const anchorImage = (image: FloatingImage): FloatingImage => {
+    const y = image.y + offsetOf(image);
+    return { ...image, y, ...findAnchor(y) };
+  };
+
+  // Wo soll ein eingefügtes Bild hin? Unter die Zeile mit dem Text-Cursor, sonst oben in den sichtbaren Bereich.
+  const pastePositionY = () => {
+    const origin = svgRef.current!.getBoundingClientRect();
+    const node = window.getSelection()?.anchorNode;
+    const element = node instanceof Element ? node : node?.parentElement;
+    const block = element?.closest(".bn-block-outer");
+    if (block && textRef.current?.contains(block)) {
+      return block.getBoundingClientRect().bottom - origin.top + 8;
+    }
+    return Math.max(0, -origin.top + 120);
+  };
+
+  // ⌘V mit einem Bild (z. B. einem Ausschnitt) -> als frei verschiebbare Box einfügen.
+  useEffect(() => {
+    const onPaste = (event: ClipboardEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+      const file = Array.from(event.clipboardData?.files ?? []).find((f) => f.type.startsWith("image/"));
+      if (!file) return; // normaler Text: macht der Editor selbst
+      event.preventDefault();
+      event.stopPropagation();
+      const y = pastePositionY();
+      (async () => {
+        const src = await fileToDataUrl(file);
+        const size = await initialImageSize(src);
+        updateImages((current) => [
+          ...current,
+          { id: crypto.randomUUID(), src, x: 0, y, ...size, ...findAnchor(y) },
+        ]);
+      })();
+    };
+    // "capture": vor dem Editor reagieren, sonst fügt er das Bild fest in den Text ein.
+    window.addEventListener("paste", onPaste, true);
+    return () => window.removeEventListener("paste", onPaste, true);
+  });
 
   // ---------- Zeichnen mit Maus / Trackpad / Stift ----------
   const { draft, handlers, lasso, selection, selectionBox, deleteSelection, dragOffset } =
@@ -172,6 +231,22 @@ export function DrawingLayer({ pageId, initialStrokes, children }: Props) {
       <div className="page-text" ref={textRef}>
         {children}
       </div>
+
+      <FloatingImages
+        images={images}
+        columnLeft={layout.columnLeft}
+        offsetOf={offsetOf}
+        interactive={!penMode}
+        onMove={(id, dx, dy) =>
+          updateImages((current) =>
+            current.map((img) => (img.id === id ? anchorImage({ ...img, x: img.x + dx, y: img.y + dy }) : img)),
+          )
+        }
+        onResize={(id, width, height) =>
+          updateImages((current) => current.map((img) => (img.id === id ? { ...img, width, height } : img)))
+        }
+        onDelete={(id) => updateImages((current) => current.filter((img) => img.id !== id))}
+      />
 
       <svg
         ref={svgRef}

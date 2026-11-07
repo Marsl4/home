@@ -150,11 +150,15 @@ export function useStrokeInput(options: Options) {
     setDraft({ ...draft, points: [...draft.points, ...points] });
   };
 
-  const onPointerUp = () => {
+  const onPointerUp = (event: React.PointerEvent) => {
     if (drag) {
       setDrag(null);
-      if (drag.dx !== 0 || drag.dy !== 0) {
-        const next = strokes.map((s) => (selection.has(s.id) ? moveStroke(s, drag.dx, drag.dy) : s));
+      // Endposition direkt vom Loslassen nehmen (die letzte Bewegung ist evtl. noch nicht im Zustand).
+      const [x, y] = toPoint(event);
+      const dx = x - drag.start[0];
+      const dy = y - drag.start[1];
+      if (dx !== 0 || dy !== 0) {
+        const next = strokes.map((s) => (selection.has(s.id) ? moveStroke(s, dx, dy) : s));
         options.onMoveDone(next, selection);
       }
       return;

@@ -2,9 +2,10 @@
 import { useEffect, useState, type ReactNode } from "react";
 
 import { DrawingLayer } from "../../drawing/DrawingLayer";
+import type { FloatingImage } from "../../drawing/images";
 import type { Stroke } from "../../drawing/strokes";
 import { removeUnknownBlocks, type EditorBlock } from "../../editor/schema";
-import { loadPageContent, loadPageDrawing, type Page } from "../../storage/db";
+import { loadPageContent, loadPageDrawing, loadPageImages, type Page } from "../../storage/db";
 import { useNotes } from "./NotesContext";
 import { PageEditor } from "./PageEditor";
 
@@ -12,6 +13,7 @@ type LoadedPage = {
   pageId: string;
   blocks: EditorBlock[] | undefined;
   strokes: Stroke[];
+  images: FloatingImage[];
 };
 
 type Props = {
@@ -26,12 +28,17 @@ export function PageView({ page, breadcrumb }: Props) {
   // Text und Zeichnungen der Seite laden.
   useEffect(() => {
     let cancelled = false;
-    Promise.all([loadPageContent(page.id), loadPageDrawing(page.id)]).then(([blocks, strokes]) => {
+    Promise.all([
+      loadPageContent(page.id),
+      loadPageDrawing(page.id),
+      loadPageImages(page.id),
+    ]).then(([blocks, strokes, images]) => {
       if (cancelled) return;
       setLoaded({
         pageId: page.id,
         blocks: blocks && removeUnknownBlocks(blocks as EditorBlock[]),
         strokes,
+        images,
       });
     });
     return () => {
@@ -45,7 +52,12 @@ export function PageView({ page, breadcrumb }: Props) {
     // light-surface: das Schreibblatt bleibt auch im dunklen Design hell.
     <div className="page light-surface">
       {/* key: beim Seitenwechsel Editor und Zeichenschicht komplett neu aufbauen */}
-      <DrawingLayer key={page.id} pageId={page.id} initialStrokes={loaded.strokes}>
+      <DrawingLayer
+        key={page.id}
+        pageId={page.id}
+        initialStrokes={loaded.strokes}
+        initialImages={loaded.images}
+      >
         {breadcrumb && <div className="page-breadcrumb">{breadcrumb}</div>}
         <input
           className="page-title-input"

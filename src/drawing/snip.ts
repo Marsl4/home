@@ -7,7 +7,15 @@ import { showToast } from "../components/toast";
 import { strokeToPath, type Box, type Stroke } from "./strokes";
 
 // Diese Elemente sollen nicht mit aufs Bild (Werkzeugleiste, Lasso-Linie, Rahmen …).
-const SKIP_CLASSES = ["drawing-toolbar", "lasso-line", "lasso-box", "lasso-delete", "bn-side-menu"];
+const SKIP_CLASSES = [
+  "drawing-toolbar",
+  "lasso-line",
+  "lasso-box",
+  "lasso-delete",
+  "bn-side-menu",
+  "floating-image-delete",
+  "floating-image-resize",
+];
 
 // Rechteck um die eingekreiste Linie.
 export function boundsOfPolygon(points: [number, number][], padding = 4): Box {

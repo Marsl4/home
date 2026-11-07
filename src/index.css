@@ -1172,3 +1172,71 @@ path.selected {
     transform: translateY(8px);
   }
 }
+
+/* ---------- Frei platzierte Bilder auf Notizseiten ---------- */
+.floating-images {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* nur die Bilder selbst sind anfassbar, nicht die leere Fläche */
+}
+
+.floating-image {
+  position: absolute;
+  outline: none;
+}
+
+.floating-image.interactive {
+  pointer-events: auto;
+  cursor: move;
+  touch-action: none;
+}
+
+.floating-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.floating-image.interactive:hover {
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+
+.floating-image.selected {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.floating-image-delete {
+  position: absolute;
+  top: -11px;
+  right: -11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.floating-image-delete:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.floating-image-resize {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--accent);
+  border-radius: 3px;
+  background: var(--surface);
+  cursor: nwse-resize;
+}

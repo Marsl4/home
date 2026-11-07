@@ -2,6 +2,7 @@
 // Gespeichert wird in IndexedDB (Datenbank im Browser) über die kleine Bibliothek idb-keyval.
 // Wenn wir später einen Server/Sync einbauen, müssen wir nur diese Datei austauschen.
 import { del, get, set } from "idb-keyval";
+import type { FloatingImage } from "../drawing/images";
 import type { Stroke } from "../drawing/strokes";
 
 export type Page = {
@@ -20,6 +21,7 @@ const PAGES_KEY = "pages";
 const SUBJECTS_KEY = "subjects";
 const contentKey = (pageId: string) => `page-content:${pageId}`;
 const drawingKey = (pageId: string) => `page-drawing:${pageId}`;
+const imagesKey = (pageId: string) => `page-images:${pageId}`;
 
 export async function loadPages(): Promise<Page[]> {
   return (await get<Page[]>(PAGES_KEY)) ?? [];
@@ -75,9 +77,19 @@ export async function savePageDrawing(pageId: string, strokes: Stroke[]): Promis
   await set(drawingKey(pageId), strokes);
 }
 
+// Frei platzierte Bilder einer Seite (Format siehe drawing/images.ts).
+export async function loadPageImages(pageId: string): Promise<FloatingImage[]> {
+  return (await get<FloatingImage[]>(imagesKey(pageId))) ?? [];
+}
+
+export async function savePageImages(pageId: string, images: FloatingImage[]): Promise<void> {
+  await set(imagesKey(pageId), images);
+}
+
 export async function deletePageData(pageId: string): Promise<void> {
   await del(contentKey(pageId));
   await del(drawingKey(pageId));
+  await del(imagesKey(pageId));
 }
 
 // ---------- PDFs ----------

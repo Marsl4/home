@@ -15,7 +15,7 @@
       auch zweimal denselben Bereich bzw. dieselbe Seite.
 - [x] **Markier-Modus (Screenshot)**: Werkzeug „Ausschnitt“ (Schere) – Bereich einkreisen,
       wird als Bild kopiert, mit ⌘V einfügen.
-- [~] **Lasso im Zeichen-Modus** (Striche: erledigt; Text/Bilder frei verschieben: offen): Gezeichnetes, Geschriebenes und Eingefügtes auswählen
+- [~] **Lasso im Zeichen-Modus** (Striche: erledigt; eingefügte Bilder als freie Boxen: erledigt; Text frei verschieben + Bilder per Lasso: offen): Gezeichnetes, Geschriebenes und Eingefügtes auswählen
       und frei auf dem Blatt verschieben.
 
 ### Startseite
