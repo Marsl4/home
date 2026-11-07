@@ -9,7 +9,8 @@ import { usePdfs } from "../sections/pdfs/PdfsContext";
 import { usePersistentState } from "../storage/uiState";
 import { AiMarkdown } from "./AiMarkdown";
 import { saveAiSettings, useAiSettings } from "./aiConfig";
-import { findSource, loadAttachment } from "./context";
+import { AttachmentTooLargeError, findSource, loadAttachment, type PageRange } from "./context";
+import { usePdfPosition } from "../sections/pdfs/visiblePage";
 import {
   askGemini,
   describeAiError,
@@ -64,6 +65,24 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
   const source = findSource(sectionId, selectedId, pages, pdfs);
   const attached = includeSource ? source : null; // was mit der nächsten Frage mitgeht
 
+  // PDF: welche Seiten gehen mit? Kleine PDFs ganz, große ab der sichtbaren Seite 10 Seiten
+  // (ein ganzes Skript auf einmal ist für eine Anfrage meist zu viel).
+  const position = usePdfPosition(source?.kind === "pdf" ? source.id : null);
+  const [chosenRange, setChosenRange] = useState<(PageRange & { pdfId: string }) | null>(null);
+  const pageCount = position?.pageCount ?? 0;
+  const defaultRange = (): PageRange => {
+    if (!position || pageCount <= 30) return { from: 1, to: Math.max(1, pageCount) };
+    return { from: position.page, to: Math.min(pageCount, position.page + 9) };
+  };
+  const range: PageRange | undefined =
+    source?.kind === "pdf" ? (chosenRange?.pdfId === source.id ? chosenRange : defaultRange()) : undefined;
+  const setRange = (next: PageRange) => {
+    if (source?.kind !== "pdf") return;
+    const from = Math.max(1, Math.min(next.from, pageCount || next.from));
+    setChosenRange({ pdfId: source.id, from, to: Math.max(from, Math.min(next.to, pageCount || next.to)) });
+  };
+  const rangeLabel = range && pageCount ? (range.from === range.to ? `, S. ${range.from}` : `, S. ${range.from}–${range.to}`) : "";
+
   const scrollToEnd = () =>
     requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }));
 
@@ -74,7 +93,7 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
     const userMessage: ChatMessage = {
       role: "user",
       text: question,
-      attached: attached?.title,
+      attached: attached ? `„${attached.title}“${attached.kind === "pdf" ? rangeLabel : ""}` : undefined,
     };
     const history = [...messages, userMessage];
     setMessages([...history, { role: "assistant", text: "" }]);
@@ -87,7 +106,7 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
     let answer = "";
     let step = "Notiz/PDF vorbereiten"; // für die Fehlermeldung: wobei ist es schiefgegangen?
     try {
-      const attachment = attached ? await loadAttachment(attached) : null;
+      const attachment = attached ? await loadAttachment(attached, range) : null;
       const ask = (modelName: string) =>
         askGemini({
           apiKey,
@@ -136,7 +155,7 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
         // Fehlgeschlagen: Frage zurück ins Eingabefeld, damit nichts verloren geht.
         setMessages(answer ? [...history, { role: "assistant", text: answer }] : messages);
         if (!answer) setInput(question);
-        setError(`${describeAiError(e)} (Schritt: ${step})`);
+        setError(e instanceof AttachmentTooLargeError ? e.message : `${describeAiError(e)} (Schritt: ${step})`);
       }
     } finally {
       abortRef.current = null;
@@ -205,7 +224,7 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
                 {message.role === "user" ? (
                   <>
                     {message.attached && (
-                      <span className="ai-attached">mit „{message.attached}“</span>
+                      <span className="ai-attached">mit {message.attached.startsWith("„") ? message.attached : `„${message.attached}“`}</span>
                     )}
                     <p>{message.text}</p>
                   </>
@@ -241,6 +260,34 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
               </label>
             ) : (
               <p className="ai-source-hint">Öffne eine Notiz oder ein PDF, damit die KI sie kennt.</p>
+            )}
+
+            {attached?.kind === "pdf" && range && pageCount > 0 && (
+              <div className="ai-range">
+                <span>Seiten</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={pageCount}
+                  value={range.from}
+                  onChange={(e) => setRange({ from: Number(e.target.value) || 1, to: Math.max(range.to, Number(e.target.value) || 1) })}
+                  aria-label="Erste Seite"
+                />
+                <span>–</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={pageCount}
+                  value={range.to}
+                  onChange={(e) => setRange({ from: range.from, to: Number(e.target.value) || range.from })}
+                  aria-label="Letzte Seite"
+                />
+                <span className="ai-range-count">von {pageCount}</span>
+                <button onClick={() => position && setRange({ from: position.page, to: position.page })}>
+                  Diese Seite
+                </button>
+                <button onClick={() => setRange({ from: 1, to: pageCount })}>Alle</button>
+              </div>
             )}
 
             {attached && (

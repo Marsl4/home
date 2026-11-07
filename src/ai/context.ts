@@ -32,12 +32,17 @@ export function findSource(
   return null;
 }
 
-// Große PDFs werden als Text geschickt; nur wenn kaum Text drin ist (eingescannt),
-// geht die Datei selbst mit – bis zu dieser Größe.
-const MAX_INLINE_PDF_BYTES = 10 * 1024 * 1024; // Google erlaubt ca. 20 MB pro Anfrage (inkl. Umwandlung)
-const MAX_TEXT_CHARS = 400_000; // grob 100.000 Wörter – mehr schickt die App nicht mit
+// PDFs: Es wird nur der gewählte Seitenbereich mitgeschickt – als Text. Haben die Seiten kaum Text
+// (eingescannt), gehen sie als Bilder mit (dann höchstens MAX_IMAGE_PAGES Seiten).
+// Grenzen so gewählt, dass eine Anfrage sicher in die Gratis-Stufe von Gemini passt.
+export const MAX_TEXT_CHARS = 200_000; // grob 30.000 Wörter
+export const MAX_IMAGE_PAGES = 20;
 
-export async function loadAttachment(source: AiSource): Promise<Attachment> {
+export type PageRange = { from: number; to: number }; // Seiten ab 1, einschließlich
+
+export class AttachmentTooLargeError extends Error {}
+
+export async function loadAttachment(source: AiSource, range?: PageRange): Promise<Attachment> {
   if (source.kind === "note") {
     const blocks = (await loadPageContent(source.id)) ?? [];
     const boxes = (await loadPageTexts(source.id)).map((t) => t.text.trim()).filter(Boolean);
@@ -47,14 +52,37 @@ export async function loadAttachment(source: AiSource): Promise<Attachment> {
 
   const file = await loadPdfFile(source.id);
   if (!file) throw new Error("Die PDF-Datei wurde nicht gefunden.");
-  const text = await pdfToText(source.id, file);
-  if (text.replace(/\s/g, "").length > 200) {
-    return { kind: "text", label: `PDF „${source.title}“`, text: text.slice(0, MAX_TEXT_CHARS) };
+  const pages = await pdfPageTexts(source.id, file);
+  const from = Math.max(1, Math.min(range?.from ?? 1, pages.length));
+  const to = Math.max(from, Math.min(range?.to ?? pages.length, pages.length));
+  const label = `PDF „${source.title}“, ${from === to ? `Seite ${from}` : `Seiten ${from}–${to}`}`;
+  const chosen = pages.slice(from - 1, to);
+
+  const text = chosen.map((pageText, i) => `--- Seite ${from + i} ---\n${pageText}`).join("\n\n");
+  const letters = chosen.join("").replace(/\s/g, "").length;
+  if (letters > 50 * chosen.length) {
+    // genug echter Text
+    if (text.length > MAX_TEXT_CHARS) {
+      throw new AttachmentTooLargeError(
+        `Die Seiten ${from}–${to} enthalten zu viel Text für eine Anfrage. Bitte weniger Seiten wählen ` +
+          `(z. B. ein Kapitel, etwa ${Math.max(1, Math.floor((MAX_TEXT_CHARS / text.length) * chosen.length))} Seiten).`,
+      );
+    }
+    return { kind: "text", label, text };
   }
-  if (file.size > MAX_INLINE_PDF_BYTES) {
-    throw new Error("Die PDF enthält keinen lesbaren Text und ist zu groß, um sie als Ganzes zu schicken.");
+  // Eingescannt: Seiten als Bilder.
+  if (chosen.length > MAX_IMAGE_PAGES) {
+    throw new AttachmentTooLargeError(
+      `Diese Seiten sind eingescannt (kein lesbarer Text) – dann gehen höchstens ${MAX_IMAGE_PAGES} Seiten auf einmal. Bitte weniger Seiten wählen.`,
+    );
   }
-  return { kind: "pdf", label: source.title, base64: await blobToBase64(file) };
+  return { kind: "images", label, images: await renderPageImages(file, from, to) };
+}
+
+// Wie viele Seiten hat das PDF? (aus dem Zwischenspeicher, sonst kurz öffnen)
+export async function pdfPageCount(pdfId: string): Promise<number> {
+  const file = await loadPdfFile(pdfId);
+  return file ? (await pdfPageTexts(pdfId, file)).length : 0;
 }
 
 // ---------- Notiz (Editor-Blöcke) → Text ----------
@@ -93,12 +121,12 @@ function inlineText(content: unknown): string {
   return "";
 }
 
-// ---------- PDF → Text (mit pdf.js, Ergebnis wird zwischengespeichert) ----------
-const pdfTextCache = new Map<string, string>(); // PDF-Kennung -> Text
+// ---------- PDF → Text pro Seite (mit pdf.js, Ergebnis wird zwischengespeichert) ----------
+const pdfTextCache = new Map<string, string[]>(); // PDF-Kennung -> Text jeder Seite
 
-async function pdfToText(id: string, file: Blob): Promise<string> {
+async function pdfPageTexts(id: string, file: Blob): Promise<string[]> {
   const cached = pdfTextCache.get(id);
-  if (cached !== undefined) return cached;
+  if (cached) return cached;
   const task = getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
   try {
     const doc = await task.promise;
@@ -108,21 +136,34 @@ async function pdfToText(id: string, file: Blob): Promise<string> {
       const text = content.items
         .map((item) => ("str" in item ? item.str + (item.hasEOL ? "\n" : " ") : ""))
         .join("");
-      pages.push(`--- Seite ${n} ---\n${text.trim()}`);
+      pages.push(text.trim());
     }
-    const result = pages.join("\n\n");
-    pdfTextCache.set(id, result);
-    return result;
+    pdfTextCache.set(id, pages);
+    return pages;
   } finally {
     await task.destroy();
   }
 }
 
-function blobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
+// Eingescannte Seiten als JPEG-Bilder (Base64), gut lesbar aber nicht zu groß.
+async function renderPageImages(file: Blob, from: number, to: number): Promise<string[]> {
+  const task = getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
+  try {
+    const doc = await task.promise;
+    const images: string[] = [];
+    for (let n = from; n <= to; n++) {
+      const page = await doc.getPage(n);
+      const base = page.getViewport({ scale: 1 });
+      const viewport = page.getViewport({ scale: Math.min(2, 1400 / base.width) });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.floor(viewport.width);
+      canvas.height = Math.floor(viewport.height);
+      await page.render({ canvas, viewport }).promise;
+      images.push(canvas.toDataURL("image/jpeg", 0.75).split(",")[1] ?? "");
+      canvas.width = canvas.height = 0; // Speicher freigeben
+    }
+    return images;
+  } finally {
+    await task.destroy();
+  }
 }

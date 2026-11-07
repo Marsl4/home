@@ -12,7 +12,7 @@ export type ChatMessage = {
 // Material, das zur aktuellen Frage mitgeschickt wird (Notiz als Text oder PDF).
 export type Attachment =
   | { kind: "text"; label: string; text: string }
-  | { kind: "pdf"; label: string; base64: string };
+  | { kind: "images"; label: string; images: string[] }; // eingescannte Seiten als JPEG (Base64)
 
 const SYSTEM_PROMPT = `Du bist der Lernassistent in „Home“, einer persönlichen App fürs Studium.
 Antworte auf Deutsch (außer es wird ausdrücklich eine andere Sprache gewünscht), klar und gut gegliedert.
@@ -51,10 +51,10 @@ export async function askGemini({ apiKey, model, history, attachment, onText, si
 }
 
 function attachmentParts(attachment: Attachment): Part[] {
-  if (attachment.kind === "pdf") {
+  if (attachment.kind === "images") {
     return [
-      { text: `Mitgeschicktes Material: PDF „${attachment.label}“` },
-      { inlineData: { mimeType: "application/pdf", data: attachment.base64 } },
+      { text: `Mitgeschicktes Material: ${attachment.label} (eingescannte Seiten als Bilder)` },
+      ...attachment.images.map((data) => ({ inlineData: { mimeType: "image/jpeg", data } })),
     ];
   }
   return [{ text: `Mitgeschicktes Material: ${attachment.label}\n\n${attachment.text}` }];
@@ -113,7 +113,7 @@ export function describeAiError(error: unknown): string {
   if (error instanceof TypeError && /load failed|failed to fetch|network/i.test(error.message)) {
     return (
       "Die Verbindung zu Google ist fehlgeschlagen. Mögliche Gründe: ein Werbe- oder Inhaltsblocker " +
-      "in Safari, ein sehr großes mitgeschicktes PDF oder eine wackelige Verbindung. " +
+      "in Safari, zu viel mitgeschicktes Material (dann weniger PDF-Seiten wählen) oder eine wackelige Verbindung. " +
       `Tipp: Frage einmal ohne Häkchen bei „Wird mitgeschickt“ stellen. (Technisch: ${error.message})`
     );
   }

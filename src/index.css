@@ -1035,6 +1035,7 @@ path.selected {
 }
 
 .pdf-scroll {
+  position: relative; /* Bezugspunkt für Seitenpositionen (welche Seite ist sichtbar?) */
   flex: 1;
   overflow: auto; /* gezoomt auch seitlich scrollbar */
   background: var(--pdf-bg);
@@ -1900,4 +1901,38 @@ path.selected {
 
 .settings-card h2 svg {
   vertical-align: -2px;
+}
+
+/* KI-Leiste: Seitenbereich eines PDFs */
+.ai-range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.ai-range input {
+  width: 52px;
+  padding: 2px 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  font: inherit;
+  color: var(--text);
+}
+
+.ai-range-count {
+  margin-right: 4px;
+}
+
+.ai-range button {
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
 }

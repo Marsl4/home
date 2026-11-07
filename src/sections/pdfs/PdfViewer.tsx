@@ -12,6 +12,7 @@ import { loadPdfFile, loadPdfInk, savePdfInk, type PdfDoc, type PdfInk } from ".
 import { publish, useLiveSync } from "../../storage/liveSync";
 import { getDocument, type PDFDocumentProxy } from "./pdfjs";
 import { PdfPage } from "./PdfPage";
+import { setPdfPosition } from "./visiblePage";
 import { usePdfs } from "./PdfsContext";
 
 const MAX_PAGE_WIDTH = 900;
@@ -47,6 +48,21 @@ export function PdfViewer({ pdf }: { pdf: PdfDoc }) {
   const [zoom, setZoom] = useState(1);
   usePinchZoom({ scrollRef, contentRef: pagesRef, zoom, setZoom, min: 0.5, max: 6 });
   const displayWidth = Math.min(availableWidth - 48, MAX_PAGE_WIDTH) * zoom;
+
+  // Welche Seite ist gerade sichtbar? (für die KI-Leiste: "diese Seite mitschicken")
+  useEffect(() => {
+    const scroller = scrollRef.current;
+    if (!scroller || !loaded) return;
+    const update = () => {
+      const probe = scroller.scrollTop + scroller.clientHeight / 3;
+      const pages = Array.from(scroller.querySelectorAll<HTMLElement>(".pdf-page"));
+      const index = pages.findIndex((el) => el.offsetTop + el.offsetHeight > probe);
+      setPdfPosition(pdf.id, { page: (index === -1 ? pages.length - 1 : index) + 1, pageCount: loaded.sizes.length });
+    };
+    update();
+    scroller.addEventListener("scroll", update, { passive: true });
+    return () => scroller.removeEventListener("scroll", update);
+  }, [loaded, pdf.id, displayWidth]);
 
   // PDF-Datei und Zeichnungen laden.
   useEffect(() => {
