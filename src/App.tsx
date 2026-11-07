@@ -1,120 +1,64 @@
-import { useEffect, useState } from "react";
+// Grundlayout: [Bereiche-Leiste] [zweite Leiste mit Unterbereichen] [Hauptansicht]
+import { PanelLeftClose } from "lucide-react";
 
-import { Sidebar } from "./components/Sidebar";
-import { PageEditor } from "./components/PageEditor";
-import { DrawingLayer } from "./drawing/DrawingLayer";
-import type { Stroke } from "./drawing/strokes";
-import { removeUnknownBlocks, type EditorBlock } from "./editor/schema";
-import {
-  deletePageData,
-  loadPageContent,
-  loadPageDrawing,
-  loadPages,
-  savePages,
-  type Page,
-} from "./storage/db";
+import { SectionRail } from "./components/SectionRail";
+import { sections } from "./sections";
+import { NotesProvider } from "./sections/notes/NotesProvider";
+import { usePersistentState } from "./storage/uiState";
 
 export default function App() {
-  const [pages, setPages] = useState<Page[] | null>(null); // null = lädt noch
-  const [activePageId, setActivePageId] = useState<string | null>(null);
-  // Inhalt der aktiven Seite (Text + Zeichnungen), wie er aus dem Speicher geladen wurde.
-  const [loaded, setLoaded] = useState<{
-    pageId: string;
-    blocks: EditorBlock[] | undefined;
-    strokes: Stroke[];
-  } | null>(null);
+  const [activeId, setActiveId] = usePersistentState("ui:section", sections[0].id);
+  const [panelOpen, setPanelOpen] = usePersistentState("ui:panelOpen", true);
+  // Pro Bereich: welcher Unterbereich zuletzt offen war.
+  const [selection, setSelection] = usePersistentState<Record<string, string | null>>(
+    "ui:selection",
+    {},
+  );
 
-  // Beim Start: Seitenliste laden.
-  useEffect(() => {
-    loadPages().then((stored) => {
-      setPages(stored);
-      setActivePageId(stored[0]?.id ?? null);
-    });
-  }, []);
-
-  // Wenn eine andere Seite ausgewählt wird: deren Inhalt laden.
-  useEffect(() => {
-    if (!activePageId) return;
-    let cancelled = false;
-    Promise.all([loadPageContent(activePageId), loadPageDrawing(activePageId)]).then(
-      ([blocks, strokes]) => {
-        if (!cancelled) {
-          setLoaded({
-            pageId: activePageId,
-            blocks: blocks && removeUnknownBlocks(blocks as EditorBlock[]),
-            strokes,
-          });
-        }
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [activePageId]);
-
-  // Seitenliste ändern = sofort speichern.
-  const updatePages = (next: Page[]) => {
-    setPages(next);
-    savePages(next);
+  const section = sections.find((s) => s.id === activeId) ?? sections[0];
+  const sectionProps = {
+    section,
+    selectedId: selection[section.id] ?? null,
+    onSelect: (id: string | null) => setSelection({ ...selection, [section.id]: id }),
   };
 
-  const createPage = () => {
-    const page: Page = { id: crypto.randomUUID(), title: "" };
-    updatePages([...(pages ?? []), page]);
-    setActivePageId(page.id);
+  // Klick auf einen Bereich: öffnen. Klick auf den schon offenen Bereich: zweite Leiste ein-/ausklappen.
+  const handleRailClick = (id: string) => {
+    if (id === section.id) {
+      setPanelOpen(!panelOpen);
+    } else {
+      setActiveId(id);
+      setPanelOpen(true);
+    }
   };
 
-  const renamePage = (id: string, title: string) => {
-    updatePages((pages ?? []).map((p) => (p.id === id ? { ...p, title } : p)));
-  };
-
-  const deletePage = (id: string) => {
-    const page = pages?.find((p) => p.id === id);
-    if (!window.confirm(`Seite "${page?.title || "Ohne Titel"}" wirklich löschen?`)) return;
-
-    const remaining = (pages ?? []).filter((p) => p.id !== id);
-    updatePages(remaining);
-    deletePageData(id);
-    if (activePageId === id) setActivePageId(remaining[0]?.id ?? null);
-  };
-
-  if (pages === null) return null; // kurz beim Laden
-
-  const activePage = pages.find((p) => p.id === activePageId);
+  const { Panel, View } = section;
 
   return (
-    <div className="app">
-      <Sidebar
-        pages={pages}
-        activePageId={activePageId}
-        onSelect={setActivePageId}
-        onCreate={createPage}
-        onDelete={deletePage}
-      />
+    <NotesProvider>
+      <div className="app">
+        <SectionRail sections={sections} activeId={section.id} onClick={handleRailClick} />
 
-      <main className="page">
-        {activePage ? (
-          loaded?.pageId === activePage.id && (
-            // key: beim Seitenwechsel Editor und Zeichenschicht komplett neu aufbauen
-            <DrawingLayer key={activePage.id} pageId={activePage.id} initialStrokes={loaded.strokes}>
-              <input
-                className="page-title-input"
-                value={activePage.title}
-                placeholder="Ohne Titel"
-                onChange={(e) => renamePage(activePage.id, e.target.value)}
-              />
-              <PageEditor pageId={activePage.id} initialContent={loaded.blocks} />
-            </DrawingLayer>
-          )
-        ) : (
-          <div className="empty-state">
-            <p>Noch keine Seite da.</p>
-            <button className="new-page-button" onClick={createPage}>
-              + Erste Seite anlegen
-            </button>
-          </div>
+        {panelOpen && (
+          <aside className="panel">
+            <header className="panel-header">
+              <span>{section.label}</span>
+              <button
+                className="icon-button"
+                onClick={() => setPanelOpen(false)}
+                title="Leiste einklappen"
+              >
+                <PanelLeftClose size={16} />
+              </button>
+            </header>
+            <Panel key={section.id} {...sectionProps} />
+          </aside>
         )}
-      </main>
-    </div>
+
+        <main className="main">
+          <View key={section.id} {...sectionProps} />
+        </main>
+      </div>
+    </NotesProvider>
   );
 }

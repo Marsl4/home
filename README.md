@@ -16,9 +16,12 @@ Dann im Browser **http://localhost:5173** öffnen. Beenden mit `Ctrl + C` im Ter
 
 ## Bedienung
 
-- **Neue Seite:** "+ Neue Seite" unten in der Seitenleiste
+- **Bereiche** (ganz links): Notizen, Uni, PDFs, Kalender, ToDos, Fitness. Klick öffnet die zweite
+  Leiste mit den Unterbereichen, nochmal klicken klappt sie zu. (Bisher funktioniert nur Notizen,
+  die anderen sind Platzhalter.)
+- **Neue Seite:** in Notizen "+ Neue Seite" unten in der zweiten Leiste
 - **Umbenennen:** oben auf der Seite in den großen Titel klicken
-- **Löschen:** in der Seitenleiste mit der Maus über die Seite fahren → "×"
+- **Löschen:** in der Leiste mit der Maus über die Seite fahren → "×"
 - **Blöcke einfügen:** `/` tippen (Überschriften, Listen, Tabellen, Bilder …)
 - **Zeichnen:** oben rechts auf "✏️ Zeichnen" → überall auf der Seite malen (Stift, Textmarker,
   Radierer, Farben). `⌘Z` = rückgängig, `Esc` oder "Fertig" = zurück zum Tippen.
@@ -29,16 +32,22 @@ Dann im Browser **http://localhost:5173** öffnen. Beenden mit `Ctrl + C` im Ter
 
 | Datei | Aufgabe |
 |---|---|
-| `src/App.tsx` | Hauptlayout, Seitenverwaltung |
-| `src/components/Sidebar.tsx` | Seitenleiste |
-| `src/components/PageEditor.tsx` | Editor für eine Seite + automatisches Speichern |
+| `src/App.tsx` | Grundlayout: Bereiche-Leiste, zweite Leiste, Hauptansicht |
+| `src/sections/index.ts` | **Liste aller Bereiche** – neuen Bereich hier eintragen |
+| `src/sections/notes/` | Notizen: Seitenliste, Editor, Seitenansicht |
+| `src/sections/placeholder/` | Platzhalter-Ansicht für Bereiche, die noch kommen |
+| `src/components/SectionRail.tsx` | Leiste ganz links |
 | `src/editor/schema.ts` | Welche Blöcke es im Editor gibt |
-| `src/drawing/DrawingLayer.tsx` | Zeichenschicht über der Seite (Zeichnen, Mitwandern, Speichern) |
-| `src/drawing/DrawingToolbar.tsx` | Werkzeugleiste oben rechts |
-| `src/drawing/strokes.ts` | Format und Aussehen der Striche |
-| `src/storage/db.ts` | Alles rund ums Speichern |
+| `src/drawing/` | Zeichenschicht, Werkzeugleiste, Striche |
+| `src/storage/db.ts` | Alles rund ums Speichern der Daten |
+| `src/storage/uiState.ts` | Merkt sich, welcher Bereich zuletzt offen war |
 
 ## Wichtig
 
 Die Daten liegen nur in **diesem Browser** auf **diesem Mac**. Wer die Browserdaten
 löscht (oder einen anderen Browser nimmt), sieht die Notizen nicht. Backup/Sync kommt später.
+
+## Neuen Bereich hinzufügen
+
+In `src/sections/index.ts` einen Eintrag ergänzen (Name, Icon von https://lucide.dev, Unterbereiche).
+Solange der Bereich noch nichts kann, `PlaceholderPanel` und `PlaceholderView` verwenden.

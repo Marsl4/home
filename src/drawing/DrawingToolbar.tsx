@@ -1,4 +1,6 @@
 // Werkzeugleiste oben rechts: Stift-Modus an/aus, Werkzeug, Farbe, Rückgängig.
+import { Eraser, Highlighter, Pencil, Undo2, type LucideIcon } from "lucide-react";
+
 import { HIGHLIGHTER_COLORS, PEN_COLORS, type Tool } from "./strokes";
 
 type Props = {
@@ -12,10 +14,10 @@ type Props = {
   onUndo: () => void;
 };
 
-const TOOLS: { tool: Tool; label: string; icon: string }[] = [
-  { tool: "pen", label: "Stift", icon: "✏️" },
-  { tool: "highlighter", label: "Textmarker", icon: "🖍️" },
-  { tool: "eraser", label: "Radierer", icon: "🧽" },
+const TOOLS: { tool: Tool; label: string; icon: LucideIcon }[] = [
+  { tool: "pen", label: "Stift", icon: Pencil },
+  { tool: "highlighter", label: "Textmarker", icon: Highlighter },
+  { tool: "eraser", label: "Radierer", icon: Eraser },
 ];
 
 export function DrawingToolbar(props: Props) {
@@ -25,7 +27,7 @@ export function DrawingToolbar(props: Props) {
     return (
       <div className="drawing-toolbar">
         <button className="toolbar-button" onClick={props.onTogglePenMode} title="Zeichnen (Stift-Modus)">
-          ✏️ Zeichnen
+          <Pencil size={16} /> Zeichnen
         </button>
       </div>
     );
@@ -49,7 +51,7 @@ export function DrawingToolbar(props: Props) {
           onClick={() => selectTool(t.tool)}
           title={t.label}
         >
-          {t.icon}
+          <t.icon size={18} />
         </button>
       ))}
 
@@ -66,7 +68,7 @@ export function DrawingToolbar(props: Props) {
 
       <span className="toolbar-divider" />
       <button className="toolbar-button" onClick={props.onUndo} disabled={!props.canUndo} title="Rückgängig (⌘Z)">
-        ↶
+        <Undo2 size={18} />
       </button>
       <button className="toolbar-button done" onClick={props.onTogglePenMode} title="Fertig (Esc)">
         Fertig

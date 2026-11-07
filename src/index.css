@@ -1,14 +1,22 @@
-/* Grundlayout: Seitenleiste links, Seite rechts. */
+/* =========================================================
+   Farben & Grundwerte – hier zentral ändern
+   ========================================================= */
 :root {
-  --sidebar-bg: #f7f7f5;
-  --border: #e9e9e7;
-  --text: #37352f;
-  --text-muted: #91918e;
-  --hover: #ebebea;
-  --active: #e3e3e1;
+  --rail-bg: #f0efec;
+  --panel-bg: #f7f7f5;
+  --main-bg: #ffffff;
+  --border: #e6e5e1;
+  --text: #2f2e2b;
+  --text-muted: #8d8c88;
+  --hover: #e9e8e4;
+  --active: #e2e1dc;
+  --accent: #4f46e5;
+  --accent-soft: #e8e7fb;
+
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--text);
-  background: #fff;
+  background: var(--main-bg);
+  -webkit-font-smoothing: antialiased;
 }
 
 * {
@@ -17,101 +25,249 @@
 
 body {
   margin: 0;
-  background: #fff;
+  background: var(--main-bg);
 }
 
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* =========================================================
+   Grundlayout: [Bereiche] [Unterbereiche] [Hauptansicht]
+   ========================================================= */
 .app {
   display: flex;
   height: 100vh;
 }
 
-/* ---------- Seitenleiste ---------- */
-.sidebar {
+.main {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Bereiche-Leiste (ganz links) ---------- */
+.rail {
+  width: 76px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 0;
+  background: var(--rail-bg);
+  border-right: 1px solid var(--border);
+}
+
+.rail-item {
+  width: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0 6px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.rail-item:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.rail-item.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.rail-label {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* ---------- Unterbereiche-Leiste ---------- */
+.panel {
   width: 240px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: var(--sidebar-bg);
-  border-right: 1px solid var(--border);
   padding: 12px 8px;
+  background: var(--panel-bg);
+  border-right: 1px solid var(--border);
 }
 
-.sidebar-header {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
-  padding: 4px 8px 8px;
-}
-
-.page-list {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.page-item {
+.panel-header {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
+  justify-content: space-between;
+  padding: 2px 4px 10px 10px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
-.page-item:hover {
+.panel-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.panel-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 6px 4px 10px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.panel-item:hover {
   background: var(--hover);
 }
 
-.page-item.active {
+.panel-item.active {
   background: var(--active);
   font-weight: 500;
 }
 
-.page-title {
+.panel-item-icon {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.panel-item-label {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.icon-button {
+.panel-item-action {
+  display: flex;
   border: none;
   background: none;
-  color: var(--text-muted);
-  font-size: 16px;
-  line-height: 1;
-  padding: 2px 6px;
+  padding: 3px;
   border-radius: 4px;
+  color: var(--text-muted);
   cursor: pointer;
   visibility: hidden; /* erst beim Drüberfahren zeigen */
 }
 
-.page-item:hover .icon-button {
+.panel-item:hover .panel-item-action {
   visibility: visible;
 }
 
-.icon-button:hover {
+.panel-item-action:hover {
   background: var(--active);
   color: var(--text);
 }
 
-.new-page-button {
+.panel-add-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 7px 10px;
   border: none;
-  background: none;
-  text-align: left;
-  padding: 6px 8px;
   border-radius: 6px;
+  background: none;
   font-size: 14px;
   color: var(--text-muted);
+  text-align: left;
   cursor: pointer;
 }
 
-.new-page-button:hover {
+.panel-add-button:hover {
   background: var(--hover);
   color: var(--text);
 }
 
-/* ---------- Seite ---------- */
+.icon-button {
+  display: flex;
+  border: none;
+  background: none;
+  padding: 5px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.primary-button:hover {
+  filter: brightness(1.1);
+}
+
+/* ---------- Platzhalter für Bereiche, die noch kommen ---------- */
+.placeholder-view {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.placeholder-icon {
+  display: flex;
+  padding: 16px;
+  margin-bottom: 8px;
+  border-radius: 16px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.placeholder-view h1 {
+  margin: 0;
+  font-size: 22px;
+  color: var(--text);
+}
+
+.placeholder-sub {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.placeholder-view p {
+  margin: 4px 0 16px;
+}
+
+/* =========================================================
+   Notizen: Seite mit Editor
+   ========================================================= */
 .page {
   flex: 1;
   overflow-y: auto;
@@ -126,6 +282,7 @@ body {
   padding: 0 54px; /* gleiche Einrückung wie der Editor-Text */
   border: none;
   outline: none;
+  font: inherit;
   font-size: 40px;
   font-weight: 700;
   color: var(--text);
@@ -139,12 +296,6 @@ body {
 .page .bn-container {
   max-width: 760px;
   margin: 0 auto;
-}
-
-.empty-state {
-  text-align: center;
-  margin-top: 20vh;
-  color: var(--text-muted);
 }
 
 /* ---------- Zeichenschicht ---------- */
@@ -194,13 +345,17 @@ body {
 }
 
 .toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   border: none;
   background: none;
   min-width: 34px;
   height: 34px;
   padding: 0 8px;
   border-radius: 6px;
-  font-size: 16px;
+  font-size: 14px;
   color: var(--text);
   cursor: pointer;
 }

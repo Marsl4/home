@@ -4,8 +4,8 @@ import { useCreateBlockNote } from "@blocknote/react";
 import { de } from "@blocknote/core/locales";
 import "@blocknote/mantine/style.css";
 
-import { schema, type EditorBlock } from "../editor/schema";
-import { savePageContent } from "../storage/db";
+import { schema, type EditorBlock } from "../../editor/schema";
+import { savePageContent } from "../../storage/db";
 
 type Props = {
   pageId: string;
