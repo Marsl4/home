@@ -417,7 +417,11 @@ button {
 .drawing-layer.active {
   pointer-events: auto;
   cursor: crosshair;
-  touch-action: none; /* auf dem iPad: Stift malt, statt die Seite zu scrollen */
+  /* iPad: Finger scrollen weiter; den Stift hält useStrokeInput vom Scrollen ab. */
+  touch-action: pan-x pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .drawing-layer.active.tool-eraser,
@@ -1012,7 +1016,10 @@ path.selected {
 .pdf-ink.active {
   pointer-events: auto;
   cursor: crosshair;
-  touch-action: none;
+  touch-action: pan-x pan-y; /* Finger scrollen, Stift malt (siehe useStrokeInput) */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 

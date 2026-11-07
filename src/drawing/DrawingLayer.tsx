@@ -190,9 +190,10 @@ export function DrawingLayer({ pageId, initialStrokes, initialImages, children }
   });
 
   // ---------- Zeichnen mit Maus / Trackpad / Stift ----------
-  const { draft, handlers, lasso, selection, selectionBox, deleteSelection, dragOffset } =
+  const { draft, draftPathRef, handlers, lasso, selection, selectionBox, deleteSelection, dragOffset } =
     useStrokeInput({
     enabled: penMode,
+    surfaceRef: svgRef,
     tool,
     color,
     strokes,
@@ -222,7 +223,7 @@ export function DrawingLayer({ pageId, initialStrokes, initialImages, children }
   // SVG-Formen nur neu berechnen, wenn sich die Striche ändern.
   const paths = useMemo(() => new Map(strokes.map((s) => [s.id, strokeToPath(s)])), [strokes]);
 
-  const renderStroke = (stroke: Stroke, path: string) => {
+  const renderStroke = (stroke: Stroke, path: string, ref?: React.Ref<SVGPathElement>) => {
     const isSelected = selection.has(stroke.id);
     const dx = isSelected ? dragOffset.dx : 0;
     const dy = offsetOf(stroke) + (isSelected ? dragOffset.dy : 0);
@@ -230,6 +231,7 @@ export function DrawingLayer({ pageId, initialStrokes, initialImages, children }
     return (
       <path
         key={stroke.id}
+        ref={ref}
         d={path}
         fill={stroke.color}
         transform={`translate(${layout.columnLeft + dx} ${dy})`}
@@ -280,7 +282,7 @@ export function DrawingLayer({ pageId, initialStrokes, initialImages, children }
         {...handlers}
       >
         {strokes.map((s) => renderStroke(s, paths.get(s.id) ?? ""))}
-        {draft && renderStroke({ ...draft, anchorBlockId: null }, strokeToPath(draft))}
+        {draft && renderStroke({ ...draft, anchorBlockId: null }, strokeToPath(draft), draftPathRef)}
         <g transform={`translate(${layout.columnLeft} 0)`}>
           <LassoOverlay lasso={lasso} box={selectionBox} onDelete={deleteSelection} />
         </g>

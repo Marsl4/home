@@ -69,9 +69,10 @@ export function PdfPage(props: Props) {
   }, [doc, index, width, displayWidth, nearViewport]);
 
   // Zeichnen: Koordinaten in PDF-Einheiten, damit Striche beim Zoomen mitskalieren.
-  const { draft, handlers, lasso, selection, selectionBox, deleteSelection, dragOffset } =
+  const { draft, draftPathRef, handlers, lasso, selection, selectionBox, deleteSelection, dragOffset } =
     useStrokeInput({
     enabled: penMode,
+    surfaceRef: svgRef,
     tool,
     color,
     strokes,
@@ -111,12 +112,13 @@ export function PdfPage(props: Props) {
 
   const paths = useMemo(() => new Map(strokes.map((s) => [s.id, strokeToPath(s)])), [strokes]);
 
-  const renderStroke = (stroke: Stroke, path: string) => {
+  const renderStroke = (stroke: Stroke, path: string, ref?: React.Ref<SVGPathElement>) => {
     const isSelected = selection.has(stroke.id);
     const classes = [stroke.tool === "highlighter" ? "highlighter-stroke" : "", isSelected ? "selected" : ""];
     return (
       <path
         key={stroke.id}
+        ref={ref}
         d={path}
         fill={stroke.color}
         transform={isSelected ? `translate(${dragOffset.dx} ${dragOffset.dy})` : undefined}
@@ -139,7 +141,7 @@ export function PdfPage(props: Props) {
         {...handlers}
       >
         {strokes.map((s) => renderStroke(s, paths.get(s.id) ?? ""))}
-        {draft && renderStroke(draft, strokeToPath(draft))}
+        {draft && renderStroke(draft, strokeToPath(draft), draftPathRef)}
         <LassoOverlay
           lasso={lasso}
           box={selectionBox}

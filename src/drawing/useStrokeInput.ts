@@ -1,7 +1,8 @@
 // Wiederverwendbare Stift-Logik: aus Maus-/Trackpad-/Stift-Bewegungen Striche machen,
 // radieren und mit dem Lasso auswählen + verschieben.
 // Benutzt von der Zeichenschicht auf Notizseiten und von den PDF-Seiten.
-import { useEffect, useRef, useState } from "react";
+// Auf dem iPad zeichnet nur der Apple Pencil – Finger scrollen und zoomen ganz normal.
+import { useEffect, useRef, useState, type RefObject } from "react";
 
 import { usePaneFocused } from "../components/PaneContext";
 import {
@@ -9,6 +10,7 @@ import {
   hitsStroke,
   moveStroke,
   strokeInLasso,
+  strokeToPath,
   type Box,
   type Stroke,
   type Tool,
@@ -18,6 +20,7 @@ export type PointerPosition = { clientX: number; clientY: number; pressure: numb
 
 type Options = {
   enabled: boolean; // Stift-Modus an?
+  surfaceRef: RefObject<Element | null>; // die Zeichenfläche (für die Stift-Erkennung auf dem iPad)
   tool: Tool;
   color: string;
   strokes: Stroke[];
@@ -42,6 +45,8 @@ export function useStrokeInput(options: Options) {
   const paneFocused = usePaneFocused(); // Tastenkürzel nur in der aktiven Hälfte
   const [draft, setDraft] = useState<Stroke | null>(null); // Strich, der gerade entsteht
   const strokesBeforeErasing = useRef<Stroke[] | null>(null); // null = es wird nicht radiert
+  const activePointer = useRef<number | null>(null); // der Stift/die Maus, die gerade zeichnet
+  const draftPathRef = useRef<SVGPathElement>(null); // Linie, die gerade entsteht (direkt aktualisiert)
 
   // ---------- Lasso-Zustand ----------
   const [lasso, setLasso] = useState<[number, number][] | null>(null); // Linie, die gerade gezogen wird
@@ -89,6 +94,25 @@ export function useStrokeInput(options: Options) {
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  // Apple Pencil: dem Browser verbieten, mit dem Stift zu scrollen (Finger dürfen weiter scrollen).
+  // Pointer-Events kommen trotzdem an – so malt der Stift ohne Verzögerung.
+  useEffect(() => {
+    const surface = options.surfaceRef.current;
+    if (!enabled || !surface) return;
+    const blockStylus = (event: Event) => {
+      const touches = Array.from((event as TouchEvent).changedTouches ?? []);
+      if (touches.some((t) => (t as Touch & { touchType?: string }).touchType === "stylus")) {
+        event.preventDefault();
+      }
+    };
+    surface.addEventListener("touchstart", blockStylus, { passive: false });
+    surface.addEventListener("touchmove", blockStylus, { passive: false });
+    return () => {
+      surface.removeEventListener("touchstart", blockStylus);
+      surface.removeEventListener("touchmove", blockStylus);
+    };
+  }, [enabled, options.surfaceRef]);
+
   // ---------- Radierer ----------
   const eraseAt = (event: PointerPosition) => {
     const [x, y] = toPoint(event);
@@ -98,6 +122,9 @@ export function useStrokeInput(options: Options) {
 
   // ---------- Zeiger-Ereignisse ----------
   const onPointerDown = (event: React.PointerEvent) => {
+    // Finger zeichnen nicht (sie scrollen/zoomen). Maus, Trackpad und Stift schon.
+    if (event.pointerType === "touch" || activePointer.current !== null) return;
+    activePointer.current = event.pointerId;
     event.currentTarget.setPointerCapture(event.pointerId);
     const [x, y] = toPoint(event);
 
@@ -134,6 +161,7 @@ export function useStrokeInput(options: Options) {
   };
 
   const onPointerMove = (event: React.PointerEvent) => {
+    if (event.pointerId !== activePointer.current) return;
     if (drag) {
       const [x, y] = toPoint(event);
       setDrag({ ...drag, dx: x - drag.start[0], dy: y - drag.start[1] });
@@ -148,11 +176,15 @@ export function useStrokeInput(options: Options) {
     if (!draft) return;
     // "Coalesced events" = alle Zwischenpunkte, für glattere Linien (v. a. mit dem Stift).
     const events = event.nativeEvent.getCoalescedEvents?.() ?? [];
-    const points = (events.length ? events : [event]).map(toPoint);
-    setDraft({ ...draft, points: [...draft.points, ...points] });
+    draft.points.push(...(events.length ? events : [event]).map(toPoint));
+    // Für möglichst wenig Verzögerung: die Linie direkt neu zeichnen, ohne React neu rendern zu lassen.
+    // (draft.points wird dafür bewusst direkt ergänzt; beim Loslassen wird eine Kopie gespeichert.)
+    draftPathRef.current?.setAttribute("d", strokeToPath(draft));
   };
 
   const onPointerUp = (event: React.PointerEvent) => {
+    if (event.pointerId !== activePointer.current) return;
+    activePointer.current = null;
     if (drag) {
       setDrag(null);
       // Endposition direkt vom Loslassen nehmen (die letzte Bewegung ist evtl. noch nicht im Zustand).
@@ -185,11 +217,12 @@ export function useStrokeInput(options: Options) {
     }
     if (!draft) return;
     setDraft(null);
-    options.onStrokeDone(draft);
+    options.onStrokeDone({ ...draft, points: [...draft.points] });
   };
 
   return {
     draft,
+    draftPathRef, // an das <path> der entstehenden Linie hängen
     handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp },
     lasso,
     selection,

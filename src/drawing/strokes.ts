@@ -28,7 +28,7 @@ export function strokeToPath(stroke: Stroke): string {
     size: isHighlighter ? 18 : 3.5,
     thinning: isHighlighter ? 0 : 0.6,
     smoothing: 0.5,
-    streamline: 0.5,
+    streamline: 0.2, // wenig "Nachziehen": die Linie folgt dem Stift ohne sichtbare Verzögerung
     simulatePressure: !isHighlighter && !stroke.realPressure,
   });
   if (outline.length === 0) return "";
