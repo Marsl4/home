@@ -1696,3 +1696,62 @@ path.selected {
   font-size: 13px;
   line-height: 1.5;
 }
+
+/* ---------- Eigene Scroll-Markierung (rechter/unterer Rand) ---------- */
+/* Die normalen Scrollbalken sind dort ausgeblendet (auf dem iPad sieht man sie ohnehin kaum). */
+.page,
+.pdf-scroll {
+  scrollbar-width: none;
+}
+
+.page::-webkit-scrollbar,
+.pdf-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-thumb {
+  position: fixed;
+  z-index: 20;
+  touch-action: none;
+  cursor: grab;
+}
+
+.scroll-thumb.vertical {
+  width: 14px;
+}
+
+.scroll-thumb.horizontal {
+  height: 14px;
+}
+
+.scroll-thumb::after {
+  content: "";
+  position: absolute;
+  border-radius: 4px;
+  background: rgba(128, 128, 128, 0.4);
+  transition: background 0.2s, width 0.2s, height 0.2s;
+}
+
+.scroll-thumb.vertical::after {
+  top: 0;
+  bottom: 0;
+  right: 3px;
+  width: 5px;
+}
+
+.scroll-thumb.horizontal::after {
+  left: 0;
+  right: 0;
+  bottom: 3px;
+  height: 5px;
+}
+
+.scroll-thumb.active::after,
+.scroll-thumb:hover::after {
+  background: rgba(128, 128, 128, 0.7);
+}
+
+.scroll-thumb.vertical:hover::after,
+.scroll-thumb.vertical:active::after {
+  width: 8px;
+}

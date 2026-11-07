@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Star } from "lucide-react";
 
+import { ScrollIndicator } from "../../components/ScrollIndicator";
 import { usePinchZoom } from "../../components/usePinchZoom";
 import { DrawingToolbar } from "../../drawing/DrawingToolbar";
 import { PEN_COLORS, type Stroke, type Tool } from "../../drawing/strokes";
@@ -146,6 +147,7 @@ export function PdfViewer({ pdf }: { pdf: PdfDoc }) {
           ))}
         </div>
       </div>
+      <ScrollIndicator scrollRef={scrollRef} />
 
       <DrawingToolbar
         penMode={penMode}

@@ -1,6 +1,7 @@
 // Zeigt EINE Notizseite: Titel, Editor und Zeichenschicht. Wird von Notizen und Uni benutzt.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
+import { ScrollIndicator } from "../../components/ScrollIndicator";
 import { DrawingLayer } from "../../drawing/DrawingLayer";
 import type { FloatingImage } from "../../drawing/images";
 import type { Stroke } from "../../drawing/strokes";
@@ -51,6 +52,7 @@ export function PageView({ page, breadcrumb }: Props) {
 
   return (
     // light-surface: das Schreibblatt bleibt auch im dunklen Design hell.
+    <>
     <div className="page light-surface" ref={scrollRef}>
       {/* key: beim Seitenwechsel Editor und Zeichenschicht komplett neu aufbauen */}
       <DrawingLayer
@@ -70,5 +72,7 @@ export function PageView({ page, breadcrumb }: Props) {
         <PageEditor pageId={page.id} initialContent={loaded.blocks} />
       </DrawingLayer>
     </div>
+    <ScrollIndicator key={page.id} scrollRef={scrollRef} />
+    </>
   );
 }

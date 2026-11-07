@@ -184,7 +184,8 @@ export function recognizeShape(input: StrokePoint[]): { kind: ShapeKind; points:
 }
 
 // Eingerastete Form weiterziehen: Linie -> Ende folgt dem Stift (Länge + Richtung),
-// geschlossene Form -> wird um ihre Mitte größer/kleiner, je nachdem wie weit der Stift von der Mitte weg ist.
+// geschlossene Form -> wird um ihre Mitte größer/kleiner (Abstand des Stifts zur Mitte) und gedreht
+// (Stift um die Mitte herumführen).
 export function transformShape(
   kind: ShapeKind,
   base: StrokePoint[],
@@ -212,8 +213,21 @@ export function transformShape(
   const xs = base.map((p) => p[0]);
   const ys = base.map((p) => p[1]);
   const center: Point = [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2];
+  // Abstand zur Mitte = Größe, Winkel um die Mitte = Drehung.
   const scale = Math.max(0.1, dist(pen, center) / Math.max(1, dist(grab, center)));
-  return base.map(([x, y, p]) => [center[0] + (x - center[0]) * scale, center[1] + (y - center[1]) * scale, p]);
+  let angle =
+    Math.atan2(pen[1] - center[1], pen[0] - center[0]) - Math.atan2(grab[1] - center[1], grab[0] - center[0]);
+  // In der Nähe von 0°, 45°, 90° … einrasten, damit kleine Wackler die Form nicht schief machen.
+  const step = Math.PI / 4;
+  const nearest = Math.round(angle / step) * step;
+  if (Math.abs(angle - nearest) < (5 * Math.PI) / 180) angle = nearest;
+  const cos = Math.cos(angle) * scale;
+  const sin = Math.sin(angle) * scale;
+  return base.map(([x, y, p]) => {
+    const vx = x - center[0];
+    const vy = y - center[1];
+    return [center[0] + vx * cos - vy * sin, center[1] + vx * sin + vy * cos, p];
+  });
 }
 
 function segmentDistance(p: Point, a: Point, b: Point): number {
