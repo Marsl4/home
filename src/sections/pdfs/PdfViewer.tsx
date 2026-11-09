@@ -1,6 +1,6 @@
 // Zeigt ein PDF: Kopfzeile (Name, Favorit), alle Seiten untereinander, Stift-Werkzeuge.
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Share, Star } from "lucide-react";
+import { PanelLeft, Share, Star } from "lucide-react";
 
 import { ScrollIndicator } from "../../components/ScrollIndicator";
 import { usePinchZoom } from "../../components/usePinchZoom";
@@ -10,10 +10,12 @@ import { eraserRadius, strokeSize, useToolSettings } from "../../drawing/toolSet
 import { usePenShortcuts } from "../../drawing/useStrokeInput";
 import { loadPdfFile, loadPdfInk, savePdfInk, type PdfDoc, type PdfInk } from "../../storage/db";
 import { publish, useLiveSync } from "../../storage/liveSync";
+import { usePersistentState } from "../../storage/uiState";
 import { exportPdfFile } from "../../storage/exportFiles";
 import { getDocument, type PDFDocumentProxy } from "./pdfjs";
 import { PdfPage } from "./PdfPage";
-import { setPdfPosition } from "./visiblePage";
+import { PdfSidebar } from "./PdfSidebar";
+import { setPdfPosition, usePdfPosition } from "./visiblePage";
 import { usePdfs } from "./PdfsContext";
 
 const MAX_PAGE_WIDTH = 900;
@@ -50,6 +52,15 @@ export function PdfViewer({ pdf, breadcrumb }: { pdf: PdfDoc; breadcrumb?: React
   const [zoom, setZoom] = useState(1);
   usePinchZoom({ scrollRef, contentRef: pagesRef, zoom, setZoom, min: 0.5, max: 6 });
   const displayWidth = Math.min(availableWidth - 48, MAX_PAGE_WIDTH) * zoom;
+
+  // Seitenleiste mit Miniaturen und Suche
+  const [sidebarOpen, setSidebarOpen] = usePersistentState("ui:pdfSidebar", false);
+  const [query, setQuery] = useState("");
+  const position = usePdfPosition(pdf.id);
+  const jumpTo = (pageIndex: number) => {
+    const page = scrollRef.current?.querySelectorAll<HTMLElement>(".pdf-page")[pageIndex];
+    if (page && scrollRef.current) scrollRef.current.scrollTop = page.offsetTop - 12;
+  };
 
   // Welche Seite ist gerade sichtbar? (für die KI-Leiste: "diese Seite mitschicken")
   useEffect(() => {
@@ -120,6 +131,13 @@ export function PdfViewer({ pdf, breadcrumb }: { pdf: PdfDoc; breadcrumb?: React
   return (
     <div className="pdf-viewer">
       <header className="pdf-header">
+        <button
+          className={`icon-button ${sidebarOpen ? "active" : ""}`}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          title={sidebarOpen ? "Seitenleiste ausblenden" : "Seiten & Suche"}
+        >
+          <PanelLeft size={17} />
+        </button>
         {breadcrumb && (
           <span className="pdf-breadcrumb">
             {breadcrumb}
@@ -144,6 +162,17 @@ export function PdfViewer({ pdf, breadcrumb }: { pdf: PdfDoc; breadcrumb?: React
         {loaded && <span className="pdf-page-count">{loaded.sizes.length} Seiten</span>}
       </header>
 
+      <div className="pdf-body">
+      {sidebarOpen && loaded && (
+        <PdfSidebar
+          doc={loaded.doc}
+          sizes={loaded.sizes}
+          currentPage={position?.page ?? 1}
+          query={query}
+          onQueryChange={setQuery}
+          onJump={jumpTo}
+        />
+      )}
       <div className="pdf-scroll" ref={scrollRef}>
         {/* Abstände zoomen mit, damit die Stelle unter den Fingern beim Zoomen an ihrem Platz bleibt. */}
         <div className="pdf-pages" ref={pagesRef} style={{ gap: 16 * zoom, padding: `${24 * zoom}px ${24 * zoom}px 80px` }}>
@@ -164,6 +193,7 @@ export function PdfViewer({ pdf, breadcrumb }: { pdf: PdfDoc; breadcrumb?: React
               strokeSize={strokeSize(tool === "highlighter" ? "highlighter" : "pen", toolSettings)}
               eraserRadiusPx={eraserRadius(toolSettings)}
               eraserMode={toolSettings.eraserMode}
+              highlight={sidebarOpen ? query : ""}
               onCommit={(strokes) => {
                 setHistory([...history, ink]);
                 save(withPage(index, strokes));
@@ -173,6 +203,7 @@ export function PdfViewer({ pdf, breadcrumb }: { pdf: PdfDoc; breadcrumb?: React
             />
           ))}
         </div>
+      </div>
       </div>
       <ScrollIndicator scrollRef={scrollRef} />
 

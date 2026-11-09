@@ -25,6 +25,7 @@ type Props = {
   strokeSize: number; // Strichdicke (in PDF-Einheiten)
   eraserRadiusPx: number; // Radierer-Größe auf dem Bildschirm
   eraserMode: "stroke" | "precise";
+  highlight: string; // Suchbegriff, der auf der Seite gelb markiert wird ("" = keiner)
   onCommit: (strokes: Stroke[]) => void; // neuer Strich (kommt in den Verlauf)
   onErase: (strokes: Stroke[]) => void; // während des Radierens
   onEraseDone: (before: Stroke[]) => void;
@@ -37,6 +38,42 @@ export function PdfPage(props: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [nearViewport, setNearViewport] = useState(false);
+  const [marks, setMarks] = useState<{ x: number; y: number; w: number; h: number }[]>([]);
+
+  // Suchtreffer auf dieser Seite markieren (Position aus dem Text der PDF-Seite, in PDF-Einheiten).
+  const highlight = props.highlight.trim().toLocaleLowerCase("de");
+  useEffect(() => {
+    if (!nearViewport || highlight.length < 2) return; // dann werden keine Markierungen angezeigt (s. u.)
+    let cancelled = false;
+    (async () => {
+      const page = await doc.getPage(index + 1);
+      const viewport = page.getViewport({ scale: 1 });
+      const content = await page.getTextContent();
+      const found: { x: number; y: number; w: number; h: number }[] = [];
+      for (const item of content.items) {
+        if (!("str" in item) || !item.str) continue;
+        const text = item.str.toLocaleLowerCase("de");
+        const fontHeight = Math.hypot(item.transform[2], item.transform[3]) || item.height;
+        const [x0, baseline] = viewport.convertToViewportPoint(item.transform[4], item.transform[5]);
+        let from = 0;
+        for (;;) {
+          const i = text.indexOf(highlight, from);
+          if (i === -1) break;
+          found.push({
+            x: x0 + (item.width * i) / text.length,
+            y: baseline - fontHeight * 0.85,
+            w: (item.width * highlight.length) / text.length,
+            h: fontHeight * 1.1,
+          });
+          from = i + highlight.length;
+        }
+      }
+      if (!cancelled) setMarks(found);
+    })().catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [doc, index, highlight, nearViewport]);
 
   // Nur Seiten in der Nähe des sichtbaren Bereichs werden gezeichnet. Weit entfernte Seiten geben ihr
   // Bild wieder frei – so bleibt der Arbeitsspeicher auch bei sehr langen PDFs klein.
@@ -150,6 +187,13 @@ export function PdfPage(props: Props) {
       style={{ width: displayWidth, height: (displayWidth * height) / width }}
     >
       <canvas ref={canvasRef} />
+      {(nearViewport && highlight.length >= 2 ? marks : []).map((m, i) => (
+        <span
+          key={i}
+          className="pdf-search-mark"
+          style={{ left: `${(m.x / width) * 100}%`, top: `${(m.y / height) * 100}%`, width: `${(m.w / width) * 100}%`, height: `${(m.h / height) * 100}%` }}
+        />
+      ))}
       <svg
         ref={svgRef}
         viewBox={`0 0 ${width} ${height}`}

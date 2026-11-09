@@ -2889,3 +2889,138 @@ path.selected {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- PDF: Seitenleiste mit Miniaturen und Suche ---------- */
+.pdf-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.pdf-body .pdf-scroll {
+  min-width: 0;
+}
+
+.icon-button.active {
+  background: var(--active);
+  color: var(--text);
+}
+
+.pdf-sidebar {
+  width: 168px;
+  min-height: 0;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: var(--panel-bg);
+}
+
+.pdf-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-muted);
+}
+
+.pdf-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.pdf-search .icon-button {
+  padding: 2px;
+}
+
+.pdf-sidebar-list {
+  flex: 1;
+  min-height: 0; /* sonst wächst die Liste mit und scrollt nicht (dann würden alle Miniaturen gezeichnet) */
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 10px 40px;
+}
+
+.pdf-thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: none;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.pdf-thumb canvas {
+  display: block;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.pdf-thumb.active {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.pdf-hit-count {
+  align-self: stretch;
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.pdf-hit {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.pdf-hit.current {
+  border-color: var(--accent);
+}
+
+.pdf-hit-page {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.pdf-hit-text mark {
+  background: #fde047;
+  color: #1f1f1f;
+  border-radius: 2px;
+}
+
+.pdf-search-mark {
+  position: absolute;
+  background: rgba(250, 204, 21, 0.45);
+  border-radius: 2px;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
