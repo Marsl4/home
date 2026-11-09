@@ -26,6 +26,23 @@ function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+// Sieht der Text nach Markdown aus? (mindestens zwei Zeilen mit #-Überschrift, Aufzählung, Nummerierung …)
+function looksLikeMarkdown(text: string): boolean {
+  const markdownLines = text.split("\n").filter((line) => /^\s*(#{1,6}\s|[-*+]\s|\d+[.)]\s|>\s)/.test(line));
+  return markdownLines.length >= 2 || /\*\*[^*]+\*\*/.test(text);
+}
+
+// Bringt die Quelle schon echte Formatierung mit (Überschriften, Listen, Fett)? Dann die nehmen.
+function hasFormatting(html: string): boolean {
+  return /<(h[1-6]|ul|ol|li|table|strong|b|em)[\s>]/i.test(html);
+}
+
+// Kleine Aufbereitung: Unterstreichungen <u>…</u> als HTML behalten, kaputte Bild-Verweise aus
+// Notion-Exporten ("!image.png") als Hinweis kennzeichnen.
+function prepareMarkdown(text: string): string {
+  return text.replace(/^(\s*)!([^\s[\]]+\.(png|jpe?g|gif|webp))\s*$/gim, "$1*(Bild: $2)*");
+}
+
 // Der Editor für EINE Seite. Beim Seitenwechsel wird er neu erzeugt (siehe key in App.tsx).
 export function PageEditor({ pageId, initialContent }: Props) {
   const editor = useCreateBlockNote({
@@ -34,6 +51,18 @@ export function PageEditor({ pageId, initialContent }: Props) {
     uploadFile: fileToDataUrl, // Bilder/Dateien direkt in der Seite speichern (kein Server nötig)
     // BlockNote mag keine leere Liste, deshalb "undefined" = leere Seite.
     initialContent: initialContent?.length ? initialContent : undefined,
+    // Eingefügter Markdown-Text (z. B. aus Notion, ChatGPT, Gemini) wird mit Überschriften,
+    // Aufzählungen und Fett-/Unterstrichen übernommen – auch wenn die Quelle ihn zusätzlich als
+    // einfachen Block (ohne Formatierung) mitschickt.
+    pasteHandler: ({ event, editor, defaultPasteHandler }) => {
+      const text = event.clipboardData?.getData("text/plain") ?? "";
+      const html = event.clipboardData?.getData("text/html") ?? "";
+      if (looksLikeMarkdown(text) && !hasFormatting(html)) {
+        editor.pasteMarkdown(prepareMarkdown(text));
+        return true;
+      }
+      return defaultPasteHandler();
+    },
   });
 
   // Live-Abgleich: Ist dieselbe Seite im Split-Modus zweimal offen, übernimmt die andere Hälfte
