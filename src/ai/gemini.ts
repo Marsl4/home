@@ -80,7 +80,11 @@ function attachmentParts(attachment: Attachment): Part[] {
 }
 
 // Fragt die KI nach strukturierten Daten (JSON nach einem Schema), z. B. für Tests oder Lernpläne.
-// Antwortet das Modell trotzdem nicht im richtigen Format, wird einmal nachgefragt.
+// Nicht jedes Modell kommt mit jeder Art der Anfrage zurecht (manche brechen mit "500" ab).
+// Darum werden nacheinander einfachere Wege probiert:
+//   1. festes Antwort-Format mit Schema
+//   2. nur "antworte als JSON", das Schema steht im Text
+//   3. ganz normale Textantwort, aus der das JSON herausgesucht wird
 export async function askGeminiJson<T>(options: {
   apiKey: string;
   model: string;
@@ -90,34 +94,61 @@ export async function askGeminiJson<T>(options: {
   signal?: AbortSignal;
 }): Promise<T> {
   const ai = new GoogleGenAI({ apiKey: options.apiKey });
-  const thinking = thinkingFor(options.model, options.fast);
-  const request = (thinkingConfig: ThinkingConfig | undefined) =>
-    ai.models.generateContent({
-      model: options.model,
-      contents: [{ role: "user", parts: [{ text: options.prompt }] }],
-      config: {
-        abortSignal: options.signal,
-        responseMimeType: "application/json",
-        responseJsonSchema: options.schema,
-        ...(thinkingConfig && { thinkingConfig }),
-      },
-    });
+  const withSchemaText = `${options.prompt}
+
+Antworte ausschließlich mit gültigem JSON (ohne Erklärungen davor oder danach) nach diesem JSON-Schema:
+${JSON.stringify(options.schema)}`;
+  const variants = [
+    { prompt: options.prompt, config: { responseMimeType: "application/json", responseJsonSchema: options.schema } },
+    { prompt: withSchemaText, config: { responseMimeType: "application/json" } },
+    { prompt: withSchemaText, config: {} },
+  ];
+
   let lastError: unknown;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    let response;
-    try {
-      response = await request(thinking);
-    } catch (error) {
-      if (!thinking || !(error instanceof ApiError) || error.status !== 400 || !/think/i.test(error.message)) throw error;
-      response = await request(undefined);
-    }
-    try {
-      return JSON.parse(response.text ?? "") as T;
-    } catch (error) {
-      lastError = error; // kaputtes JSON: nochmal fragen
+  for (const variant of variants) {
+    let thinking = thinkingFor(options.model, options.fast);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const response = await ai.models.generateContent({
+          model: options.model,
+          contents: [{ role: "user", parts: [{ text: variant.prompt }] }],
+          config: { abortSignal: options.signal, ...variant.config, ...(thinking && { thinkingConfig: thinking }) },
+        });
+        return parseJson<T>(response.text ?? "");
+      } catch (error) {
+        if (options.signal?.aborted) throw error;
+        lastError = error;
+        if (error instanceof ApiError) {
+          // Modell mag die Denk-Einstellung nicht: gleiche Variante ohne.
+          if (thinking && error.status === 400 && /think/i.test(error.message)) {
+            thinking = undefined;
+            continue;
+          }
+          // Schlüssel falsch, Limit erreicht, Modell unbekannt: andere Varianten helfen nicht.
+          if ([401, 403, 404, 429].includes(error.status)) throw error;
+        } else if (!(error instanceof SyntaxError)) {
+          throw error; // z. B. keine Verbindung
+        }
+        break; // nächste, einfachere Variante
+      }
     }
   }
-  throw new Error(`Die KI hat keine verwertbare Antwort geliefert (${String(lastError)}). Bitte nochmal versuchen.`);
+  throw lastError instanceof ApiError
+    ? lastError
+    : new Error("Die KI hat keine verwertbare Antwort geliefert. Bitte nochmal versuchen.");
+}
+
+// JSON aus einer Antwort holen – auch wenn es in ```json … ``` steht oder Text drumherum ist.
+function parseJson<T>(text: string): T {
+  const cleaned = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "");
+  try {
+    return JSON.parse(cleaned) as T;
+  } catch {
+    const start = cleaned.search(/[[{]/);
+    const end = Math.max(cleaned.lastIndexOf("}"), cleaned.lastIndexOf("]"));
+    if (start === -1 || end <= start) throw new SyntaxError("Kein JSON in der Antwort");
+    return JSON.parse(cleaned.slice(start, end + 1)) as T;
+  }
 }
 
 // Prüft den Schlüssel und liefert die Modelle, die Text erzeugen können.
@@ -165,7 +196,9 @@ export function describeAiError(error: unknown): string {
       return "Dieses Modell gibt es nicht (mehr). Bitte in Einstellungen → KI ein anderes wählen.";
     if (error.status === 429)
       return "Gratis-Limit erreicht – bitte kurz warten (meist eine Minute) und dann nochmal versuchen.";
-    if (error.status >= 500) return "Google ist gerade überlastet. Bitte gleich nochmal versuchen.";
+    if (error.status === 503) return "Google ist gerade überlastet. Bitte gleich nochmal versuchen.";
+    if (error.status >= 500)
+      return `Google konnte die Anfrage nicht bearbeiten (Fehler ${error.status}). Tipp: in Einstellungen → KI ein anderes Modell wählen. (Technisch: ${error.message.slice(0, 160)})`;
     return `Fehler von Gemini (${error.status}): ${error.message}`;
   }
   // "Load failed" (Safari) / "Failed to fetch" (Chrome): Die Anfrage kam gar nicht bei Google an
