@@ -7,6 +7,7 @@ import type { FloatingImage } from "../../drawing/images";
 import type { Stroke } from "../../drawing/strokes";
 import type { FloatingText } from "../../drawing/texts";
 import { removeUnknownBlocks, type EditorBlock } from "../../editor/schema";
+import { readScrollSpot, restoreScrollTop, saveScrollSpot } from "../../storage/scrollMemory";
 import { loadPageContent, loadPageDrawing, loadPageImages, loadPageTexts, type Page } from "../../storage/db";
 import { useNotes } from "./NotesContext";
 import { PageEditor } from "./PageEditor";
@@ -51,6 +52,34 @@ export function PageView({ page, breadcrumb }: Props) {
       cancelled = true;
     };
   }, [page.id]);
+
+  // Beim Öffnen dorthin springen, wo man zuletzt war, und beim Scrollen die Stelle merken.
+  const loadedId = loaded?.pageId === page.id ? page.id : null;
+  useEffect(() => {
+    const scroller = scrollRef.current;
+    if (!scroller || !loadedId) return;
+    const spot = readScrollSpot(loadedId);
+    const restore = restoreScrollTop(scroller, () => (spot && "top" in spot ? spot.top : 0));
+    let pending: number | null = null;
+    let timer = 0;
+    const flush = () => {
+      if (pending !== null) saveScrollSpot(loadedId, { top: pending });
+      pending = null;
+    };
+    const onScroll = () => {
+      if (restore.running()) return;
+      pending = scroller.scrollTop;
+      clearTimeout(timer);
+      timer = window.setTimeout(flush, 200);
+    };
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      restore.cancel();
+      scroller.removeEventListener("scroll", onScroll);
+      clearTimeout(timer);
+      flush(); // beim Verlassen sofort speichern
+    };
+  }, [loadedId]);
 
   if (loaded?.pageId !== page.id) return null; // lädt noch
 

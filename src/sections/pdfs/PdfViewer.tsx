@@ -12,6 +12,7 @@ import { loadPdfFile, loadPdfInk, savePdfInk, type PdfDoc, type PdfInk } from ".
 import { publish, useLiveSync } from "../../storage/liveSync";
 import { usePersistentState } from "../../storage/uiState";
 import { exportPdfFile } from "../../storage/exportFiles";
+import { readScrollSpot, restoreScrollTop, saveScrollSpot } from "../../storage/scrollMemory";
 import { getDocument, type PDFDocumentProxy } from "./pdfjs";
 import { PdfPage } from "./PdfPage";
 import { PdfSidebar } from "./PdfSidebar";
@@ -62,7 +63,23 @@ export function PdfViewer({ pdf, breadcrumb }: { pdf: PdfDoc; breadcrumb?: React
     if (page && scrollRef.current) scrollRef.current.scrollTop = page.offsetTop - 12;
   };
 
+  // Beim Öffnen dorthin springen, wo man zuletzt war (einmal pro PDF, sobald die Seiten Platz haben).
+  const restoreRef = useRef<{ pdfId: string; running: () => boolean; cancel: () => void } | null>(null);
+  useEffect(() => {
+    const scroller = scrollRef.current;
+    if (!scroller || !loaded || displayWidth <= 0 || restoreRef.current?.pdfId === pdf.id) return;
+    const spot = readScrollSpot(pdf.id);
+    const restore = restoreScrollTop(scroller, () => {
+      if (!spot || !("page" in spot)) return 0;
+      const page = scroller.querySelectorAll<HTMLElement>(".pdf-page")[spot.page];
+      return page ? page.offsetTop + spot.within * page.offsetHeight : null;
+    });
+    restoreRef.current = { pdfId: pdf.id, ...restore };
+  }, [loaded, pdf.id, displayWidth]);
+  useEffect(() => () => restoreRef.current?.cancel(), []);
+
   // Welche Seite ist gerade sichtbar? (für die KI-Leiste: "diese Seite mitschicken")
+  // Beim Scrollen außerdem die Stelle merken (Seite + Anteil darin).
   useEffect(() => {
     const scroller = scrollRef.current;
     if (!scroller || !loaded) return;
@@ -72,9 +89,31 @@ export function PdfViewer({ pdf, breadcrumb }: { pdf: PdfDoc; breadcrumb?: React
       const index = pages.findIndex((el) => el.offsetTop + el.offsetHeight > probe);
       setPdfPosition(pdf.id, { page: (index === -1 ? pages.length - 1 : index) + 1, pageCount: loaded.sizes.length });
     };
+    // Stelle beim Scrollen ausrechnen, aber erst kurz danach speichern (nicht bei jedem Pixel).
+    let pending: { page: number; within: number } | null = null;
+    let timer = 0;
+    const flush = () => {
+      if (pending) saveScrollSpot(pdf.id, pending);
+      pending = null;
+    };
+    const onScroll = () => {
+      update();
+      if (restoreRef.current?.pdfId !== pdf.id || restoreRef.current.running()) return;
+      const pages = Array.from(scroller.querySelectorAll<HTMLElement>(".pdf-page"));
+      const index = Math.max(0, pages.findIndex((el) => el.offsetTop + el.offsetHeight > scroller.scrollTop));
+      const page = pages[index];
+      if (!page) return;
+      pending = { page: index, within: Math.min(1, Math.max(0, (scroller.scrollTop - page.offsetTop) / page.offsetHeight)) };
+      clearTimeout(timer);
+      timer = window.setTimeout(flush, 200);
+    };
     update();
-    scroller.addEventListener("scroll", update, { passive: true });
-    return () => scroller.removeEventListener("scroll", update);
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      scroller.removeEventListener("scroll", onScroll);
+      clearTimeout(timer);
+      flush(); // beim Verlassen sofort speichern
+    };
   }, [loaded, pdf.id, displayWidth]);
 
   // PDF-Datei und Zeichnungen laden.
