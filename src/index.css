@@ -398,6 +398,15 @@ button {
   overflow: hidden;
 }
 
+/* Kleiner gezoomt als das Blatt: Blatt mittig auf grauem Grund, mit Rand. */
+.page.zoomed-out {
+  background: var(--pdf-bg);
+}
+.page.zoomed-out .zoom-sizer {
+  background: var(--main-bg);
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+
 .zoom-button {
   font-size: 13px;
   font-variant-numeric: tabular-nums;

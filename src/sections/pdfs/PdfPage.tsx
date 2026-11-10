@@ -201,7 +201,7 @@ export function PdfPage(props: Props) {
         {...handlers}
       >
         {strokes.map((s) => renderStroke(s, paths.get(s.id) ?? ""))}
-        {draft && renderStroke(draft, strokeToPath(draft), draftPathRef)}
+        {draft && renderStroke(draft, strokeToPath(draft, true), draftPathRef)}
         {eraser && <circle className="eraser-cursor" cx={eraser.x} cy={eraser.y} r={eraser.r} />}
         <LassoOverlay
           lasso={lasso}

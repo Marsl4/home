@@ -77,7 +77,8 @@ export function DrawingLayer({ pageId, title, scrollRef, initialStrokes, initial
   }, [zoom]);
   const [viewport, setViewport] = useState({ width: 0, height: 0 }); // sichtbarer Bereich, ungezoomt
   const [contentHeight, setContentHeight] = useState(0);
-  usePinchZoom({ scrollRef, contentRef: sizerRef, zoom, setZoom, min: 1, max: 6 });
+  // min 0.5: man kann auch kleiner als Blattgröße zoomen (Überblick), das Blatt steht dann mittig.
+  usePinchZoom({ scrollRef, contentRef: sizerRef, zoom, setZoom, min: 0.5, max: 6 });
 
   useEffect(() => {
     const scroller = scrollRef.current;
@@ -93,6 +94,11 @@ export function DrawingLayer({ pageId, title, scrollRef, initialStrokes, initial
     return () => observer.disconnect();
   }, [scrollRef]);
   const zoomed = zoom !== 1;
+  const zoomedOut = zoom < 1;
+  // Kleiner als Blattgröße: grauer Hintergrund um das Blatt (wie bei PDFs).
+  useEffect(() => {
+    scrollRef.current?.classList.toggle("zoomed-out", zoomedOut);
+  }, [scrollRef, zoomedOut]);
 
   // ---------- Unendliches Blatt ----------
   // Unter dem Text bzw. der tiefsten Zeichnung ist immer mindestens eine Bildschirmhöhe Platz.
@@ -420,7 +426,7 @@ export function DrawingLayer({ pageId, title, scrollRef, initialStrokes, initial
       <div
         className="zoom-sizer"
         ref={sizerRef}
-        style={zoomed ? { width: viewport.width * zoom, height: contentHeight * zoom } : undefined}
+        style={zoomed ? { width: viewport.width * zoom, height: contentHeight * zoom, ...(zoomedOut && { margin: "0 auto" }) } : undefined}
       >
       <div
         className="page-content"
@@ -463,7 +469,7 @@ export function DrawingLayer({ pageId, title, scrollRef, initialStrokes, initial
         {...handlers}
       >
         {strokes.map((s) => renderStroke(s, paths.get(s.id) ?? ""))}
-        {draft && renderStroke({ ...draft, anchorBlockId: null }, strokeToPath(draft), draftPathRef)}
+        {draft && renderStroke({ ...draft, anchorBlockId: null }, strokeToPath(draft, true), draftPathRef)}
         <g transform={`translate(${layout.columnLeft} 0)`}>
           {eraser && <circle className="eraser-cursor" cx={eraser.x} cy={eraser.y} r={eraser.r} />}
           <LassoOverlay lasso={lasso} box={selectionBox} onDelete={deleteSelection} />

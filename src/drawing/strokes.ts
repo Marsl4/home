@@ -31,17 +31,42 @@ export const HIGHLIGHTER_SIZES = [10, 18, 28];
 export const ERASER_SIZES = [5, 12, 24]; // Radius des Radierers
 
 // Wandelt die Punkte eines Strichs in eine SVG-Form (gefüllte Kontur) um.
-export function strokeToPath(stroke: Stroke): string {
+// live = Strich wird gerade noch gezeichnet (dann ist das Ende noch offen).
+export function strokeToPath(stroke: Stroke, live = false): string {
   const isHighlighter = stroke.tool === "highlighter";
-  const outline = getStroke(stroke.points, {
+  const pen = !isHighlighter && !stroke.shape;
+  const outline = getStroke(pen ? cleanPoints(stroke.points, stroke.realPressure) : stroke.points, {
     size: stroke.size ?? (isHighlighter ? HIGHLIGHTER_SIZES[1] : PEN_SIZES[1]),
-    thinning: isHighlighter || stroke.shape ? 0 : 0.6, // Formen: gleichmäßig dick, saubere Ecken
+    // Wie stark der Druck die Dicke ändert. Mit dem echten Stift etwas weniger: gleichmäßigere, saubere Schrift.
+    thinning: !pen ? 0 : stroke.realPressure ? 0.4 : 0.6,
     smoothing: 0.6,
     // wenig "Nachziehen": die Linie folgt dem Stift ohne sichtbare Verzögerung
-    streamline: stroke.shape ? 0 : 0.2,
+    streamline: stroke.shape ? 0 : 0.25,
     simulatePressure: !isHighlighter && !stroke.realPressure,
+    last: !live, // fertige Striche bekommen ein sauberes, rundes Ende
   });
   return outlineToPath(outline);
+}
+
+// Glättet die Stift-Daten nur fürs Aussehen (gespeichert bleiben die Originalpunkte):
+// - winzige Zitter-Schritte (fast derselbe Punkt) weglassen
+// - den Druck des Stifts beruhigen, damit die Linie nicht fleckig dick/dünn wird
+function cleanPoints(points: Stroke["points"], realPressure: boolean): Stroke["points"] {
+  const MIN_STEP = 0.25;
+  const result: Stroke["points"] = [];
+  let pressure = points[0]?.[2] ?? 0.5;
+  points.forEach(([x, y, p], i) => {
+    const previous = result[result.length - 1];
+    const isLast = i === points.length - 1;
+    if (previous && !isLast && Math.hypot(x - previous[0], y - previous[1]) < MIN_STEP) return;
+    if (realPressure) {
+      pressure = pressure + (p - pressure) * 0.3; // gleitender Mittelwert
+      result.push([x, y, Math.max(0.2, pressure)]); // nie ganz dünn (z. B. beim Aufsetzen)
+    } else {
+      result.push([x, y, p]);
+    }
+  });
+  return result;
 }
 
 // Umriss -> SVG-Pfad mit weichen Kurven (statt vieler kurzer gerader Stücke, die eckig wirken).

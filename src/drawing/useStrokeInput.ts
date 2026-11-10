@@ -84,7 +84,7 @@ export function useStrokeInput(options: Options) {
       stroke.points.splice(0, stroke.points.length, ...shape.points);
       stroke.shape = true;
       snapped.current = true;
-      draftPathRef.current?.setAttribute("d", strokeToPath(stroke));
+      draftPathRef.current?.setAttribute("d", strokeToPath(stroke, true));
     }, HOLD_TO_SNAP_MS);
   };
   useEffect(() => () => clearTimeout(holdTimer.current), []);
@@ -258,7 +258,7 @@ export function useStrokeInput(options: Options) {
       if (!edit) return;
       const [x, y] = toPoint(event);
       draft.points.splice(0, draft.points.length, ...transformShape(edit.kind, edit.base, edit.grab, [x, y]));
-      draftPathRef.current?.setAttribute("d", strokeToPath(draft));
+      draftPathRef.current?.setAttribute("d", strokeToPath(draft, true));
       return;
     }
     // Bewegt sich der Stift (mehr als nur Zittern), beginnt das Warten aufs Stillhalten von vorn.
@@ -271,7 +271,7 @@ export function useStrokeInput(options: Options) {
     draft.points.push(...(events.length ? events : [event]).map(toPoint));
     // Für möglichst wenig Verzögerung: die Linie direkt neu zeichnen, ohne React neu rendern zu lassen.
     // (draft.points wird dafür bewusst direkt ergänzt; beim Loslassen wird eine Kopie gespeichert.)
-    draftPathRef.current?.setAttribute("d", strokeToPath(draft));
+    draftPathRef.current?.setAttribute("d", strokeToPath(draft, true));
   };
 
   const onPointerUp = (event: React.PointerEvent) => {
