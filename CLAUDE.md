@@ -49,8 +49,10 @@ Nur für mich privat. Läuft auf Mac (Tippen) und später iPad (Apple Pencil).
   ⌘V nur in der aktiven Hälfte (`usePaneFocused()` aus `src/components/PaneContext.ts`). Ist derselbe
   Inhalt zweimal offen, gleichen sich die Ansichten über `src/storage/liveSync.ts` ab – neue Ansichten,
   die etwas speichern, müssen das auch tun (sonst überschreiben sie sich gegenseitig).
-- KI (`src/ai/`): Gemini über `@google/genai`, direkt vom Gerät (kein Server). Schlüssel + Modell in
-  localStorage (`aiConfig.ts`, bewusst nicht in IndexedDB/Backup). Anbieter-Spezifisches nur in `gemini.ts`.
+- KI (`src/ai/`): zwei Anbieter, direkt vom Gerät (kein Server): Groq (`groq.ts`, OpenAI-Schnittstelle per fetch,
+  Standard-Modell `openai/gpt-oss-120b`) und Gemini (`gemini.ts`, `@google/genai`). Auswahl in `provider.ts`
+  (`askAiJson`, `describeAiError`) – neue KI-Funktionen dort anbinden. Groq liest keine Bilder → eingescannte
+  PDFs gehen an Gemini. Schlüssel + Modelle in localStorage (`aiConfig.ts`, bewusst nicht in IndexedDB/Backup).
   `context.ts` macht aus offener Notiz/PDF den mitgeschickten Text. Grenzen: Safari bricht Anfragen nach
   ca. 50 s ab („Load failed“), der Gratis-Tarif erlaubt nur wenige Anfragen pro Tag und Modell (429) –
   große Aufgaben in wenige mittelgroße Anfragen teilen (Beispiel: `englishAi.ts`), immer per Stream. Tests: Google per puppeteer-Request-

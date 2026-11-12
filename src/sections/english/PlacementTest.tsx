@@ -4,9 +4,7 @@
 import { useRef, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 
-import { ApiError } from "@google/genai";
-
-import { describeAiError } from "../../ai/gemini";
+import { describeAiError, isAiServiceError } from "../../ai/provider";
 import { usePersistentState } from "../../storage/uiState";
 import { useEnglish } from "./EnglishContext";
 import { assess, createPlacementTest, createPlan, type Assessment, type PlacementTest as Test } from "./englishAi";
@@ -48,7 +46,7 @@ export function PlacementTest({ onStart, onPlanReady }: { onStart: () => void; o
       if (controller.signal.aborted) return;
       // Fehler von Google bzw. der Verbindung verständlich machen, eigene Meldungen direkt zeigen.
       const message =
-        e instanceof ApiError || e instanceof TypeError
+        isAiServiceError(e)
           ? describeAiError(e, { withAttachment: false })
           : e instanceof Error
             ? e.message

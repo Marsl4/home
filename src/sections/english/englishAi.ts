@@ -1,7 +1,6 @@
 // Aufgaben an die KI für den Englisch-Bereich: Einstufungstest erstellen, auswerten, Lernplan bauen.
 // Die KI antwortet jeweils in einem festen Format (JSON-Schema), damit die App es weiterverarbeiten kann.
-import { loadAiSettings } from "../../ai/aiConfig";
-import { askGeminiJson } from "../../ai/gemini";
+import { askAiJson } from "../../ai/provider";
 import type { EnglishLevel } from "../../storage/db";
 
 export const LEVELS: EnglishLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
@@ -29,12 +28,6 @@ export type PlanUnit = {
   grammar: string;
   vocabulary: { en: string; de: string; example: string }[];
 };
-
-function settings() {
-  const { apiKey, model, thorough } = loadAiSettings();
-  if (!apiKey) throw new Error("Für den Englisch-Bereich brauchst du den KI-Schlüssel (Einstellungen → KI).");
-  return { apiKey, model, fast: !thorough };
-}
 
 const str = { type: "string" };
 const strList = { type: "array", items: str };
@@ -79,8 +72,7 @@ Ziel der Person: ${goal}.
       ? `\n- writingTask: eine kurze Schreibaufgabe auf Deutsch formuliert ("Schreibe 3–5 Sätze auf Englisch über …"), passend zum Ziel.`
       : ""
   }`;
-  const result = await askGeminiJson<{ questions: TestQuestion[]; writingTask?: string }>({
-    ...settings(),
+  const result = await askAiJson<{ questions: TestQuestion[]; writingTask?: string }>({
     prompt,
     signal,
     schema: {
@@ -144,8 +136,7 @@ Antwort der Person: ${writing.trim() || "(nichts geschrieben)"}
 Grobe Einstufung nach Punkten: ${estimateLevel(test.questions, answers)}.
 Bestimme das passende Niveau (berücksichtige auch die Schreibprobe). Antworte auf Deutsch, freundlich und konkret:
 summary = 2–4 Sätze Einschätzung; strengths und weaknesses = je 2–4 kurze Punkte (z. B. "Zeitformen der Vergangenheit").`;
-  return askGeminiJson<Assessment>({
-    ...settings(),
+  return askAiJson<Assessment>({
     prompt,
     signal,
     schema: {
@@ -176,8 +167,7 @@ export async function createPlan(
 Schwächen laut Einstufungstest: ${input.weaknesses.join("; ") || "keine besonderen"}.`;
 
   // Schritt 1: Gliederung
-  const outline = await askGeminiJson<{ units: UnitOutline[] }>({
-    ...settings(),
+  const outline = await askAiJson<{ units: UnitOutline[] }>({
     prompt: `Erstelle die Gliederung eines Englisch-Lernplans für eine deutschsprachige Person.
 ${about}
 - 8 Einheiten (units), aufeinander aufbauend, Schwächen zuerst, passend zum Ziel; jede Einheit ca. 1 Woche.
@@ -204,8 +194,7 @@ ${about}
   for (let i = 0; i < units.length; i += UNITS_PER_VOCAB_REQUEST) groups.push(units.slice(i, i + UNITS_PER_VOCAB_REQUEST));
   const vocabGroups = await Promise.all(
     groups.map(async (group) => {
-      const result = await askGeminiJson<{ units: { vocabulary: PlanUnit["vocabulary"] }[] }>({
-        ...settings(),
+      const result = await askAiJson<{ units: { vocabulary: PlanUnit["vocabulary"] }[] }>({
         prompt: `Erstelle Vokabeln für einen Englisch-Lernplan einer deutschsprachigen Person.
 ${about}
 Alle Einheiten des Plans (nur zur Orientierung, damit sich nichts doppelt): ${allTitles}

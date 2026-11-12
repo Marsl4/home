@@ -1,4 +1,4 @@
-// KI-Leiste rechts: Chat mit Gemini. Kennt die Notiz bzw. das PDF der aktiven Hälfte
+// KI-Leiste rechts: Chat mit der KI (Groq oder Gemini, siehe Einstellungen → KI). Kennt die Notiz bzw. das PDF der aktiven Hälfte
 // und schickt sie (wenn gewünscht) mit der Frage mit.
 import { useEffect, useRef, useState } from "react";
 import { Copy, FileText, NotebookPen, Send, Sparkles, Square, Trash2, X } from "lucide-react";
@@ -11,9 +11,10 @@ import { AiMarkdown } from "./AiMarkdown";
 import { saveAiSettings, useAiSettings } from "./aiConfig";
 import { AttachmentTooLargeError, findSource, loadAttachment, type PageRange } from "./context";
 import { usePdfPosition } from "../sections/pdfs/visiblePage";
+import { askGroq } from "./groq";
+import { activeAccess, describeAiError, providerName } from "./provider";
 import {
   askGemini,
-  describeAiError,
   FALLBACK_MODELS,
   isModelMissing,
   listGeminiModels,
@@ -54,7 +55,8 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
   const { pages } = useNotes();
   const { pdfs } = usePdfs();
   const settings = useAiSettings();
-  const { apiKey, model } = settings;
+  const access = activeAccess(settings); // gewählter Anbieter mit Schlüssel und Modell
+  const { apiKey, model } = settings; // Gemini (für Gemini-Chat und eingescannte PDFs)
   const [messages, setMessages] = usePersistentState<ChatMessage[]>("ai:chat", []);
   const [input, setInput] = useState("");
   const [includeSource, setIncludeSource] = useState(true);
@@ -114,6 +116,8 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
     abortRef.current = controller;
     let answer = "";
     let step = "Notiz/PDF vorbereiten"; // für die Fehlermeldung: wobei ist es schiefgegangen?
+    // Läuft beim Abschicken, nicht beim Zeichnen – der Linter erkennt das hier nicht.
+    // oxlint-disable-next-line react/purity
     const since = Date.now();
     const what = attached?.kind === "pdf" && range ? (range.from === range.to ? "1 Seite" : `${range.to - range.from + 1} Seiten`) : "die Notiz";
     setWaitedSeconds(0);
@@ -121,48 +125,49 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
     try {
       const attachment = attached ? await loadAttachment(attached, range) : null;
       setWaiting({ text: attached ? `liest ${what}` : "denkt nach", since });
+      const onText = (soFar: string) => {
+        setWaiting(null);
+        answer = soFar;
+        setMessages([...history, { role: "assistant", text: soFar }]);
+      };
+      const fast = !settings.thorough;
+      // Groq kann keine eingescannten Seiten (Bilder) lesen – dafür Gemini nehmen, falls ein Schlüssel da ist.
+      const useGroq = access.provider === "groq" && !(attachment?.kind === "images" && apiKey);
       const ask = (modelName: string) =>
-        askGemini({
-          apiKey,
-          model: modelName,
-          history,
-          attachment,
-          signal: controller.signal,
-          fast: !settings.thorough,
-          onText: (soFar) => {
-            setWaiting(null);
-            answer = soFar;
-            setMessages([...history, { role: "assistant", text: soFar }]);
-          },
-        });
-      try {
-        step = `Anfrage an ${model}`;
-        await ask(model);
-      } catch (e) {
-        // Modell gibt es nicht (mehr)? Dann selbst ein passendes aussuchen, merken und nochmal fragen.
-        if (!isModelMissing(e)) throw e;
-        step = "Modell-Liste abrufen";
-        let candidates: string[];
+        askGemini({ apiKey, model: modelName, history, attachment, signal: controller.signal, fast, onText });
+      if (useGroq) {
+        step = `Anfrage an ${access.model}`;
+        await askGroq({ apiKey: access.apiKey, model: access.model, history, attachment, signal: controller.signal, fast, onText });
+      } else {
         try {
-          const best = pickModel(await listGeminiModels(apiKey));
-          candidates = best ? [best] : FALLBACK_MODELS;
-        } catch {
-          candidates = FALLBACK_MODELS; // Liste nicht abrufbar: bekannte Namen durchprobieren
-        }
-        let lastError: unknown = e;
-        for (const candidate of candidates.filter((c) => c !== model)) {
-          step = `Anfrage an ${candidate}`;
+          step = `Anfrage an ${model}`;
+          await ask(model);
+        } catch (e) {
+          // Modell gibt es nicht (mehr)? Dann selbst ein passendes aussuchen, merken und nochmal fragen.
+          if (!isModelMissing(e)) throw e;
+          step = "Modell-Liste abrufen";
+          let candidates: string[];
           try {
-            await ask(candidate);
-            saveAiSettings({ ...settings, model: candidate });
-            lastError = null;
-            break;
-          } catch (retryError) {
-            lastError = retryError;
-            if (!isModelMissing(retryError)) break;
+            const best = pickModel(await listGeminiModels(apiKey));
+            candidates = best ? [best] : FALLBACK_MODELS;
+          } catch {
+            candidates = FALLBACK_MODELS; // Liste nicht abrufbar: bekannte Namen durchprobieren
           }
+          let lastError: unknown = e;
+          for (const candidate of candidates.filter((c) => c !== model)) {
+            step = `Anfrage an ${candidate}`;
+            try {
+              await ask(candidate);
+              saveAiSettings({ ...settings, model: candidate });
+              lastError = null;
+              break;
+            } catch (retryError) {
+              lastError = retryError;
+              if (!isModelMissing(retryError)) break;
+            }
+          }
+          if (lastError) throw lastError;
         }
-        if (lastError) throw lastError;
       }
     } catch (e) {
       if (controller.signal.aborted) {
@@ -199,7 +204,7 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
       <header className="ai-header">
         <Sparkles size={16} />
         <span>KI-Assistent</span>
-        <span className="ai-model">{model}</span>
+        <span className="ai-model">{access.model}</span>
         <button
           className="icon-button"
           title="Neuer Chat"
@@ -217,10 +222,10 @@ export function AiSidebar({ sectionId, selectedId, onClose, onOpenSettings }: Pr
         </button>
       </header>
 
-      {!apiKey ? (
+      {!access.apiKey ? (
         <div className="ai-empty">
           <Sparkles size={28} strokeWidth={1.5} />
-          <p>Um die KI zu nutzen, trag einmal deinen kostenlosen Gemini-Schlüssel ein.</p>
+          <p>Um die KI zu nutzen, trag einmal deinen kostenlosen {providerName(access.provider)}-Schlüssel ein.</p>
           <button className="primary-button" onClick={onOpenSettings}>
             Zu den KI-Einstellungen
           </button>

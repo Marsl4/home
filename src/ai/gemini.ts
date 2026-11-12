@@ -152,7 +152,7 @@ ${JSON.stringify(options.schema)}`;
 }
 
 // JSON aus einer Antwort holen – auch wenn es in ```json … ``` steht oder Text drumherum ist.
-function parseJson<T>(text: string): T {
+export function parseJson<T>(text: string): T {
   const cleaned = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "");
   try {
     return JSON.parse(cleaned) as T;
@@ -221,7 +221,7 @@ function describeLimit(message: string): string {
 }
 
 // withAttachment: false, wenn es kein mitgeschicktes Material gibt (z. B. im Englisch-Bereich).
-export function describeAiError(error: unknown, { withAttachment = true } = {}): string {
+export function describeGeminiError(error: unknown, { withAttachment = true } = {}): string {
   if (!navigator.onLine) return "Keine Internetverbindung – die KI braucht Internet.";
   if (error instanceof ApiError) {
     if (error.status === 400 && /api key/i.test(error.message))
@@ -241,12 +241,12 @@ export function describeAiError(error: unknown, { withAttachment = true } = {}):
   if (error instanceof TypeError && /load failed|failed to fetch|network/i.test(error.message)) {
     if (!withAttachment) {
       return (
-        "Die Verbindung zu Google ist abgebrochen. Mögliche Gründe: ein Werbe- oder Inhaltsblocker in Safari " +
+        "Die Verbindung zur KI ist abgebrochen. Mögliche Gründe: ein Werbe- oder Inhaltsblocker in Safari " +
         `oder eine wackelige Verbindung. Bitte nochmal versuchen. (Technisch: ${error.message})`
       );
     }
     return (
-      "Die Verbindung zu Google ist fehlgeschlagen. Mögliche Gründe: ein Werbe- oder Inhaltsblocker " +
+      "Die Verbindung zur KI ist fehlgeschlagen. Mögliche Gründe: ein Werbe- oder Inhaltsblocker " +
       "in Safari, zu viel mitgeschicktes Material (dann weniger PDF-Seiten wählen) oder eine wackelige Verbindung. " +
       `Tipp: Frage einmal ohne Häkchen bei „Wird mitgeschickt“ stellen. (Technisch: ${error.message})`
     );

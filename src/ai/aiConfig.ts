@@ -5,9 +5,17 @@ import { useEffect, useState } from "react";
 
 import { readStored } from "../storage/uiState";
 
+export type AiProvider = "gemini" | "groq";
+
 export type AiSettings = {
+  // Welcher Anbieter die Fragen beantwortet. Fehlt bei älteren Einstellungen → "gemini".
+  provider?: AiProvider;
+  // Google Gemini
   apiKey: string;
   model: string;
+  // Groq
+  groqKey?: string;
+  groqModel?: string;
   // false (Standard) = schnell: die KI "denkt" vor der Antwort nur kurz nach.
   // true = gründlich: mehr Nachdenken, dafür längere Wartezeit.
   thorough?: boolean;

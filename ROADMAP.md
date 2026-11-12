@@ -31,8 +31,8 @@
 
 ### Verbindungen nach außen
 - [ ] **Mail-Integration**: E-Mails in der App lesen/schreiben bzw. mit Notizen und ToDos verknüpfen.
-- [~] **KI-Integration**: KI-Leiste rechts (Knopf „KI“) mit Google Gemini (kostenloser Schlüssel,
-      Einstellungen → KI): Chat, kennt die offene Notiz/PDF, Zusammenfassen / Erklären / Abfragen /
+- [~] **KI-Integration**: KI-Leiste rechts (Knopf „KI“) mit Groq (schnell, Standard) oder Google Gemini
+      (beide kostenloser Schlüssel, Einstellungen → KI): Chat, kennt die offene Notiz/PDF, Zusammenfassen / Erklären / Abfragen /
       Karteikarten. Offen: Antwort direkt in Notiz einfügen, weitere Anbieter (z. B. Claude per API-Schlüssel),
       „Mit Claude öffnen“-Brücke fürs Pro-Abo.
 
