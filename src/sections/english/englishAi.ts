@@ -60,51 +60,53 @@ const questionSchema = {
   required: ["level", "skill", "question", "options", "correctIndex"],
 };
 
-async function createTestPart(goal: string, levels: EnglishLevel[], signal?: AbortSignal): Promise<TestQuestion[]> {
+// withWritingTask: Der erste Teil liefert auch die Schreibaufgabe mit (spart eine Anfrage –
+// im Gratis-Tarif gibt es nur wenige Anfragen pro Tag).
+async function createTestPart(
+  goal: string,
+  levels: EnglishLevel[],
+  withWritingTask: boolean,
+  signal?: AbortSignal,
+): Promise<{ questions: TestQuestion[]; writingTask?: string }> {
   const prompt = `Erstelle einen Teil eines Einstufungstests Englisch für eine deutschsprachige Person.
 Ziel der Person: ${goal}.
 - Genau 4 Multiple-Choice-Fragen pro Niveau, nur für diese Niveaus: ${levels.join(", ")} (also ${levels.length * 4} Fragen), sortiert von leicht nach schwer.
 - Je genau 4 Antwortmöglichkeiten, genau eine richtig.
 - Gemischt: Grammatik (grammar), Wortschatz (vocabulary) und kurzes Leseverständnis (reading, mit 1–3 Sätzen Text in der Frage).
 - Fragen und Antworten auf Englisch; Lücken als "___".
-- Die richtige Antwort nicht immer an derselben Stelle.`;
-  const result = await askGeminiJson<{ questions: TestQuestion[] }>({
+- Die richtige Antwort nicht immer an derselben Stelle.${
+    withWritingTask
+      ? `\n- writingTask: eine kurze Schreibaufgabe auf Deutsch formuliert ("Schreibe 3–5 Sätze auf Englisch über …"), passend zum Ziel.`
+      : ""
+  }`;
+  const result = await askGeminiJson<{ questions: TestQuestion[]; writingTask?: string }>({
     ...settings(),
     prompt,
     signal,
     schema: {
       type: "object",
-      properties: { questions: { type: "array", items: questionSchema } },
-      required: ["questions"],
+      properties: {
+        questions: { type: "array", items: questionSchema },
+        ...(withWritingTask && { writingTask: str }),
+      },
+      required: withWritingTask ? ["questions", "writingTask"] : ["questions"],
     },
   });
-  return result.questions ?? [];
-}
-
-async function createWritingTask(goal: string, signal?: AbortSignal): Promise<string> {
-  const result = await askGeminiJson<{ writingTask: string }>({
-    ...settings(),
-    prompt: `Formuliere für einen Englisch-Einstufungstest eine kurze Schreibaufgabe auf Deutsch
-("Schreibe 3–5 Sätze auf Englisch über …"), passend zum Ziel der Person: ${goal}.`,
-    signal,
-    schema: { type: "object", properties: { writingTask: str }, required: ["writingTask"] },
-  });
-  return result.writingTask;
+  return { questions: result.questions ?? [], writingTask: result.writingTask };
 }
 
 export async function createPlacementTest(goal: string, signal?: AbortSignal): Promise<PlacementTest> {
-  const [parts, writingTask] = await Promise.all([
-    Promise.all(TEST_PARTS.map((levels) => createTestPart(goal, levels, signal))),
-    // Die Schreibaufgabe ist nicht so wichtig: Klappt sie nicht, nehmen wir eine Standard-Aufgabe.
-    createWritingTask(goal, signal).catch(() => ""),
-  ]);
+  const parts = await Promise.all(TEST_PARTS.map((levels, i) => createTestPart(goal, levels, i === 0, signal)));
   // Nur brauchbare Fragen übernehmen (4 Antworten, gültige Lösung), nach Niveau sortiert.
   const questions = parts
-    .flat()
+    .flatMap((part) => part.questions)
     .filter((q) => q.options?.length === 4 && q.correctIndex >= 0 && q.correctIndex < 4 && LEVELS.includes(q.level))
     .sort((a, b) => LEVELS.indexOf(a.level) - LEVELS.indexOf(b.level));
   if (questions.length < 8) throw new Error("Der Test konnte nicht erstellt werden. Bitte nochmal versuchen.");
-  return { questions, writingTask: writingTask || "Schreibe 3–5 Sätze auf Englisch über dich und dein Studium." };
+  return {
+    questions,
+    writingTask: parts[0].writingTask || "Schreibe 3–5 Sätze auf Englisch über dich und dein Studium.",
+  };
 }
 
 // Grobe Einstufung aus den Antworten: das höchste Niveau, bei dem mindestens 3 von 4 richtig waren

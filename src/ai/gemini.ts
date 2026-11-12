@@ -198,6 +198,28 @@ export function isModelMissing(error: unknown): boolean {
 }
 
 // Verständliche Fehlermeldung statt technischem Text.
+// Google schickt bei "429" mit, welches Limit erreicht ist, z. B.
+// "quotaId": "GenerateRequestsPerDayPerProjectPerModel-FreeTier" … "limit: 20, model: gemini-2.5-flash".
+// Jedes Modell hat sein eigenes Limit – ein anderes Modell geht also oft noch.
+function describeLimit(message: string): string {
+  const model = message.match(/model: ([\w.-]+)/)?.[1];
+  const limit = message.match(/limit: (\d+)/)?.[1];
+  const forModel = model ? ` für das Modell „${model}“` : "";
+  const otherModel = "In Einstellungen → KI ein anderes Modell wählen – jedes Modell hat ein eigenes Limit.";
+  if (limit === "0") {
+    return `Das Modell${model ? ` „${model}“` : ""} ist im Gratis-Tarif nicht nutzbar. ${otherModel}`;
+  }
+  if (/PerDay/i.test(message)) {
+    return (
+      `Tageslimit${forModel} erreicht${limit ? ` (${limit} Anfragen pro Tag)` : ""}. ` +
+      `Es wird täglich gegen 9 Uhr zurückgesetzt. Bis dahin: ${otherModel}`
+    );
+  }
+  const seconds = message.match(/retry in ([\d.]+)s/i)?.[1];
+  const wait = seconds ? `ca. ${Math.ceil(Number(seconds))} Sekunden` : "eine Minute";
+  return `Minutenlimit${forModel} erreicht – bitte ${wait} warten und dann nochmal versuchen.`;
+}
+
 // withAttachment: false, wenn es kein mitgeschicktes Material gibt (z. B. im Englisch-Bereich).
 export function describeAiError(error: unknown, { withAttachment = true } = {}): string {
   if (!navigator.onLine) return "Keine Internetverbindung – die KI braucht Internet.";
@@ -208,8 +230,7 @@ export function describeAiError(error: unknown, { withAttachment = true } = {}):
       return "Der API-Schlüssel wird nicht akzeptiert. Bitte in Einstellungen → KI prüfen.";
     if (error.status === 404)
       return "Dieses Modell gibt es nicht (mehr). Bitte in Einstellungen → KI ein anderes wählen.";
-    if (error.status === 429)
-      return "Gratis-Limit erreicht – bitte kurz warten (meist eine Minute) und dann nochmal versuchen.";
+    if (error.status === 429) return describeLimit(error.message);
     if (error.status === 503) return "Google ist gerade überlastet. Bitte gleich nochmal versuchen.";
     if (error.status >= 500)
       return `Google konnte die Anfrage nicht bearbeiten (Fehler ${error.status}). Tipp: in Einstellungen → KI ein anderes Modell wählen. (Technisch: ${error.message.slice(0, 160)})`;
