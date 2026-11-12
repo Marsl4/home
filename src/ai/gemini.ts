@@ -109,12 +109,17 @@ ${JSON.stringify(options.schema)}`;
     let thinking = thinkingFor(options.model, options.fast);
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const response = await ai.models.generateContent({
+        // Als "Stream" abrufen, also Stück für Stück: Lange Antworten (z. B. ein ganzer Lernplan)
+        // brauchen oft über eine Minute. Kommt so lange gar nichts an, bricht Safari die Verbindung
+        // mit "Load failed" ab. Beim Stream fließen laufend Daten, dann passiert das nicht.
+        const stream = await ai.models.generateContentStream({
           model: options.model,
           contents: [{ role: "user", parts: [{ text: variant.prompt }] }],
           config: { abortSignal: options.signal, ...variant.config, ...(thinking && { thinkingConfig: thinking }) },
         });
-        return parseJson<T>(response.text ?? "");
+        let text = "";
+        for await (const chunk of stream) text += chunk.text ?? "";
+        return parseJson<T>(text);
       } catch (error) {
         if (options.signal?.aborted) throw error;
         lastError = error;
@@ -185,7 +190,8 @@ export function isModelMissing(error: unknown): boolean {
 }
 
 // Verständliche Fehlermeldung statt technischem Text.
-export function describeAiError(error: unknown): string {
+// withAttachment: false, wenn es kein mitgeschicktes Material gibt (z. B. im Englisch-Bereich).
+export function describeAiError(error: unknown, { withAttachment = true } = {}): string {
   if (!navigator.onLine) return "Keine Internetverbindung – die KI braucht Internet.";
   if (error instanceof ApiError) {
     if (error.status === 400 && /api key/i.test(error.message))
@@ -204,6 +210,12 @@ export function describeAiError(error: unknown): string {
   // "Load failed" (Safari) / "Failed to fetch" (Chrome): Die Anfrage kam gar nicht bei Google an
   // oder die Verbindung brach ab – z. B. durch einen Werbe-/Inhaltsblocker oder eine zu große Datei.
   if (error instanceof TypeError && /load failed|failed to fetch|network/i.test(error.message)) {
+    if (!withAttachment) {
+      return (
+        "Die Verbindung zu Google ist abgebrochen. Mögliche Gründe: ein Werbe- oder Inhaltsblocker in Safari " +
+        `oder eine wackelige Verbindung. Bitte nochmal versuchen. (Technisch: ${error.message})`
+      );
+    }
     return (
       "Die Verbindung zu Google ist fehlgeschlagen. Mögliche Gründe: ein Werbe- oder Inhaltsblocker " +
       "in Safari, zu viel mitgeschicktes Material (dann weniger PDF-Seiten wählen) oder eine wackelige Verbindung. " +

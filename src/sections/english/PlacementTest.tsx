@@ -46,7 +46,7 @@ export function PlacementTest({ onStart, onPlanReady }: { onStart: () => void; o
     } catch (e) {
       if (controller.signal.aborted) return;
       // Fehler von Google bzw. der Verbindung verständlich machen, eigene Meldungen direkt zeigen.
-      setError(e instanceof ApiError || e instanceof TypeError ? describeAiError(e) : e instanceof Error ? e.message : String(e));
+      setError(e instanceof ApiError || e instanceof TypeError ? describeAiError(e, { withAttachment: false }) : e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(null);
     }
