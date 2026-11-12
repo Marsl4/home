@@ -41,12 +41,21 @@ export function PlacementTest({ onStart, onPlanReady }: { onStart: () => void; o
     setBusy(label);
     const controller = new AbortController();
     abortRef.current = controller;
+    const startedAt = Date.now();
     try {
       await task(controller.signal);
     } catch (e) {
       if (controller.signal.aborted) return;
       // Fehler von Google bzw. der Verbindung verständlich machen, eigene Meldungen direkt zeigen.
-      setError(e instanceof ApiError || e instanceof TypeError ? describeAiError(e, { withAttachment: false }) : e instanceof Error ? e.message : String(e));
+      const message =
+        e instanceof ApiError || e instanceof TypeError
+          ? describeAiError(e, { withAttachment: false })
+          : e instanceof Error
+            ? e.message
+            : String(e);
+      // Wie lange es bis zum Fehler gedauert hat, hilft bei der Fehlersuche (z. B. ~60 s = Zeitlimit).
+      const seconds = Math.round((Date.now() - startedAt) / 1000);
+      setError(`${message} (${label.replace(/ …$/, "")} – nach ${seconds} s)`);
     } finally {
       setBusy(null);
     }

@@ -106,7 +106,10 @@ ${JSON.stringify(options.schema)}`;
 
   let lastError: unknown;
   for (const variant of variants) {
-    let thinking = thinkingFor(options.model, options.fast);
+    // includeThoughts: Die KI schickt beim Nachdenken kurze Zwischenstände mit. Die App zeigt sie
+    // nicht an (chunk.text lässt sie weg), aber so fließen von Anfang an Daten und Safari bricht
+    // die Verbindung nicht ab, während die KI noch nachdenkt.
+    let thinking: ThinkingConfig | undefined = { ...thinkingFor(options.model, options.fast), includeThoughts: true };
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         // Als "Stream" abrufen, also Stück für Stück: Lange Antworten (z. B. ein ganzer Lernplan)
