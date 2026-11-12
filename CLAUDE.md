@@ -51,7 +51,9 @@ Nur für mich privat. Läuft auf Mac (Tippen) und später iPad (Apple Pencil).
   die etwas speichern, müssen das auch tun (sonst überschreiben sie sich gegenseitig).
 - KI (`src/ai/`): Gemini über `@google/genai`, direkt vom Gerät (kein Server). Schlüssel + Modell in
   localStorage (`aiConfig.ts`, bewusst nicht in IndexedDB/Backup). Anbieter-Spezifisches nur in `gemini.ts`.
-  `context.ts` macht aus offener Notiz/PDF den mitgeschickten Text. Tests: Google per puppeteer-Request-
+  `context.ts` macht aus offener Notiz/PDF den mitgeschickten Text. Grenzen: Safari bricht Anfragen nach
+  ca. 50 s ab („Load failed“), der Gratis-Tarif erlaubt nur wenige Anfragen pro Tag und Modell (429) –
+  große Aufgaben in wenige mittelgroße Anfragen teilen (Beispiel: `englishAi.ts`), immer per Stream. Tests: Google per puppeteer-Request-
   Interception simulieren (Liste nutzt `supportedGenerationMethods`, Antworten als SSE).
 - iPad-Eingabe: Im Stift-Modus zeichnen nur Stift/Maus (`pointerType !== "touch"`), Finger scrollen.
   Zoom (`src/components/usePinchZoom.ts`) nur im Blatt/PDF: Notizen per `transform: scale` (Positionen
