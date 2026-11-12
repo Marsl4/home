@@ -8,14 +8,15 @@ import { describeAiError, isAiServiceError } from "../../ai/provider";
 import { DEFAULT_ENGLISH_PROFILE } from "../../storage/db";
 import { usePersistentState } from "../../storage/uiState";
 import { useEnglish } from "./EnglishContext";
-import { assess, createPlacementTest, createPlan, type Assessment, type PlacementTest as Test } from "./englishAi";
-
-const GOALS = [
-  "Alltag & Reisen",
-  "Studium (Fachtexte lesen, Vorlesungen verstehen)",
-  "Beruf & Business",
-  "Prüfung (z. B. TOEFL, IELTS, Cambridge)",
-];
+import {
+  assess,
+  createPlacementTest,
+  createPlan,
+  GOALS,
+  MINUTE_OPTIONS,
+  type Assessment,
+  type PlacementTest as Test,
+} from "./englishAi";
 
 type Draft = {
   test: Test;
@@ -219,7 +220,7 @@ export function PlacementTest({ onStart, onPlanReady }: { onStart: () => void; o
       <label className="english-field">
         <span>Wie viel Zeit hast du pro Tag?</span>
         <div className="english-choice">
-          {[10, 15, 30, 45].map((m) => (
+          {MINUTE_OPTIONS.map((m) => (
             <button key={m} className={m === minutes ? "selected" : ""} onClick={() => setMinutes(m)}>
               {m} Min.
             </button>

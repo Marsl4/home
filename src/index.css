@@ -3107,3 +3107,18 @@ path.selected {
   color: var(--accent);
   white-space: nowrap;
 }
+
+.english-plan-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.english-plan-bar .secondary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

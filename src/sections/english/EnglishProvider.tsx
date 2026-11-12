@@ -158,6 +158,32 @@ export function EnglishProvider({ children }: { children: ReactNode }) {
         ...units.flatMap((u, i) => u.vocabulary.map((v) => newCard({ ...v, unitId: planUnits[i].id }, i === 0))),
       ]);
     },
+    replaceFutureUnits: (
+      units: { title: string; goal: string; grammar: string; vocabulary: { en: string; de: string; example: string }[] }[],
+      settings: { goal: string; minutesPerDay: number },
+    ) => {
+      const kept = (english?.units ?? []).filter((u) => u.status !== "locked");
+      const removedIds = new Set((english?.units ?? []).filter((u) => u.status === "locked").map((u) => u.id));
+      // Ist keine Einheit mehr aktiv (alle erledigt), wird die erste neue gleich freigeschaltet.
+      const startNow = !kept.some((u) => u.status === "active");
+      const newUnits = units.map((u, i) => ({
+        id: crypto.randomUUID(),
+        title: u.title,
+        goal: u.goal,
+        grammar: u.grammar,
+        status: (startNow && i === 0 ? "active" : "locked") as "active" | "locked",
+      }));
+      updateEnglish((s) => ({
+        ...s,
+        ...settings,
+        units: [...s.units.filter((u) => !removedIds.has(u.id)), ...newUnits],
+      }));
+      // Vokabeln der ersetzten Einheiten entfernen – aber nur, wenn sie noch nie geübt wurden.
+      updateCards((current) => [
+        ...current.filter((c) => !(c.unitId && removedIds.has(c.unitId) && c.reps === 0 && c.lapses === 0)),
+        ...units.flatMap((u, i) => u.vocabulary.map((v) => newCard({ ...v, unitId: newUnits[i].id }, startNow && i === 0))),
+      ]);
+    },
     completeUnit: (unitId: string) => {
       // Nächste noch gesperrte Einheit nach dieser (aus dem aktuellen Stand berechnet).
       const units = english?.units ?? [];

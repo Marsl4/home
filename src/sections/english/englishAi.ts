@@ -149,10 +149,29 @@ summary = 2–4 Sätze Einschätzung; strengths und weaknesses = je 2–4 kurze 
 
 // ---------- Lernplan ----------
 // In zwei Schritten, damit keine Anfrage zu lange dauert (Safari bricht nach ca. 50–60 s ab):
-//   1. Gliederung: 8 Einheiten mit Titel, Ziel und Grammatik (kurze Antwort)
-//   2. Vokabeln: 4 Anfragen gleichzeitig, je 2 Einheiten mit 12 Wörtern
+//   1. Gliederung: Einheiten mit Titel, Ziel und Grammatik (kurze Antwort)
+//   2. Vokabeln: je 2 Einheiten pro Anfrage, höchstens 2 Anfragen gleichzeitig
+//      (sonst wird bei Groq schnell das Minutenlimit für Tokens erreicht)
 type UnitOutline = Omit<PlanUnit, "vocabulary">;
 const UNITS_PER_VOCAB_REQUEST = 2;
+const PARALLEL_VOCAB_REQUESTS = 2;
+
+export const GOALS = [
+  "Alltag & Reisen",
+  "Studium (Fachtexte lesen, Vorlesungen verstehen)",
+  "Beruf & Business",
+  "Prüfung (z. B. TOEFL, IELTS, Cambridge)",
+];
+export const MINUTE_OPTIONS = [10, 15, 30, 45, 60];
+
+// Mehr Zeit pro Tag → mehr Vokabeln pro Einheit (eine Einheit ≈ 1 Woche).
+export function wordsPerUnit(minutesPerDay: number): number {
+  if (minutesPerDay <= 10) return 8;
+  if (minutesPerDay <= 15) return 12;
+  if (minutesPerDay <= 30) return 16;
+  if (minutesPerDay <= 45) return 20;
+  return 24;
+}
 
 const vocabSchema = {
   type: "array",
@@ -160,18 +179,35 @@ const vocabSchema = {
 };
 
 export async function createPlan(
-  input: { level: EnglishLevel; goal: string; minutesPerDay: number; weaknesses: string[] },
+  input: {
+    level: EnglishLevel;
+    goal: string;
+    minutesPerDay: number;
+    weaknesses: string[];
+    count?: number; // wie viele Einheiten (Standard 8)
+    previousUnits?: string[]; // Titel der Einheiten, die bleiben (beim Anpassen) – darauf aufbauen
+    knownWords?: string[]; // Wörter, die die Person schon hat – nicht nochmal nehmen
+  },
   signal?: AbortSignal,
 ): Promise<PlanUnit[]> {
+  const count = input.count ?? 8;
+  const words = wordsPerUnit(input.minutesPerDay);
+  const previous = input.previousUnits ?? [];
   const about = `Aktuelles Niveau: ${input.level}. Ziel: ${input.goal}. Zeit pro Tag: ${input.minutesPerDay} Minuten.
 Schwächen laut Einstufungstest: ${input.weaknesses.join("; ") || "keine besonderen"}.`;
+  const continuation = previous.length
+    ? `\nDiese Einheiten hat die Person schon (bzw. bearbeitet sie gerade) – darauf aufbauen, nichts wiederholen:
+${previous.join("; ")}
+Die Nummerierung geht weiter mit Unit ${previous.length + 1}.`
+    : "";
 
   // Schritt 1: Gliederung
   const outline = await askAiJson<{ units: UnitOutline[] }>({
     prompt: `Erstelle die Gliederung eines Englisch-Lernplans für eine deutschsprachige Person.
-${about}
-- 8 Einheiten (units), aufeinander aufbauend, Schwächen zuerst, passend zum Ziel; jede Einheit ca. 1 Woche.
-- title: kurz, z. B. "Unit 1: Past Simple & Reisen"; goal: was man danach kann (Deutsch, 1 Satz);
+${about}${continuation}
+- ${count} Einheiten (units), aufeinander aufbauend, Schwächen zuerst, passend zum Ziel; jede Einheit ca. 1 Woche.
+- Umfang passend zur Zeit pro Tag (mehr Zeit = anspruchsvollere, umfangreichere Einheiten).
+- title: kurz, z. B. "Unit ${previous.length + 1}: Past Simple & Reisen"; goal: was man danach kann (Deutsch, 1 Satz);
   grammar: Grammatik-Schwerpunkt (Deutsch, kurz).`,
     signal,
     schema: {
@@ -185,39 +221,37 @@ ${about}
       required: ["units"],
     },
   });
-  const units = (outline.units ?? []).filter((u) => u.title);
+  const units = (outline.units ?? []).filter((u) => u.title).slice(0, count);
   if (units.length === 0) throw new Error("Der Lernplan konnte nicht erstellt werden. Bitte nochmal versuchen.");
 
-  // Schritt 2: Vokabeln, mehrere Einheiten gleichzeitig
-  const allTitles = units.map((u) => u.title).join("; ");
+  // Schritt 2: Vokabeln (je 2 Einheiten pro Anfrage, 2 Anfragen gleichzeitig)
+  const allTitles = [...previous, ...units.map((u) => u.title)].join("; ");
   const groups: UnitOutline[][] = [];
   for (let i = 0; i < units.length; i += UNITS_PER_VOCAB_REQUEST) groups.push(units.slice(i, i + UNITS_PER_VOCAB_REQUEST));
-  const vocabGroups = await Promise.all(
-    groups.map(async (group) => {
-      const result = await askAiJson<{ units: { vocabulary: PlanUnit["vocabulary"] }[] }>({
-        prompt: `Erstelle Vokabeln für einen Englisch-Lernplan einer deutschsprachigen Person.
+  const vocabGroups = await inBatches(groups, PARALLEL_VOCAB_REQUESTS, async (group) => {
+    const result = await askAiJson<{ units: { vocabulary: PlanUnit["vocabulary"] }[] }>({
+      prompt: `Erstelle Vokabeln für einen Englisch-Lernplan einer deutschsprachigen Person.
 ${about}
 Alle Einheiten des Plans (nur zur Orientierung, damit sich nichts doppelt): ${allTitles}
 Erstelle Vokabeln NUR für diese ${group.length} Einheit(en), in dieser Reihenfolge:
 ${group.map((u, i) => `${i + 1}. ${u.title} – ${u.goal}`).join("\n")}
-- Pro Einheit genau 12 nützliche Wörter/Ausdrücke passend zu Niveau, Ziel und Thema der Einheit:
+- Pro Einheit genau ${words} nützliche Wörter/Ausdrücke passend zu Niveau, Ziel und Thema der Einheit:
   en (englisch), de (deutsche Bedeutung), example (natürlicher englischer Beispielsatz).
 - Keine zu leichten Wörter für dieses Niveau, keine Wörter doppelt.`,
-        signal,
-        schema: {
-          type: "object",
-          properties: {
-            units: { type: "array", items: { type: "object", properties: { vocabulary: vocabSchema }, required: ["vocabulary"] } },
-          },
-          required: ["units"],
+      signal,
+      schema: {
+        type: "object",
+        properties: {
+          units: { type: "array", items: { type: "object", properties: { vocabulary: vocabSchema }, required: ["vocabulary"] } },
         },
-      });
-      return group.map((_, i) => result.units?.[i]?.vocabulary ?? []);
-    }),
-  );
+        required: ["units"],
+      },
+    });
+    return group.map((_, i) => result.units?.[i]?.vocabulary ?? []);
+  });
 
   // Zusammensetzen; Wörter, die schon in einer früheren Einheit vorkommen, weglassen.
-  const seen = new Set<string>();
+  const seen = new Set<string>((input.knownWords ?? []).map((w) => w.trim().toLowerCase()));
   const plan = units.map((unit, i) => {
     const vocabulary = (vocabGroups.flat()[i] ?? []).filter((v) => {
       const key = v.en?.trim().toLowerCase();
@@ -230,4 +264,13 @@ ${group.map((u, i) => `${i + 1}. ${u.title} – ${u.goal}`).join("\n")}
   const usable = plan.filter((u) => u.vocabulary.length > 0);
   if (usable.length === 0) throw new Error("Der Lernplan konnte nicht erstellt werden. Bitte nochmal versuchen.");
   return usable;
+}
+
+// Führt task für alle Einträge aus, aber höchstens "parallel" gleichzeitig. Ergebnisse in derselben Reihenfolge.
+async function inBatches<T, R>(items: T[], parallel: number, task: (item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = [];
+  for (let i = 0; i < items.length; i += parallel) {
+    results.push(...(await Promise.all(items.slice(i, i + parallel).map(task))));
+  }
+  return results;
 }

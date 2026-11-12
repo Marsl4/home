@@ -21,6 +21,8 @@ export type EnglishContextValue = {
   saveGoal: (goal: string, minutesPerDay: number) => void;
   applyAssessment: (assessment: Assessment) => void;
   applyPlan: (units: PlanUnit[]) => void; // ersetzt den bisherigen Plan (eigene Vokabeln bleiben)
+  // Plan anpassen: Erledigte und aktuelle Einheit bleiben, die zukünftigen werden durch neue ersetzt.
+  replaceFutureUnits: (units: PlanUnit[], settings: { goal: string; minutesPerDay: number }) => void;
   completeUnit: (unitId: string) => void; // Einheit fertig -> nächste wird freigeschaltet
   reviewCard: (cardId: string, rating: Rating) => void;
   addCard: (en: string, de: string, example: string) => void;
