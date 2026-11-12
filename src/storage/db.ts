@@ -196,21 +196,52 @@ export type VocabCard = {
   createdAt: number;
 };
 
-const ENGLISH_KEY = "english";
-const VOCAB_KEY = "english-vocab";
+// Mehrere Personen können Englisch lernen – jede mit eigenem Profil (Test, Plan, Vokabeln).
+// Das erste Profil ("default") nutzt die alten Speicher-Schlüssel "english" / "english-vocab" weiter.
+// So mussten beim Einführen der Profile keine Daten umziehen, und ältere App-Versionen
+// (z. B. auf dem iPad vor dem Update) sehen weiterhin die Daten der ersten Person.
+export type EnglishProfile = {
+  id: string;
+  name: string; // z. B. "Person 1" oder ein Vorname
+  createdAt: number;
+};
 
-export async function loadEnglish(): Promise<EnglishState | null> {
-  return (await get<EnglishState>(ENGLISH_KEY)) ?? null;
+export const DEFAULT_ENGLISH_PROFILE = "default";
+const PROFILES_KEY = "english-profiles";
+
+export const englishKey = (profileId: string) =>
+  profileId === DEFAULT_ENGLISH_PROFILE ? "english" : `english:${profileId}`;
+export const vocabKey = (profileId: string) =>
+  profileId === DEFAULT_ENGLISH_PROFILE ? "english-vocab" : `english-vocab:${profileId}`;
+
+// Gibt es noch keine gespeicherte Liste (ältere Daten), gibt es genau eine Person.
+export async function loadEnglishProfiles(): Promise<EnglishProfile[]> {
+  const profiles = await get<EnglishProfile[]>(PROFILES_KEY);
+  return profiles?.length ? profiles : [{ id: DEFAULT_ENGLISH_PROFILE, name: "Person 1", createdAt: 0 }];
 }
 
-export async function saveEnglish(state: EnglishState): Promise<void> {
-  await set(ENGLISH_KEY, state);
+export async function saveEnglishProfiles(profiles: EnglishProfile[]): Promise<void> {
+  await set(PROFILES_KEY, profiles);
 }
 
-export async function loadVocab(): Promise<VocabCard[]> {
-  return (await get<VocabCard[]>(VOCAB_KEY)) ?? [];
+export async function loadEnglish(profileId: string): Promise<EnglishState | null> {
+  return (await get<EnglishState>(englishKey(profileId))) ?? null;
 }
 
-export async function saveVocab(cards: VocabCard[]): Promise<void> {
-  await set(VOCAB_KEY, cards);
+export async function saveEnglish(profileId: string, state: EnglishState): Promise<void> {
+  await set(englishKey(profileId), state);
+}
+
+export async function loadVocab(profileId: string): Promise<VocabCard[]> {
+  return (await get<VocabCard[]>(vocabKey(profileId))) ?? [];
+}
+
+export async function saveVocab(profileId: string, cards: VocabCard[]): Promise<void> {
+  await set(vocabKey(profileId), cards);
+}
+
+// Alle Englisch-Daten einer Person löschen (das Profil selbst entfernt der Aufrufer aus der Liste).
+export async function deleteEnglishProfileData(profileId: string): Promise<void> {
+  await del(englishKey(profileId));
+  await del(vocabKey(profileId));
 }

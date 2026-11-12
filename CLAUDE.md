@@ -70,8 +70,9 @@ Nur für mich privat. Läuft auf Mac (Tippen) und später iPad (Apple Pencil).
   vereinigen, sonst neuerer Stand). Heruntergeladenes wird per `publish` in offene Ansichten gegeben – Provider
   hören per `useLiveSync` auf ihre Listen. Neue gespeicherte Daten-Arten: in `merge.ts`/`isIdListKey` einordnen.
   Google-Zugang gilt 1 Stunde (Web-Apps bekommen keinen Dauer-Zugang). Test: `test35.mjs` (zwei Profile + Drive-Nachbau).
-- Englisch (`src/sections/english/`): Speicher `english` (Profil + Plan) und `english-vocab` (Karten, ID-Liste
-  für Sync). KI-Aufrufe mit festem JSON-Format über `askGeminiJson` (`englishAi.ts`). Lernlogik `srs.ts`.
+- Englisch (`src/sections/english/`): mehrere Personen (`english-profiles`, ID-Liste). Pro Person `english:<id>`
+  (Profil + Plan) und `english-vocab:<id>` (Karten, ID-Liste für Sync); die erste Person `default` nutzt die alten
+  Schlüssel `english` / `english-vocab` (Schlüssel über `englishKey`/`vocabKey` in db.ts). Gewählte Person: localStorage. KI-Aufrufe mit festem JSON-Format über `askGeminiJson` (`englishAi.ts`). Lernlogik `srs.ts`.
 - Ältere Geräte: Das iPad läuft mit iPadOS 17.7 (Safari 17). pdf.js darum aus `pdfjs-dist/legacy/...`
   (die normale Ausgabe braucht Safari 18.4+). Neue Bibliotheken auf Safari-17-Tauglichkeit prüfen –
   Testskript `old-safari.mjs` im Scratchpad löscht neuere Browser-Funktionen in Chrome.

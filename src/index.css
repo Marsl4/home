@@ -3033,3 +3033,77 @@ path.selected {
   pointer-events: none;
   mix-blend-mode: multiply;
 }
+
+/* ---------- Englisch: Personen ---------- */
+.english-person {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 4px 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-muted);
+}
+
+.english-person select {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.english-for {
+  margin: -8px 0 16px;
+}
+
+.english-people {
+  gap: 4px;
+  padding: 8px;
+}
+
+.english-person-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 8px;
+  border-radius: 8px;
+}
+
+.english-person-row.active {
+  background: var(--accent-soft);
+}
+
+.english-person-name {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.english-person-name:hover,
+.english-person-name:focus {
+  border-color: var(--border);
+  background: var(--surface);
+  outline: none;
+}
+
+.english-person-current {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--accent);
+  white-space: nowrap;
+}

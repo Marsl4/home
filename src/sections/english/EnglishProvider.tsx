@@ -1,8 +1,24 @@
-// Lädt Profil, Lernplan und Vokabeln und stellt Funktionen zum Ändern bereit (alles wird sofort gespeichert).
+// Lädt die Personen (Profile) und für die gewählte Person Profil, Lernplan und Vokabeln.
+// Stellt Funktionen zum Ändern bereit (alles wird sofort gespeichert – immer bei der richtigen Person).
 import { useEffect, useState, type ReactNode } from "react";
 
-import { loadEnglish, loadVocab, saveEnglish, saveVocab, type EnglishState, type VocabCard } from "../../storage/db";
+import {
+  DEFAULT_ENGLISH_PROFILE,
+  deleteEnglishProfileData,
+  englishKey,
+  loadEnglish,
+  loadEnglishProfiles,
+  loadVocab,
+  saveEnglish,
+  saveEnglishProfiles,
+  saveVocab,
+  vocabKey,
+  type EnglishProfile,
+  type EnglishState,
+  type VocabCard,
+} from "../../storage/db";
 import { useLiveSync } from "../../storage/liveSync";
+import { usePersistentState } from "../../storage/uiState";
 import { EnglishContext } from "./EnglishContext";
 import { newCard, review } from "./srs";
 
@@ -18,34 +34,110 @@ const EMPTY: EnglishState = {
   planCreatedAt: null,
 };
 
+// Daten EINER Person. profileId steht mit drin, damit beim Speichern klar ist, wem sie gehören
+// (auch wenn gerade zu einer anderen Person gewechselt wird).
+type ProfileData = { profileId: string; english: EnglishState | null; cards: VocabCard[] };
+
 export function EnglishProvider({ children }: { children: ReactNode }) {
-  const [english, setEnglish] = useState<EnglishState | null | undefined>(undefined); // undefined = lädt
-  const [cards, setCards] = useState<VocabCard[] | null>(null);
-  // Vom anderen Gerät (Sync) geänderte Daten sofort übernehmen.
-  useLiveSync<EnglishState>("english", setEnglish);
-  useLiveSync<VocabCard[]>("english-vocab", setCards);
+  const [profiles, setProfiles] = useState<EnglishProfile[] | null>(null);
+  // Wer gerade lernt, merkt sich jedes Gerät selbst (nicht im Sync).
+  const [chosenId, setChosenId] = usePersistentState<string>("ui:englishProfile", DEFAULT_ENGLISH_PROFILE);
+  const [data, setData] = useState<ProfileData | null>(null);
+
+  // Gibt es die gewählte Person nicht (mehr)? Dann die erste nehmen.
+  const profileId = profiles?.some((p) => p.id === chosenId) ? chosenId : (profiles?.[0]?.id ?? DEFAULT_ENGLISH_PROFILE);
 
   useEffect(() => {
-    loadEnglish().then((state) => setEnglish(state ? { ...EMPTY, ...state } : null));
-    loadVocab().then(setCards);
+    loadEnglishProfiles().then(setProfiles);
   }, []);
 
-  if (english === undefined || cards === null) return null;
+  // Daten der gewählten Person laden. Bis sie da sind, bleiben die bisherigen sichtbar.
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([loadEnglish(profileId), loadVocab(profileId)]).then(([state, cards]) => {
+      if (!cancelled) setData({ profileId, english: state ? { ...EMPTY, ...state } : null, cards });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [profileId]);
 
-  const updateEnglish = (change: (current: EnglishState) => EnglishState) =>
-    setEnglish((current) => {
-      const next = change({ ...EMPTY, ...(current ?? {}) });
-      saveEnglish(next);
+  // Vom anderen Gerät (Sync) geänderte Daten sofort übernehmen.
+  useLiveSync<EnglishProfile[]>("english-profiles", (list) => {
+    if (list?.length) setProfiles(list); // leere Liste nie übernehmen – mindestens eine Person bleibt
+  });
+  useLiveSync<EnglishState>(englishKey(profileId), (state) =>
+    setData((current) => (current?.profileId === profileId ? { ...current, english: state } : current)),
+  );
+  useLiveSync<VocabCard[]>(vocabKey(profileId), (cards) =>
+    setData((current) => (current?.profileId === profileId ? { ...current, cards } : current)),
+  );
+
+  if (!profiles || !data) return null;
+
+  // ---------- Personen ----------
+  const updateProfiles = (change: (current: EnglishProfile[]) => EnglishProfile[]) =>
+    setProfiles((current) => {
+      const next = change(current ?? []);
+      saveEnglishProfiles(next);
       return next;
+    });
+
+  const addProfile = () => {
+    const id = crypto.randomUUID();
+    updateProfiles((current) => {
+      // Nächste freie Nummer: "Person 2", "Person 3" …
+      let number = current.length + 1;
+      while (current.some((p) => p.name === `Person ${number}`)) number++;
+      return [...current, { id, name: `Person ${number}`, createdAt: Date.now() }];
+    });
+    setChosenId(id);
+    return id;
+  };
+
+  const renameProfile = (id: string, name: string) => {
+    const trimmed = name.trim();
+    if (trimmed) updateProfiles((current) => current.map((p) => (p.id === id ? { ...p, name: trimmed } : p)));
+  };
+
+  const deleteProfile = (id: string) => {
+    if (profiles.length <= 1) return; // mindestens eine Person bleibt
+    updateProfiles((current) => current.filter((p) => p.id !== id));
+    deleteEnglishProfileData(id);
+    try {
+      localStorage.removeItem(id === DEFAULT_ENGLISH_PROFILE ? "ui:englishTestDraft" : `ui:englishTestDraft:${id}`);
+    } catch {
+      // egal – war nur ein angefangener Test
+    }
+    if (id === profileId) setChosenId(profiles.find((p) => p.id !== id)!.id);
+  };
+
+  // ---------- Daten der gewählten Person ----------
+  const updateEnglish = (change: (current: EnglishState) => EnglishState) =>
+    setData((current) => {
+      if (!current) return current;
+      const next = change({ ...EMPTY, ...(current.english ?? {}) });
+      saveEnglish(current.profileId, next);
+      return { ...current, english: next };
     });
   const updateCards = (change: (current: VocabCard[]) => VocabCard[]) =>
-    setCards((current) => {
-      const next = change(current ?? []);
-      saveVocab(next);
-      return next;
+    setData((current) => {
+      if (!current) return current;
+      const next = change(current.cards);
+      saveVocab(current.profileId, next);
+      return { ...current, cards: next };
     });
 
+  const { english, cards } = data;
+
   const value = {
+    profiles,
+    profileId: data.profileId,
+    selectProfile: setChosenId,
+    addProfile,
+    renameProfile,
+    deleteProfile,
+
     english,
     cards,
     saveGoal: (goal: string, minutesPerDay: number) => updateEnglish((s) => ({ ...s, goal, minutesPerDay })),

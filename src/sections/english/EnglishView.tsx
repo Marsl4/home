@@ -1,8 +1,9 @@
-// Hauptansicht Englisch: Übersicht, Einstufungstest, Lernplan, Vokabeln lernen, alle Vokabeln.
+// Hauptansicht Englisch: Übersicht, Einstufungstest, Lernplan, Vokabeln lernen, alle Vokabeln, Personen.
 import { Languages } from "lucide-react";
 
 import type { SectionProps } from "../types";
 import { ENGLISH_PAGES, useEnglish } from "./EnglishContext";
+import { PeopleView } from "./PeopleView";
 import { PlacementTest } from "./PlacementTest";
 import { PlanView } from "./PlanView";
 import { isDue } from "./srs";
@@ -15,17 +16,22 @@ const TITLES: Record<string, string> = {
   plan: "Lernplan",
   learn: "Vokabeln lernen",
   words: "Alle Vokabeln",
+  people: "Personen",
 };
 
 export function EnglishView({ selectedId, onSelect }: SectionProps) {
-  const { english } = useEnglish();
+  const { english, profiles, profileId } = useEnglish();
   // Noch nie getestet: direkt beim Test starten.
   const page = selectedId ?? (english?.level ? ENGLISH_PAGES.overview : ENGLISH_PAGES.test);
+  const person = profiles.find((p) => p.id === profileId);
 
   return (
     <div className="english">
-      <div className="english-inner">
+      {/* key: Beim Wechsel der Person alles neu aufbauen (z. B. ihren angefangenen Test laden). */}
+      <div className="english-inner" key={profileId}>
         <h1 className="browser-title">{TITLES[page] ?? "Englisch"}</h1>
+        {page !== "people" && profiles.length > 1 && person && <p className="muted english-for">für {person.name}</p>}
+        {page === "people" && <PeopleView onStartTest={() => onSelect(ENGLISH_PAGES.test)} />}
         {page === "test" && (
           <PlacementTest onStart={() => onSelect(ENGLISH_PAGES.test)} onPlanReady={() => onSelect(ENGLISH_PAGES.plan)} />
         )}

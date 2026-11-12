@@ -1,12 +1,12 @@
-// Zweite Seitenleiste im Englisch-Bereich.
-import { BookOpen, ClipboardCheck, GraduationCap, Layers, ListChecks } from "lucide-react";
+// Zweite Seitenleiste im Englisch-Bereich: oben die Person, die gerade lernt, darunter die Unterseiten.
+import { BookOpen, ClipboardCheck, GraduationCap, Layers, ListChecks, UserRound, Users } from "lucide-react";
 
 import type { SectionProps } from "../types";
 import { ENGLISH_PAGES, useEnglish } from "./EnglishContext";
 import { isDue } from "./srs";
 
 export function EnglishPanel({ selectedId, onSelect }: SectionProps) {
-  const { english, cards } = useEnglish();
+  const { english, cards, profiles, profileId, selectProfile } = useEnglish();
   const current = selectedId ?? (english?.level ? ENGLISH_PAGES.overview : ENGLISH_PAGES.test);
   const due = cards.filter((c) => isDue(c)).length;
   const items = [
@@ -18,6 +18,23 @@ export function EnglishPanel({ selectedId, onSelect }: SectionProps) {
   ];
   return (
     <nav className="panel-list">
+      <label className="english-person">
+        <UserRound size={15} />
+        <select
+          value={profileId}
+          onChange={(e) => {
+            selectProfile(e.target.value);
+            if (current === ENGLISH_PAGES.people) onSelect(ENGLISH_PAGES.overview);
+          }}
+          aria-label="Wer lernt gerade?"
+        >
+          {profiles.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </label>
       {english?.level && <div className="panel-section-title">Niveau {english.level}</div>}
       {items.map((item) => (
         <button key={item.id} className={`panel-item ${current === item.id ? "active" : ""}`} onClick={() => onSelect(item.id)}>
@@ -26,6 +43,15 @@ export function EnglishPanel({ selectedId, onSelect }: SectionProps) {
           {item.count ? <span className="panel-item-count">{item.count}</span> : null}
         </button>
       ))}
+      <div className="panel-section-title">Verwalten</div>
+      <button
+        className={`panel-item ${current === ENGLISH_PAGES.people ? "active" : ""}`}
+        onClick={() => onSelect(ENGLISH_PAGES.people)}
+      >
+        <Users size={15} className="panel-item-icon" />
+        <span className="panel-item-label">Personen</span>
+        <span className="panel-item-count">{profiles.length}</span>
+      </button>
     </nav>
   );
 }

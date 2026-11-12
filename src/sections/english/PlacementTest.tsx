@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 
 import { describeAiError, isAiServiceError } from "../../ai/provider";
+import { DEFAULT_ENGLISH_PROFILE } from "../../storage/db";
 import { usePersistentState } from "../../storage/uiState";
 import { useEnglish } from "./EnglishContext";
 import { assess, createPlacementTest, createPlan, type Assessment, type PlacementTest as Test } from "./englishAi";
@@ -25,10 +26,14 @@ type Draft = {
 
 // onStart: den Test fest als offene Seite merken (sonst springt die Ansicht nach der Auswertung zur Übersicht).
 export function PlacementTest({ onStart, onPlanReady }: { onStart: () => void; onPlanReady: () => void }) {
-  const { english, saveGoal, applyAssessment, applyPlan } = useEnglish();
+  const { english, profileId, saveGoal, applyAssessment, applyPlan } = useEnglish();
   const [goal, setGoal] = useState(english?.goal || GOALS[1]);
   const [minutes, setMinutes] = useState(english?.minutesPerDay ?? 15);
-  const [draft, setDraft] = usePersistentState<Draft>("ui:englishTestDraft", null);
+  // Angefangener Test – pro Person (die erste Person nutzt den alten Schlüssel weiter).
+  const [draft, setDraft] = usePersistentState<Draft>(
+    profileId === DEFAULT_ENGLISH_PROFILE ? "ui:englishTestDraft" : `ui:englishTestDraft:${profileId}`,
+    null,
+  );
   const [result, setResult] = useState<Assessment | null>(null);
   const [busy, setBusy] = useState<string | null>(null); // Text, was gerade passiert
   const [error, setError] = useState<string | null>(null);
