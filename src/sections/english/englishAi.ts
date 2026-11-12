@@ -40,47 +40,71 @@ const str = { type: "string" };
 const strList = { type: "array", items: str };
 
 // ---------- Einstufungstest ----------
-export async function createPlacementTest(goal: string, signal?: AbortSignal): Promise<PlacementTest> {
-  const prompt = `Erstelle einen Einstufungstest Englisch für eine deutschsprachige Person.
+// Der Test wird in 3 kleinen Anfragen gleichzeitig erstellt (je 2 Niveaus mit 8 Fragen).
+// Eine einzige große Anfrage dauert zu lange – Safari bricht nach ca. 50–60 s ab ("Load failed").
+const TEST_PARTS: EnglishLevel[][] = [
+  ["A1", "A2"],
+  ["B1", "B2"],
+  ["C1", "C2"],
+];
+
+const questionSchema = {
+  type: "object",
+  properties: {
+    level: { type: "string", enum: LEVELS },
+    skill: { type: "string", enum: ["grammar", "vocabulary", "reading"] },
+    question: str,
+    options: strList,
+    correctIndex: { type: "integer" },
+  },
+  required: ["level", "skill", "question", "options", "correctIndex"],
+};
+
+async function createTestPart(goal: string, levels: EnglishLevel[], signal?: AbortSignal): Promise<TestQuestion[]> {
+  const prompt = `Erstelle einen Teil eines Einstufungstests Englisch für eine deutschsprachige Person.
 Ziel der Person: ${goal}.
-- 24 Multiple-Choice-Fragen, je genau 4 Antwortmöglichkeiten, genau eine richtig.
-- Je 4 Fragen pro Niveau A1, A2, B1, B2, C1, C2, sortiert von leicht nach schwer.
+- Genau 4 Multiple-Choice-Fragen pro Niveau, nur für diese Niveaus: ${levels.join(", ")} (also ${levels.length * 4} Fragen), sortiert von leicht nach schwer.
+- Je genau 4 Antwortmöglichkeiten, genau eine richtig.
 - Gemischt: Grammatik (grammar), Wortschatz (vocabulary) und kurzes Leseverständnis (reading, mit 1–3 Sätzen Text in der Frage).
 - Fragen und Antworten auf Englisch; Lücken als "___".
-- Die richtige Antwort nicht immer an derselben Stelle.
-- writingTask: eine kurze Schreibaufgabe auf Deutsch formuliert ("Schreibe 3–5 Sätze auf Englisch über …"), passend zum Ziel.`;
-  const result = await askGeminiJson<PlacementTest>({
+- Die richtige Antwort nicht immer an derselben Stelle.`;
+  const result = await askGeminiJson<{ questions: TestQuestion[] }>({
     ...settings(),
     prompt,
     signal,
     schema: {
       type: "object",
-      properties: {
-        questions: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              level: { type: "string", enum: LEVELS },
-              skill: { type: "string", enum: ["grammar", "vocabulary", "reading"] },
-              question: str,
-              options: strList,
-              correctIndex: { type: "integer" },
-            },
-            required: ["level", "skill", "question", "options", "correctIndex"],
-          },
-        },
-        writingTask: str,
-      },
-      required: ["questions", "writingTask"],
+      properties: { questions: { type: "array", items: questionSchema } },
+      required: ["questions"],
     },
   });
-  // Nur brauchbare Fragen übernehmen (4 Antworten, gültige Lösung).
-  const questions = (result.questions ?? []).filter(
-    (q) => q.options?.length === 4 && q.correctIndex >= 0 && q.correctIndex < 4 && LEVELS.includes(q.level),
-  );
+  return result.questions ?? [];
+}
+
+async function createWritingTask(goal: string, signal?: AbortSignal): Promise<string> {
+  const result = await askGeminiJson<{ writingTask: string }>({
+    ...settings(),
+    prompt: `Formuliere für einen Englisch-Einstufungstest eine kurze Schreibaufgabe auf Deutsch
+("Schreibe 3–5 Sätze auf Englisch über …"), passend zum Ziel der Person: ${goal}.`,
+    signal,
+    schema: { type: "object", properties: { writingTask: str }, required: ["writingTask"] },
+  });
+  return result.writingTask;
+}
+
+export async function createPlacementTest(goal: string, signal?: AbortSignal): Promise<PlacementTest> {
+  const [parts, writingTask] = await Promise.all([
+    Promise.all(TEST_PARTS.map((levels) => createTestPart(goal, levels, signal))),
+    // Die Schreibaufgabe ist nicht so wichtig: Klappt sie nicht, nehmen wir eine Standard-Aufgabe.
+    createWritingTask(goal, signal).catch(() => ""),
+  ]);
+  // Nur brauchbare Fragen übernehmen (4 Antworten, gültige Lösung), nach Niveau sortiert.
+  const questions = parts
+    .flat()
+    .filter((q) => q.options?.length === 4 && q.correctIndex >= 0 && q.correctIndex < 4 && LEVELS.includes(q.level))
+    .sort((a, b) => LEVELS.indexOf(a.level) - LEVELS.indexOf(b.level));
   if (questions.length < 8) throw new Error("Der Test konnte nicht erstellt werden. Bitte nochmal versuchen.");
-  return { questions, writingTask: result.writingTask || "Schreibe 3–5 Sätze auf Englisch über dich und dein Studium." };
+  return { questions, writingTask: writingTask || "Schreibe 3–5 Sätze auf Englisch über dich und dein Studium." };
 }
 
 // Grobe Einstufung aus den Antworten: das höchste Niveau, bei dem mindestens 3 von 4 richtig waren
@@ -131,47 +155,88 @@ summary = 2–4 Sätze Einschätzung; strengths und weaknesses = je 2–4 kurze 
 }
 
 // ---------- Lernplan ----------
+// In zwei Schritten, damit keine Anfrage zu lange dauert (Safari bricht nach ca. 50–60 s ab):
+//   1. Gliederung: 8 Einheiten mit Titel, Ziel und Grammatik (kurze Antwort)
+//   2. Vokabeln: 4 Anfragen gleichzeitig, je 2 Einheiten mit 12 Wörtern
+type UnitOutline = Omit<PlanUnit, "vocabulary">;
+const UNITS_PER_VOCAB_REQUEST = 2;
+
+const vocabSchema = {
+  type: "array",
+  items: { type: "object", properties: { en: str, de: str, example: str }, required: ["en", "de", "example"] },
+};
+
 export async function createPlan(
   input: { level: EnglishLevel; goal: string; minutesPerDay: number; weaknesses: string[] },
   signal?: AbortSignal,
 ): Promise<PlanUnit[]> {
-  const prompt = `Erstelle einen Englisch-Lernplan für eine deutschsprachige Person.
-Aktuelles Niveau: ${input.level}. Ziel: ${input.goal}. Zeit pro Tag: ${input.minutesPerDay} Minuten.
-Schwächen laut Einstufungstest: ${input.weaknesses.join("; ") || "keine besonderen"}.
+  const about = `Aktuelles Niveau: ${input.level}. Ziel: ${input.goal}. Zeit pro Tag: ${input.minutesPerDay} Minuten.
+Schwächen laut Einstufungstest: ${input.weaknesses.join("; ") || "keine besonderen"}.`;
+
+  // Schritt 1: Gliederung
+  const outline = await askGeminiJson<{ units: UnitOutline[] }>({
+    ...settings(),
+    prompt: `Erstelle die Gliederung eines Englisch-Lernplans für eine deutschsprachige Person.
+${about}
 - 8 Einheiten (units), aufeinander aufbauend, Schwächen zuerst, passend zum Ziel; jede Einheit ca. 1 Woche.
 - title: kurz, z. B. "Unit 1: Past Simple & Reisen"; goal: was man danach kann (Deutsch, 1 Satz);
-  grammar: Grammatik-Schwerpunkt (Deutsch, kurz).
-- vocabulary: je 12 nützliche Wörter/Ausdrücke passend zu Niveau, Ziel und Thema der Einheit:
-  en (englisch), de (deutsche Bedeutung), example (natürlicher englischer Beispielsatz).
-- Keine Wörter doppelt im ganzen Plan; keine zu leichten Wörter für dieses Niveau.`;
-  const result = await askGeminiJson<{ units: PlanUnit[] }>({
-    ...settings(),
-    prompt,
+  grammar: Grammatik-Schwerpunkt (Deutsch, kurz).`,
     signal,
     schema: {
       type: "object",
       properties: {
         units: {
           type: "array",
-          items: {
-            type: "object",
-            properties: {
-              title: str,
-              goal: str,
-              grammar: str,
-              vocabulary: {
-                type: "array",
-                items: { type: "object", properties: { en: str, de: str, example: str }, required: ["en", "de", "example"] },
-              },
-            },
-            required: ["title", "goal", "grammar", "vocabulary"],
-          },
+          items: { type: "object", properties: { title: str, goal: str, grammar: str }, required: ["title", "goal", "grammar"] },
         },
       },
       required: ["units"],
     },
   });
-  const units = (result.units ?? []).filter((u) => u.title && u.vocabulary?.length);
+  const units = (outline.units ?? []).filter((u) => u.title);
   if (units.length === 0) throw new Error("Der Lernplan konnte nicht erstellt werden. Bitte nochmal versuchen.");
-  return units;
+
+  // Schritt 2: Vokabeln, mehrere Einheiten gleichzeitig
+  const allTitles = units.map((u) => u.title).join("; ");
+  const groups: UnitOutline[][] = [];
+  for (let i = 0; i < units.length; i += UNITS_PER_VOCAB_REQUEST) groups.push(units.slice(i, i + UNITS_PER_VOCAB_REQUEST));
+  const vocabGroups = await Promise.all(
+    groups.map(async (group) => {
+      const result = await askGeminiJson<{ units: { vocabulary: PlanUnit["vocabulary"] }[] }>({
+        ...settings(),
+        prompt: `Erstelle Vokabeln für einen Englisch-Lernplan einer deutschsprachigen Person.
+${about}
+Alle Einheiten des Plans (nur zur Orientierung, damit sich nichts doppelt): ${allTitles}
+Erstelle Vokabeln NUR für diese ${group.length} Einheit(en), in dieser Reihenfolge:
+${group.map((u, i) => `${i + 1}. ${u.title} – ${u.goal}`).join("\n")}
+- Pro Einheit genau 12 nützliche Wörter/Ausdrücke passend zu Niveau, Ziel und Thema der Einheit:
+  en (englisch), de (deutsche Bedeutung), example (natürlicher englischer Beispielsatz).
+- Keine zu leichten Wörter für dieses Niveau, keine Wörter doppelt.`,
+        signal,
+        schema: {
+          type: "object",
+          properties: {
+            units: { type: "array", items: { type: "object", properties: { vocabulary: vocabSchema }, required: ["vocabulary"] } },
+          },
+          required: ["units"],
+        },
+      });
+      return group.map((_, i) => result.units?.[i]?.vocabulary ?? []);
+    }),
+  );
+
+  // Zusammensetzen; Wörter, die schon in einer früheren Einheit vorkommen, weglassen.
+  const seen = new Set<string>();
+  const plan = units.map((unit, i) => {
+    const vocabulary = (vocabGroups.flat()[i] ?? []).filter((v) => {
+      const key = v.en?.trim().toLowerCase();
+      if (!key || !v.de || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    return { ...unit, vocabulary };
+  });
+  const usable = plan.filter((u) => u.vocabulary.length > 0);
+  if (usable.length === 0) throw new Error("Der Lernplan konnte nicht erstellt werden. Bitte nochmal versuchen.");
+  return usable;
 }

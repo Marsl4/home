@@ -110,11 +110,12 @@ ${JSON.stringify(options.schema)}`;
     // nicht an (chunk.text lässt sie weg), aber so fließen von Anfang an Daten und Safari bricht
     // die Verbindung nicht ab, während die KI noch nachdenkt.
     let thinking: ThinkingConfig | undefined = { ...thinkingFor(options.model, options.fast), includeThoughts: true };
-    for (let attempt = 0; attempt < 2; attempt++) {
+    let retriedAfterNetworkError = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        // Als "Stream" abrufen, also Stück für Stück: Lange Antworten (z. B. ein ganzer Lernplan)
-        // brauchen oft über eine Minute. Kommt so lange gar nichts an, bricht Safari die Verbindung
-        // mit "Load failed" ab. Beim Stream fließen laufend Daten, dann passiert das nicht.
+        // Als "Stream" abrufen, also Stück für Stück. Trotzdem gilt: Anfragen klein halten!
+        // Safari bricht Verbindungen nach ca. 50–60 s mit "Load failed" ab, wenn die Antwort
+        // so lange braucht. Große Aufgaben darum in mehrere kleine Anfragen teilen (siehe englishAi.ts).
         const stream = await ai.models.generateContentStream({
           model: options.model,
           contents: [{ role: "user", parts: [{ text: variant.prompt }] }],
@@ -134,6 +135,10 @@ ${JSON.stringify(options.schema)}`;
           }
           // Schlüssel falsch, Limit erreicht, Modell unbekannt: andere Varianten helfen nicht.
           if ([401, 403, 404, 429].includes(error.status)) throw error;
+        } else if (error instanceof TypeError && !retriedAfterNetworkError && navigator.onLine) {
+          // Verbindung abgebrochen ("Load failed"): einmal dieselbe Anfrage nochmal versuchen.
+          retriedAfterNetworkError = true;
+          continue;
         } else if (!(error instanceof SyntaxError)) {
           throw error; // z. B. keine Verbindung
         }
