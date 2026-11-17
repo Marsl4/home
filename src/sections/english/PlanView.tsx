@@ -10,7 +10,7 @@ import { createPlan, GOALS, MINUTE_OPTIONS, wordsPerUnit } from "./englishAi";
 import { isDue } from "./srs";
 import { SpeakButton } from "./VocabTrainer";
 
-export function PlanView({ onLearn, onRetest }: { onLearn: () => void; onRetest: () => void }) {
+export function PlanView({ onLearn, onRetest, onPractice }: { onLearn: () => void; onRetest: () => void; onPractice: () => void }) {
   const { english, cards, completeUnit } = useEnglish();
   const units = english?.units ?? [];
   const [openId, setOpenId] = useState<string | null>(units.find((u) => u.status === "active")?.id ?? null);
@@ -62,7 +62,10 @@ export function PlanView({ onLearn, onRetest }: { onLearn: () => void; onRetest:
             {open && (
               <div className="english-unit-body">
                 <p>{unit.goal}</p>
-                <p className="muted">Grammatik: {unit.grammar}</p>
+                <p className="muted">
+                  Grammatik: {unit.grammar}
+                  {unit.grammarScore !== undefined && ` · geübt: ${Math.round(unit.grammarScore * 100)} %`}
+                </p>
                 <div className="english-words">
                   {unitCards.map((c) => (
                     <div key={c.id} className="english-word">
@@ -76,6 +79,9 @@ export function PlanView({ onLearn, onRetest }: { onLearn: () => void; onRetest:
                   <div className="english-unit-actions">
                     <button className="primary-button" onClick={onLearn} disabled={dueCount === 0}>
                       {dueCount ? `${dueCount} Vokabeln lernen` : "Gerade nichts fällig"}
+                    </button>
+                    <button className="secondary-button" onClick={onPractice}>
+                      Grammatik üben
                     </button>
                     <button
                       className="secondary-button"

@@ -24,6 +24,7 @@ export type EnglishContextValue = {
   // Plan anpassen: Erledigte und aktuelle Einheit bleiben, die zukünftigen werden durch neue ersetzt.
   replaceFutureUnits: (units: PlanUnit[], settings: { goal: string; minutesPerDay: number }) => void;
   completeUnit: (unitId: string) => void; // Einheit fertig -> nächste wird freigeschaltet
+  saveGrammarScore: (unitId: string, score: number) => void; // behält das beste Ergebnis
   reviewCard: (cardId: string, rating: Rating) => void;
   addCard: (en: string, de: string, example: string) => void;
   deleteCard: (cardId: string) => void;
@@ -44,5 +45,6 @@ export const ENGLISH_PAGES = {
   plan: "plan",
   learn: "learn",
   words: "words",
+  practice: "practice",
   people: "people",
 } as const;

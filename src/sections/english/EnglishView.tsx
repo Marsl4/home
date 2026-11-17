@@ -1,4 +1,4 @@
-// Hauptansicht Englisch: Übersicht, Einstufungstest, Lernplan, Vokabeln lernen, alle Vokabeln, Personen.
+// Hauptansicht Englisch: Übersicht, Einstufungstest, Lernplan, Vokabeln lernen, alle Vokabeln, Üben, Personen.
 import { Languages } from "lucide-react";
 
 import type { SectionProps } from "../types";
@@ -6,6 +6,7 @@ import { ENGLISH_PAGES, useEnglish } from "./EnglishContext";
 import { PeopleView } from "./PeopleView";
 import { PlacementTest } from "./PlacementTest";
 import { PlanView } from "./PlanView";
+import { PracticeView } from "./PracticeView";
 import { isDue } from "./srs";
 import { VocabList } from "./VocabList";
 import { VocabTrainer } from "./VocabTrainer";
@@ -16,6 +17,7 @@ const TITLES: Record<string, string> = {
   plan: "Lernplan",
   learn: "Vokabeln lernen",
   words: "Alle Vokabeln",
+  practice: "Üben",
   people: "Personen",
 };
 
@@ -35,7 +37,14 @@ export function EnglishView({ selectedId, onSelect }: SectionProps) {
         {page === "test" && (
           <PlacementTest onStart={() => onSelect(ENGLISH_PAGES.test)} onPlanReady={() => onSelect(ENGLISH_PAGES.plan)} />
         )}
-        {page === "plan" && <PlanView onLearn={() => onSelect(ENGLISH_PAGES.learn)} onRetest={() => onSelect(ENGLISH_PAGES.test)} />}
+        {page === "plan" && (
+          <PlanView
+            onLearn={() => onSelect(ENGLISH_PAGES.learn)}
+            onRetest={() => onSelect(ENGLISH_PAGES.test)}
+            onPractice={() => onSelect(ENGLISH_PAGES.practice)}
+          />
+        )}
+        {page === "practice" && <PracticeView />}
         {page === "learn" && <VocabTrainer />}
         {page === "words" && <VocabList />}
         {page === "overview" && <Overview onSelect={onSelect} />}

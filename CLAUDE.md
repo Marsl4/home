@@ -72,7 +72,9 @@ Nur für mich privat. Läuft auf Mac (Tippen) und später iPad (Apple Pencil).
   Google-Zugang gilt 1 Stunde (Web-Apps bekommen keinen Dauer-Zugang). Test: `test35.mjs` (zwei Profile + Drive-Nachbau).
 - Englisch (`src/sections/english/`): mehrere Personen (`english-profiles`, ID-Liste). Pro Person `english:<id>`
   (Profil + Plan) und `english-vocab:<id>` (Karten, ID-Liste für Sync); die erste Person `default` nutzt die alten
-  Schlüssel `english` / `english-vocab` (Schlüssel über `englishKey`/`vocabKey` in db.ts). Gewählte Person: localStorage. KI-Aufrufe mit festem JSON-Format über `askGeminiJson` (`englishAi.ts`). Lernlogik `srs.ts`.
+  Schlüssel `english` / `english-vocab` (Schlüssel über `englishKey`/`vocabKey` in db.ts). Gewählte Person: localStorage.
+  KI-Aufrufe mit festem JSON-Format über `askAiJson` (`englishAi.ts`; Üben: `practiceAi.ts` + `PracticeView`,
+  Stand pro Person in localStorage). Lernlogik `src/learning/srs.ts`, Spracheingabe `useSpeechInput.ts`.
 - Hausarbeiten/Präsentationen (`src/sections/projects/`, Uni → Planung): private GitHub-Repos mit `home.json`
   (Vorlage `vorlagen/projekt/`), entstehen in VS Code mit Claude. App liest nur (Fine-grained Token, Contents
   read-only, localStorage `github:settings`). Projektliste/Änderungen/PDFs im eigenen Zwischenspeicher

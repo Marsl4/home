@@ -167,6 +167,7 @@ export type EnglishUnit = {
   goal: string; // was man danach kann (Deutsch)
   grammar: string; // Grammatik-Schwerpunkt
   status: "locked" | "active" | "done";
+  grammarScore?: number; // bestes Ergebnis der Grammatik-Übung (Anteil richtig, 0–1); fehlt = noch nicht geübt
 };
 
 export type EnglishState = {

@@ -44,7 +44,8 @@
 ### Lernen
 - [x] **Englisch lernen**: Einstufungstest (KI) → Niveau + Lernplan mit 8 Einheiten und Vokabeln,
       Vokabeltrainer mit Wiederholung nach Lernstand, beide Richtungen, Aussprache; eigene Vokabeln.
-      Offen: Grammatik-Übungen pro Einheit, Sprechen/Schreiben üben mit KI.
+      Üben: Grammatik-Übungen pro Einheit (Ergebnis im Lernplan), Schreiben mit KI-Korrektur, Sprechen
+      (Gespräch mit Korrekturen, Mikrofon/Diktieren, Vorlesen).
 - [x] **Abfragemodus** (Lernen → Abfragen): KI stellt Fragen zu Notiz/PDF/Text (offen mit KI-Bewertung oder
       Multiple Choice), Auswertung, nicht Gewusstes als Karteikarten speichern.
 - [x] **Karteikarten** (Bereich „Lernen“): Stapel pro Fach, Karten von Hand oder per KI aus Notiz/PDF/Text
@@ -66,5 +67,4 @@
 
 ## Irgendwann
 
-- App aufs iPad bringen (Apple Pencil: Stift zeichnet, Finger scrollt)
 - Kalender und Fitness ausbauen

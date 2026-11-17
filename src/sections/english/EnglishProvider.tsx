@@ -197,6 +197,11 @@ export function EnglishProvider({ children }: { children: ReactNode }) {
       const now = Date.now();
       updateCards((current) => current.map((c) => (nextId && c.unitId === nextId && c.due === null ? { ...c, due: now } : c)));
     },
+    saveGrammarScore: (unitId: string, score: number) =>
+      updateEnglish((s) => ({
+        ...s,
+        units: s.units.map((u) => (u.id === unitId ? { ...u, grammarScore: Math.max(u.grammarScore ?? 0, score) } : u)),
+      })),
     reviewCard: (cardId: string, rating: Parameters<typeof review>[1]) =>
       updateCards((current) => current.map((c) => (c.id === cardId ? review(c, rating) : c))),
     addCard: (en: string, de: string, example: string) =>

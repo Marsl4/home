@@ -1,5 +1,5 @@
 // Zweite Seitenleiste im Englisch-Bereich: oben die Person, die gerade lernt, darunter die Unterseiten.
-import { BookOpen, ClipboardCheck, GraduationCap, Layers, ListChecks, UserRound, Users } from "lucide-react";
+import { BookOpen, ClipboardCheck, Dumbbell, GraduationCap, Layers, ListChecks, UserRound, Users } from "lucide-react";
 
 import type { SectionProps } from "../types";
 import { ENGLISH_PAGES, useEnglish } from "./EnglishContext";
@@ -15,6 +15,7 @@ export function EnglishPanel({ selectedId, onSelect }: SectionProps) {
     { id: ENGLISH_PAGES.plan, label: "Lernplan", icon: ListChecks },
     { id: ENGLISH_PAGES.learn, label: "Vokabeln lernen", icon: Layers, count: due },
     { id: ENGLISH_PAGES.words, label: "Alle Vokabeln", icon: BookOpen },
+    { id: ENGLISH_PAGES.practice, label: "Üben", icon: Dumbbell },
   ];
   return (
     <nav className="panel-list">
