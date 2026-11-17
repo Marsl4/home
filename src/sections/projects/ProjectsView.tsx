@@ -10,12 +10,16 @@ import {
   FolderGit2,
   History,
   ListTodo,
+  Maximize,
   Presentation,
   RefreshCw,
 } from "lucide-react";
 
 import { PdfViewer } from "../pdfs/PdfViewer";
+import { usePdfPosition } from "../pdfs/visiblePage";
 import { describeGithubError, useGithubSettings, type Project, type ProjectType } from "./github";
+import { enterFullscreen } from "./fullscreen";
+import { Presenter } from "./Presenter";
 import { loadResultFile, refreshProjects, useProjectDetails, useProjects } from "./projectStore";
 
 const LABELS: Record<ProjectType, { plural: string; one: string; result: string }> = {
@@ -138,6 +142,8 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: () => void
 function ProjectDetail({ project, onBack, onOpenResult }: { project: Project; onBack: () => void; onOpenResult: () => void }) {
   const { details, error, loading } = useProjectDetails(project);
   const label = LABELS[project.typ];
+  const [presenting, setPresenting] = useState(false);
+  const latest = details?.versions[0]?.sha;
 
   return (
     <Page
@@ -159,9 +165,22 @@ function ProjectDetail({ project, onBack, onOpenResult }: { project: Project; on
         {project.abgabe ? <Deadline date={project.abgabe} done={isDone(project)} big /> : <p className="muted">Kein Abgabetermin eingetragen.</p>}
         <Progress project={project} />
         {project.ergebnis ? (
-          <button className="primary-button icon-text" onClick={onOpenResult}>
-            {project.typ === "hausarbeit" ? <FileText size={15} /> : <Presentation size={15} />} {label.result}
-          </button>
+          <div className="english-unit-actions">
+            <button className="primary-button icon-text" onClick={onOpenResult}>
+              {project.typ === "hausarbeit" ? <FileText size={15} /> : <Presentation size={15} />} {label.result}
+            </button>
+            {project.typ === "praesentation" && latest && (
+              <button
+                className="secondary-button"
+                onClick={() => {
+                  enterFullscreen();
+                  setPresenting(true);
+                }}
+              >
+                <Maximize size={14} /> Präsentieren
+              </button>
+            )}
+          </div>
         ) : (
           <p className="muted">Noch kein Ergebnis-PDF eingetragen („ergebnis“ in home.json).</p>
         )}
@@ -203,6 +222,12 @@ function ProjectDetail({ project, onBack, onOpenResult }: { project: Project; on
           </ul>
         )}
       </div>
+      {presenting && latest && project.ergebnis && (
+        <Presenter
+          loadFile={() => loadResultFile(project.repo, project.ergebnis!, latest)}
+          onClose={() => setPresenting(false)}
+        />
+      )}
     </Page>
   );
 }
@@ -214,6 +239,8 @@ function ResultView(props: { project: Project; version: string; onBack: () => vo
   const versions = details?.versions ?? [];
   const sha = version === "latest" ? versions[0]?.sha : version;
   const path = project.ergebnis!;
+  const [presenting, setPresenting] = useState(false);
+  const position = usePdfPosition(sha ? `gh:${project.repo}@${sha}` : null);
 
   // Eigene ID je Projekt + Stand: So gehören Stift-Notizen immer zu genau dieser Fassung
   // und verrutschen nicht, wenn Claude den Text später ändert.
@@ -255,6 +282,24 @@ function ResultView(props: { project: Project; version: string; onBack: () => vo
     </select>
   );
 
+  const headerExtra = (
+    <>
+      {versionPicker}
+      {project.typ === "praesentation" && (
+        <button
+          className="icon-button"
+          onClick={() => {
+            enterFullscreen();
+            setPresenting(true);
+          }}
+          title="Präsentieren (Vollbild)"
+        >
+          <Maximize size={17} />
+        </button>
+      )}
+    </>
+  );
+
   const breadcrumb = (
     <button className="breadcrumb-link" onClick={onBack}>
       {LABELS[project.typ].one}
@@ -262,12 +307,21 @@ function ResultView(props: { project: Project; version: string; onBack: () => vo
   );
 
   return (
-    <PdfViewer
-      key={pdf.id}
-      pdf={pdf}
-      breadcrumb={breadcrumb}
-      external={{ loadFile: () => loadResultFile(project.repo, path, sha), headerExtra: versionPicker }}
-    />
+    <>
+      <PdfViewer
+        key={pdf.id}
+        pdf={pdf}
+        breadcrumb={breadcrumb}
+        external={{ loadFile: () => loadResultFile(project.repo, path, sha), headerExtra }}
+      />
+      {presenting && (
+        <Presenter
+          loadFile={() => loadResultFile(project.repo, path, sha)}
+          startPage={position?.page ?? 1}
+          onClose={() => setPresenting(false)}
+        />
+      )}
+    </>
   );
 }
 

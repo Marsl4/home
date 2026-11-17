@@ -26,6 +26,9 @@
   --toast-bg: #2f2e2b;
   --toast-text: #ffffff;
   --toast-action: #a5b4fc;
+  --presenter-bg: #000000; /* Vollbild-Präsentation: in beiden Designs schwarz */
+  --presenter-controls: rgba(40, 40, 44, 0.85);
+  --presenter-text: #ffffff;
   color-scheme: light; /* helle Datumsfelder, Scrollbalken usw. */
 }
 
@@ -3324,4 +3327,78 @@ a.icon-text {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+/* ---------- Vollbild-Präsentation ---------- */
+.presenter {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--presenter-bg);
+  color: var(--presenter-text);
+  touch-action: none; /* Wischen gehört der Präsentation, nicht dem Scrollen/Zoomen */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.presenter.hide-controls {
+  cursor: none;
+}
+
+.presenter-slide {
+  display: block;
+}
+
+.presenter-message {
+  position: absolute;
+  margin: 0;
+  font-size: 16px;
+  opacity: 0.8;
+}
+
+.presenter-controls {
+  position: absolute;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: var(--presenter-controls);
+  transform: translateX(-50%);
+  transition: opacity 0.3s;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.presenter.hide-controls .presenter-controls {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.presenter-controls span {
+  min-width: 64px;
+  text-align: center;
+}
+
+.presenter-controls button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.presenter-controls button:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
