@@ -47,9 +47,8 @@
       Offen: Grammatik-Übungen pro Einheit, Sprechen/Schreiben üben mit KI.
 - [ ] **Lern- und Abfragemodus (KI-gestützt)**: auf Basis der PDFs und Zusammenfassungen
       Fragen stellen lassen, Wissen abfragen, Erklärungen bekommen.
-- [ ] **Karteikarten**: eigene Karten anlegen (auch ohne KI möglich, mit Wiederholung nach
-      Lernstand) und Karten automatisch aus PDFs/Zusammenfassungen erzeugen lassen (mit KI).
-      Hinweis: KI-Dienste kosten meist pro Nutzung – vor dem Bau kostenlose Wege prüfen.
+- [x] **Karteikarten** (Bereich „Lernen“): Stapel pro Fach, Karten von Hand oder per KI aus Notiz/PDF/Text
+      (mit Vorschau), Lernen mit Wiederholung nach Lernstand, „Heute lernen“ über alle Stapel.
 - [ ] **Mindmaps**: Themen als Mindmap darstellen (Knoten anlegen, verbinden, verschieben),
       z. B. als eigener Block auf Notizseiten oder eigener Bereich; später evtl. per KI
       aus Zusammenfassungen erzeugen.

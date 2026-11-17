@@ -6,14 +6,8 @@ import { PartyPopper, Volume2 } from "lucide-react";
 
 import type { VocabCard } from "../../storage/db";
 import { useEnglish } from "./EnglishContext";
+import { RATINGS } from "../../learning/srs";
 import { isDue, nextIntervalLabel, speak, type Rating } from "./srs";
-
-const RATINGS: { rating: Rating; label: string; key: string }[] = [
-  { rating: "again", label: "Nochmal", key: "1" },
-  { rating: "hard", label: "Schwer", key: "2" },
-  { rating: "good", label: "Gut", key: "3" },
-  { rating: "easy", label: "Leicht", key: "4" },
-];
 
 // Richtung pro Karte und Wiederholung (gleichmäßig verteilt, aber bei derselben Karte stabil).
 const germanFirst = (card: VocabCard) => (card.id.charCodeAt(0) + card.reps + card.lapses) % 2 === 0;

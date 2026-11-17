@@ -1,0 +1,50 @@
+// Zweite Seitenleiste im Lern-Bereich: Übersicht, heute lernen, Karteikarten-Stapel.
+import { Layers, LayoutGrid, Plus, Sun } from "lucide-react";
+
+import { isDue } from "../../learning/srs";
+import type { SectionProps } from "../types";
+import { NEW_DECK_NAME } from "./DeckView";
+import { useLearn } from "./LearnContext";
+import { deckSelection, parseLearnSelection } from "./selection";
+
+export function LearnPanel({ selectedId, onSelect }: SectionProps) {
+  const { decks, cards, addDeck } = useLearn();
+  const selection = parseLearnSelection(selectedId);
+  const dueOf = (deckId?: string) => cards.filter((c) => (!deckId || c.deckId === deckId) && isDue(c)).length;
+  const totalDue = dueOf();
+
+  return (
+    <>
+      <nav className="panel-list">
+        <button className={`panel-item ${selection.kind === "overview" ? "active" : ""}`} onClick={() => onSelect(null)}>
+          <LayoutGrid size={15} className="panel-item-icon" />
+          <span className="panel-item-label">Übersicht</span>
+        </button>
+        <button className={`panel-item ${selection.kind === "today" ? "active" : ""}`} onClick={() => onSelect("today")}>
+          <Sun size={15} className="panel-item-icon" />
+          <span className="panel-item-label">Heute lernen</span>
+          {totalDue ? <span className="panel-item-count">{totalDue}</span> : null}
+        </button>
+
+        <div className="panel-section-title">Karteikarten</div>
+        {decks.length === 0 && <p className="panel-hint">Noch keine Stapel.</p>}
+        {[...decks]
+          .sort((a, b) => a.name.localeCompare(b.name, "de"))
+          .map((deck) => (
+            <button
+              key={deck.id}
+              className={`panel-item ${selection.kind === "deck" && selection.id === deck.id ? "active" : ""}`}
+              onClick={() => onSelect(deckSelection(deck.id))}
+            >
+              <Layers size={15} className="panel-item-icon" />
+              <span className="panel-item-label">{deck.name || "Ohne Namen"}</span>
+              {dueOf(deck.id) ? <span className="panel-item-count">{dueOf(deck.id)}</span> : null}
+            </button>
+          ))}
+      </nav>
+      <button className="panel-add-button" onClick={() => onSelect(deckSelection(addDeck(NEW_DECK_NAME)))}>
+        <Plus size={15} /> Neuer Stapel
+      </button>
+    </>
+  );
+}

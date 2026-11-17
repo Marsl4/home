@@ -3402,3 +3402,235 @@ a.icon-text {
   opacity: 0.35;
   cursor: default;
 }
+
+/* ---------- Lernen: Karteikarten ---------- */
+.english-stat:disabled {
+  cursor: default;
+}
+
+div.english-stat {
+  cursor: default;
+}
+
+.learn-today {
+  align-self: flex-start;
+  margin-bottom: 8px;
+}
+
+.deck-list-title {
+  margin: 24px 0 12px;
+  font-size: 17px;
+}
+
+.project-card.new-deck {
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.deck-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.deck-name {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
+  margin-left: -6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.deck-name:hover,
+.deck-name:focus {
+  border-color: var(--border);
+  outline: none;
+}
+
+.deck-folder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 16px;
+  font-size: 14px;
+}
+
+.deck-folder select {
+  min-width: 0;
+  max-width: 320px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.deck-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.english-card .deck-actions {
+  margin: 4px 0 0;
+}
+
+.secondary-button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.deck-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.deck-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.deck-card.preview {
+  cursor: pointer;
+}
+
+.deck-card.preview input {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.deck-card.skipped {
+  opacity: 0.45;
+}
+
+.deck-card-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.deck-card-front {
+  font-weight: 600;
+}
+
+.deck-card-back {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.deck-card-front p,
+.deck-card-back p,
+.deck-card-back ul,
+.deck-card-back ol {
+  margin: 0;
+}
+
+.deck-card-tools {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.deck-card-state {
+  margin: 6px 6px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.deck-card-state.known {
+  color: var(--ok-text);
+}
+
+.card-editor {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-editor textarea,
+.material-text {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--main-bg);
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+
+.material-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.material-select {
+  flex: none;
+  width: 100%;
+  max-width: 480px;
+}
+
+.material-range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.material-range input {
+  width: 64px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+/* Karteikarte im Lernmodus: längere Texte, darum kleiner als Vokabeln und linksbündig in der Antwort */
+.vocab-card.flashcard .vocab-front {
+  display: block;
+  font-size: 22px;
+}
+
+.vocab-card.flashcard .vocab-front p {
+  margin: 0;
+}
+
+.flashcard-back {
+  align-items: stretch;
+  width: 100%;
+  max-width: 640px;
+  font-size: 17px;
+  text-align: left;
+}
+
+.flashcard-back p {
+  margin: 0 0 6px;
+}

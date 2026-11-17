@@ -2,6 +2,7 @@
 // Neuen Bereich hinzufügen = hier einen Eintrag ergänzen.
 // Bereiche, die noch nicht fertig sind, nutzen PlaceholderPanel/PlaceholderView.
 import {
+  Brain,
   CalendarDays,
   ClipboardCheck,
   Cloud,
@@ -21,6 +22,9 @@ import {
 } from "lucide-react";
 
 import { EnglishPanel } from "./english/EnglishPanel";
+import { LearnPanel } from "./learn/LearnPanel";
+import { LearnProvider } from "./learn/LearnProvider";
+import { LearnView } from "./learn/LearnView";
 import { EnglishProvider } from "./english/EnglishProvider";
 import { EnglishView } from "./english/EnglishView";
 import { NotesPanel } from "./notes/NotesPanel";
@@ -70,6 +74,14 @@ export const sections: Section[] = [
     Panel: PdfsPanel,
     View: PdfsView,
     Provider: PdfsProvider,
+  },
+  {
+    id: "learn",
+    label: "Lernen",
+    icon: Brain,
+    Panel: LearnPanel,
+    View: LearnView,
+    Provider: LearnProvider,
   },
   {
     id: "english",

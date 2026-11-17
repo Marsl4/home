@@ -245,3 +245,46 @@ export async function deleteEnglishProfileData(profileId: string): Promise<void>
   await del(englishKey(profileId));
   await del(vocabKey(profileId));
 }
+
+// ---------- Lernen: Karteikarten ----------
+// Stapel (z. B. "Steuerrecht – Grundbegriffe"), optional einem Uni-Ordner (Fach) zugeordnet,
+// und die Karten aller Stapel in einer Liste (jede Karte weiß, zu welchem Stapel sie gehört).
+export type FlashcardDeck = {
+  id: string;
+  name: string;
+  folderId?: string | null; // Uni-Ordner (Subject), zu dem der Stapel gehört
+  createdAt: number;
+};
+
+export type Flashcard = {
+  id: string;
+  deckId: string;
+  front: string; // Vorderseite: Frage / Begriff (Markdown erlaubt)
+  back: string; // Rückseite: Antwort / Erklärung
+  // Lernstand (siehe src/learning/srs.ts)
+  due: number | null;
+  interval: number;
+  ease: number;
+  reps: number;
+  lapses: number;
+  createdAt: number;
+};
+
+const DECKS_KEY = "flashcard-decks";
+const FLASHCARDS_KEY = "flashcards";
+
+export async function loadDecks(): Promise<FlashcardDeck[]> {
+  return (await get<FlashcardDeck[]>(DECKS_KEY)) ?? [];
+}
+
+export async function saveDecks(decks: FlashcardDeck[]): Promise<void> {
+  await set(DECKS_KEY, decks);
+}
+
+export async function loadFlashcards(): Promise<Flashcard[]> {
+  return (await get<Flashcard[]>(FLASHCARDS_KEY)) ?? [];
+}
+
+export async function saveFlashcards(cards: Flashcard[]): Promise<void> {
+  await set(FLASHCARDS_KEY, cards);
+}
