@@ -39,7 +39,8 @@ export function strokeToPath(stroke: Stroke, live = false): string {
     size: stroke.size ?? (isHighlighter ? HIGHLIGHTER_SIZES[1] : PEN_SIZES[1]),
     // Wie stark der Druck die Dicke ändert. Mit dem echten Stift etwas weniger: gleichmäßigere, saubere Schrift.
     thinning: !pen ? 0 : stroke.realPressure ? 0.4 : 0.6,
-    smoothing: 0.6,
+    // Mindestabstand der Umrisspunkte (Anteil der Dicke): kleiner = rundere enge Kurven, auch stark gezoomt
+    smoothing: 0.35,
     // wenig "Nachziehen": die Linie folgt dem Stift ohne sichtbare Verzögerung
     streamline: stroke.shape ? 0 : 0.25,
     simulatePressure: !isHighlighter && !stroke.realPressure,
@@ -51,8 +52,13 @@ export function strokeToPath(stroke: Stroke, live = false): string {
 // Glättet die Stift-Daten nur fürs Aussehen (gespeichert bleiben die Originalpunkte):
 // - winzige Zitter-Schritte (fast derselbe Punkt) weglassen
 // - den Druck des Stifts beruhigen, damit die Linie nicht fleckig dick/dünn wird
+// - Lücken zwischen weit auseinanderliegenden Punkten mit einer weichen Kurve füllen (siehe fillGaps)
 function cleanPoints(points: Stroke["points"], realPressure: boolean): Stroke["points"] {
-  const MIN_STEP = 0.25;
+  return fillGaps(calmPoints(points, realPressure));
+}
+
+function calmPoints(points: Stroke["points"], realPressure: boolean): Stroke["points"] {
+  const MIN_STEP = 1; // Punkte näher als 1 px: Zittern, nicht Schrift (die Kurve verbindet die übrigen weich)
   const result: Stroke["points"] = [];
   let pressure = points[0]?.[2] ?? 0.5;
   points.forEach(([x, y, p], i) => {
@@ -67,6 +73,53 @@ function cleanPoints(points: Stroke["points"], realPressure: boolean): Stroke["p
     }
   });
   return result;
+}
+
+// Beim schnellen Schreiben kommen vom Stift oft nur ~60 Punkte pro Sekunde an (v. a. im Safari auf
+// iPadOS 17, das die Zwischenpunkte noch nicht liefert). Die Punkte liegen dann einige Pixel auseinander,
+// und gerade Verbindungen wirken eckig. Darum werden die Lücken mit einer Kurve gefüllt, die genau durch
+// die echten Punkte läuft ("Catmull-Rom-Kurve", zentripetale Variante: macht keine Schlaufen oder Überschwinger).
+const GAP_SPACING = 1.5; // so dicht werden Lücken aufgefüllt (Pixel)
+const MAX_GAP_POINTS = 12; // höchstens so viele Zwischenpunkte pro Lücke
+
+function fillGaps(points: Stroke["points"]): Stroke["points"] {
+  if (points.length < 3) return points;
+  const result: Stroke["points"] = [points[0]];
+  for (let i = 0; i < points.length - 1; i++) {
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p0 = points[i - 1] ?? p1; // am Anfang/Ende fehlt ein Nachbar: dann den Punkt selbst nehmen
+    const p3 = points[i + 2] ?? p2;
+    const steps = Math.min(MAX_GAP_POINTS, Math.floor(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / GAP_SPACING));
+    for (let s = 1; s < steps; s++) {
+      const t = s / steps;
+      const [x, y] = catmullRom(p0, p1, p2, p3, t);
+      result.push([x, y, p1[2] + (p2[2] - p1[2]) * t]); // Druck dazwischen gleichmäßig verteilen
+    }
+    result.push(p2);
+  }
+  return result;
+}
+
+// Punkt bei t (0..1) auf der Kurve zwischen p1 und p2; p0 und p3 bestimmen die Richtung an den Enden.
+type XY = readonly [number, number, ...number[]];
+function catmullRom(p0: XY, p1: XY, p2: XY, p3: XY, t: number): [number, number] {
+  // Abstand der Punkte, "zentripetal" = Wurzel aus der Entfernung
+  const gap = (a: XY, b: XY) => Math.max(1e-4, Math.sqrt(Math.hypot(b[0] - a[0], b[1] - a[1])));
+  const t1 = gap(p0, p1);
+  const t2 = t1 + gap(p1, p2);
+  const t3 = t2 + gap(p2, p3);
+  const u = t1 + (t2 - t1) * t;
+  const mix = (a: XY, b: XY, ta: number, tb: number): [number, number] => {
+    const w = (u - ta) / (tb - ta);
+    return [a[0] + (b[0] - a[0]) * w, a[1] + (b[1] - a[1]) * w];
+  };
+  const a1 = mix(p0, p1, 0, t1);
+  const a2 = mix(p1, p2, t1, t2);
+  const a3 = mix(p2, p3, t2, t3);
+  const b1 = mix(a1, a2, 0, t2);
+  const b2 = mix(a2, a3, t1, t3);
+  return mix(b1, b2, t1, t2);
 }
 
 // Umriss -> SVG-Pfad mit weichen Kurven (statt vieler kurzer gerader Stücke, die eckig wirken).
