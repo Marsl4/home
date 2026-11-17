@@ -1,0 +1,13 @@
+{
+  "typ": "hausarbeit",
+  "titel": "Titel der Hausarbeit",
+  "fach": "Name des Seminars / Fachs",
+  "abgabe": "2026-12-31",
+  "status": "Thema",
+  "ergebnis": "ausgabe/hausarbeit.pdf",
+  "umfang": { "ist": 0, "ziel": 5000, "einheit": "Wörter" },
+  "aufgaben": [
+    { "text": "Vorgaben klären (Umfang, Zitierweise, Format)", "erledigt": false },
+    { "text": "Gliederung", "erledigt": false }
+  ]
+}

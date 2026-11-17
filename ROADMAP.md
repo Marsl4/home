@@ -25,6 +25,11 @@
 - [x] Scroll-Markierung am Rand (ziehbar); eingerastete Formen auch drehen
 - [x] 3 Strichdicken (Füller, Textmarker), Radierer mit 3 Größen und Modus „Strich“ / „Genau"
 
+### Hausarbeiten & Präsentationen
+- [x] **Aus VS Code/Claude über GitHub**: Uni → Hausarbeiten / Präsentationen zeigt Abgabe, Fortschritt,
+      Aufgaben, letzte Änderungen und das Ergebnis-PDF (Fassungen, Stift-Notizen). Vorlage: `vorlagen/projekt/`.
+      Offen: Stift-Notizen als Rückmeldung an Claude zurückgeben (z. B. markiertes PDF ins Projekt legen).
+
 ### Startseite
 - [ ] **Startseite mit Widgets**: verschiedene Widgets (z. B. heutige ToDos, nächste Termine,
       zuletzt geöffnete Seiten/PDFs, Fitness), die man frei platzieren und anordnen kann.
