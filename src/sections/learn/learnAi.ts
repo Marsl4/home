@@ -146,3 +146,29 @@ feedback: 1–3 Sätze auf Deutsch, direkt an die Person ("du"): was gut war, wa
   const valid = ["right", "partly", "wrong"].includes(result.result);
   return { result: valid ? result.result : "partly", feedback: result.feedback || "" };
 }
+
+// ---------- Mindmap ----------
+export type MindTree = { text: string; children?: MindTree[] };
+
+export async function createMindmapTree(material: Material, signal?: AbortSignal): Promise<MindTree> {
+  const { label, text } = await materialText(material);
+  checkLength(text);
+  const node = (depth: number): Record<string, unknown> =>
+    depth === 0
+      ? { type: "object", properties: { text: { type: "string" } }, required: ["text"] }
+      : { type: "object", properties: { text: { type: "string" }, children: { type: "array", items: node(depth - 1) } }, required: ["text"] };
+  const result = await askAiJson<MindTree>({
+    prompt: `Erstelle eine Mindmap zum Lernen aus diesem Material.
+- text (oben): das Hauptthema, kurz (2–5 Wörter).
+- children: 4–7 Hauptäste (die wichtigsten Teilthemen), jeweils mit 2–5 Unterpunkten; wo sinnvoll noch eine Ebene darunter.
+- Jeder Knoten: Stichwort oder sehr kurzer Satz (höchstens ca. 8 Wörter) – keine langen Erklärungen.
+- Nur Inhalte aus dem Material. Sprache wie das Material (meist Deutsch).
+
+Material (${label}):
+${text}`,
+    signal,
+    schema: node(3),
+  });
+  if (!result?.text?.trim() || !result.children?.length) throw new Error("Die KI hat keine Mindmap geliefert. Bitte nochmal versuchen.");
+  return result;
+}

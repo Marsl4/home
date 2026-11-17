@@ -82,6 +82,9 @@ Nur für mich privat. Läuft auf Mac (Tippen) und später iPad (Apple Pencil).
 - Lernen (`src/sections/learn/`): Karteikarten-Stapel `flashcard-decks` (optional `folderId` = Uni-Ordner) und
   Karten `flashcards` (beide ID-Listen). Lernlogik gemeinsam mit Englisch in `src/learning/srs.ts`.
   KI-Material (Notiz/PDF/Text) über `MaterialPicker` + `learnAi.ts` (`MAX_MATERIAL_CHARS` wegen Gratis-Limits).
+  Abfragemodus `QuizView` (laufende Abfrage in localStorage `ui:quiz`). Mindmaps: Liste `mindmaps`, Knoten
+  `mindmap-nodes:<id>` (ID-Liste, Mittelpunkt-Koordinaten), Anordnung `mindLayout.ts` (`autoLayout` bis zum
+  ersten Verschieben), `MindmapView` gleicht sich per liveSync ab.
 - Ältere Geräte: Das iPad läuft mit iPadOS 17.7 (Safari 17). pdf.js darum aus `pdfjs-dist/legacy/...`
   (die normale Ausgabe braucht Safari 18.4+). Neue Bibliotheken auf Safari-17-Tauglichkeit prüfen –
   Testskript `old-safari.mjs` im Scratchpad löscht neuere Browser-Funktionen in Chrome.

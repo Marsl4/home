@@ -174,7 +174,7 @@ const isBlobKey = (key: string) => key.startsWith("pdf-file:");
 function order(key: string) {
   if (key === TOMBSTONES_KEY) return 0;
   if (isBlobKey(key)) return 1;
-  if (["pages", "subjects", "todos", "pdfs"].includes(key)) return 3;
+  if (["pages", "subjects", "todos", "pdfs", "mindmaps", "flashcard-decks"].includes(key)) return 3;
   return 2;
 }
 

@@ -1,24 +1,39 @@
-// Lädt Stapel und Karteikarten und stellt Funktionen zum Ändern bereit (alles wird sofort gespeichert).
+// Lädt Stapel, Karteikarten und die Mindmap-Liste und stellt Funktionen zum Ändern bereit
+// (alles wird sofort gespeichert).
 import { useEffect, useState, type ReactNode } from "react";
 
 import { freshSchedule, review } from "../../learning/srs";
-import { loadDecks, loadFlashcards, saveDecks, saveFlashcards, type Flashcard, type FlashcardDeck } from "../../storage/db";
+import {
+  deleteMindmapData,
+  loadDecks,
+  loadFlashcards,
+  loadMindmaps,
+  saveDecks,
+  saveFlashcards,
+  saveMindmaps,
+  type Flashcard,
+  type FlashcardDeck,
+  type Mindmap,
+} from "../../storage/db";
 import { useLiveSync } from "../../storage/liveSync";
 import { LearnContext, type NewCard } from "./LearnContext";
 
 export function LearnProvider({ children }: { children: ReactNode }) {
   const [decks, setDecks] = useState<FlashcardDeck[] | null>(null); // null = lädt noch
   const [cards, setCards] = useState<Flashcard[] | null>(null);
+  const [mindmaps, setMindmaps] = useState<Mindmap[] | null>(null);
   // Vom anderen Gerät (Sync) geänderte Daten sofort übernehmen.
   useLiveSync<FlashcardDeck[]>("flashcard-decks", setDecks);
   useLiveSync<Flashcard[]>("flashcards", setCards);
+  useLiveSync<Mindmap[]>("mindmaps", setMindmaps);
 
   useEffect(() => {
     loadDecks().then(setDecks);
     loadFlashcards().then(setCards);
+    loadMindmaps().then(setMindmaps);
   }, []);
 
-  if (decks === null || cards === null) return null;
+  if (decks === null || cards === null || mindmaps === null) return null;
 
   // Jede Änderung baut auf dem neuesten Stand auf und wird sofort gespeichert.
   const updateDecks = (change: (current: FlashcardDeck[]) => FlashcardDeck[]) =>
@@ -31,6 +46,12 @@ export function LearnProvider({ children }: { children: ReactNode }) {
     setCards((current) => {
       const next = change(current ?? []);
       saveFlashcards(next);
+      return next;
+    });
+  const updateMindmaps = (change: (current: Mindmap[]) => Mindmap[]) =>
+    setMindmaps((current) => {
+      const next = change(current ?? []);
+      saveMindmaps(next);
       return next;
     });
 
@@ -65,6 +86,19 @@ export function LearnProvider({ children }: { children: ReactNode }) {
     deleteCard: (id: string) => updateCards((current) => current.filter((c) => c.id !== id)),
     reviewCard: (id: string, rating: Parameters<typeof review>[1]) =>
       updateCards((current) => current.map((c) => (c.id === id ? review(c, rating) : c))),
+
+    mindmaps,
+    addMindmap: (title: string, folderId: string | null = null) => {
+      const id = crypto.randomUUID();
+      updateMindmaps((current) => [...current, { id, title, folderId, autoLayout: true, createdAt: Date.now() }]);
+      return id;
+    },
+    updateMindmap: (id: string, changes: Partial<Omit<Mindmap, "id">>) =>
+      updateMindmaps((current) => current.map((m) => (m.id === id ? { ...m, ...changes } : m))),
+    deleteMindmap: (id: string) => {
+      updateMindmaps((current) => current.filter((m) => m.id !== id));
+      deleteMindmapData(id);
+    },
   };
 
   return <LearnContext.Provider value={value}>{children}</LearnContext.Provider>;

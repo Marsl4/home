@@ -288,3 +288,46 @@ export async function loadFlashcards(): Promise<Flashcard[]> {
 export async function saveFlashcards(cards: Flashcard[]): Promise<void> {
   await set(FLASHCARDS_KEY, cards);
 }
+
+// ---------- Lernen: Mindmaps ----------
+// Liste der Mindmaps + pro Mindmap ihre Knoten (eigener Schlüssel, damit der Sync Knoten einzeln abgleicht).
+export type Mindmap = {
+  id: string;
+  title: string; // = Text des Hauptthemas (Mitte)
+  folderId?: string | null; // Uni-Ordner (Fach)
+  // true/fehlt = automatisch angeordnet; false = Knoten wurden von Hand verschoben (Positionen gespeichert)
+  autoLayout?: boolean;
+  createdAt: number;
+};
+
+export type MindNode = {
+  id: string;
+  parentId: string | null; // null = Hauptthema in der Mitte
+  text: string;
+  x: number; // Mittelpunkt (nur genutzt, wenn von Hand angeordnet)
+  y: number;
+  color?: number; // Farbe des Astes (Index der Palette); fehlt = vom Ast geerbt
+};
+
+const MINDMAPS_KEY = "mindmaps";
+const mindNodesKey = (id: string) => `mindmap-nodes:${id}`;
+
+export async function loadMindmaps(): Promise<Mindmap[]> {
+  return (await get<Mindmap[]>(MINDMAPS_KEY)) ?? [];
+}
+
+export async function saveMindmaps(maps: Mindmap[]): Promise<void> {
+  await set(MINDMAPS_KEY, maps);
+}
+
+export async function loadMindNodes(id: string): Promise<MindNode[]> {
+  return (await get<MindNode[]>(mindNodesKey(id))) ?? [];
+}
+
+export async function saveMindNodes(id: string, nodes: MindNode[]): Promise<void> {
+  await set(mindNodesKey(id), nodes);
+}
+
+export async function deleteMindmapData(id: string): Promise<void> {
+  await del(mindNodesKey(id));
+}

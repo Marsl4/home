@@ -29,6 +29,13 @@
   --presenter-bg: #000000; /* Vollbild-Präsentation: in beiden Designs schwarz */
   --presenter-controls: rgba(40, 40, 44, 0.85);
   --presenter-text: #ffffff;
+  /* Mindmap: Farben der Äste */
+  --mind-0: #6366f1;
+  --mind-1: #0ea5e9;
+  --mind-2: #10b981;
+  --mind-3: #f59e0b;
+  --mind-4: #ef4444;
+  --mind-5: #a855f7;
   color-scheme: light; /* helle Datumsfelder, Scrollbalken usw. */
 }
 
@@ -3756,4 +3763,184 @@ div.english-stat {
   background: var(--surface);
   color: var(--text);
   font: inherit;
+}
+
+/* ---------- Lernen: Mindmaps ---------- */
+.mindmap-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.mindmap {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.mindmap-toolbar,
+.mindmap-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--main-bg);
+}
+
+.mindmap-footer {
+  border-top: 1px solid var(--border);
+  border-bottom: none;
+  gap: 12px;
+}
+
+.mindmap-footer .deck-folder {
+  margin: 0;
+}
+
+.mindmap-hint {
+  flex: 1;
+  font-size: 12px;
+}
+
+.mindmap-toolbar-spacer {
+  flex: 1;
+}
+
+.mindmap-colors {
+  display: flex;
+  gap: 4px;
+  margin: 0 6px;
+}
+
+.mind-swatch {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--border);
+  cursor: pointer;
+}
+
+.mind-swatch:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.mind-swatch.c0 { background: var(--mind-0); }
+.mind-swatch.c1 { background: var(--mind-1); }
+.mind-swatch.c2 { background: var(--mind-2); }
+.mind-swatch.c3 { background: var(--mind-3); }
+.mind-swatch.c4 { background: var(--mind-4); }
+.mind-swatch.c5 { background: var(--mind-5); }
+
+.mindmap-ai {
+  margin: 12px 16px 0;
+}
+
+.mindmap-canvas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--main-bg);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.mindmap-sizer {
+  position: relative;
+}
+
+.mindmap-content {
+  position: relative;
+}
+
+.mindmap-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.mind-line {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.mind-line.c0 { stroke: var(--mind-0); }
+.mind-line.c1 { stroke: var(--mind-1); }
+.mind-line.c2 { stroke: var(--mind-2); }
+.mind-line.c3 { stroke: var(--mind-3); }
+.mind-line.c4 { stroke: var(--mind-4); }
+.mind-line.c5 { stroke: var(--mind-5); }
+
+.mind-node {
+  --mind: var(--mind-0);
+  position: absolute;
+  max-width: 220px;
+  min-width: 48px;
+  padding: 7px 12px;
+  border: 2px solid var(--mind);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--mind) 12%, var(--surface));
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.35;
+  text-align: center;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  touch-action: none; /* Knoten ziehen statt Fläche scrollen */
+}
+
+.mind-node.c0 { --mind: var(--mind-0); }
+.mind-node.c1 { --mind: var(--mind-1); }
+.mind-node.c2 { --mind: var(--mind-2); }
+.mind-node.c3 { --mind: var(--mind-3); }
+.mind-node.c4 { --mind: var(--mind-4); }
+.mind-node.c5 { --mind: var(--mind-5); }
+
+.mind-node.root {
+  --mind: var(--accent);
+  padding: 12px 20px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: var(--toast-text);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.mind-node.root .muted {
+  color: inherit;
+  opacity: 0.7;
+}
+
+.mind-node.selected {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mind) 35%, transparent);
+}
+
+.mind-node.dragging {
+  cursor: grabbing;
+  opacity: 0.85;
+}
+
+.mind-editor {
+  display: block;
+  width: 180px;
+  max-width: 100%;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  resize: none;
+  overflow: hidden;
 }

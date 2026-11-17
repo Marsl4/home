@@ -49,9 +49,8 @@
       Multiple Choice), Auswertung, nicht Gewusstes als Karteikarten speichern.
 - [x] **Karteikarten** (Bereich „Lernen“): Stapel pro Fach, Karten von Hand oder per KI aus Notiz/PDF/Text
       (mit Vorschau), Lernen mit Wiederholung nach Lernstand, „Heute lernen“ über alle Stapel.
-- [ ] **Mindmaps**: Themen als Mindmap darstellen (Knoten anlegen, verbinden, verschieben),
-      z. B. als eigener Block auf Notizseiten oder eigener Bereich; später evtl. per KI
-      aus Zusammenfassungen erzeugen.
+- [x] **Mindmaps** (Lernen → Mindmaps): Hauptthema mit Ästen, Knoten anlegen/bearbeiten/verschieben/einfärben,
+      automatisch anordnen, Zoomen, per KI aus Notiz/PDF/Text erstellen.
 
 ### Echte App (nicht im Browser) – ohne Kosten
 - Alternative mit Kosten (nur falls später gewünscht): native App-Hülle (Capacitor).

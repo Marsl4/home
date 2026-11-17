@@ -31,7 +31,8 @@ const notify = () => listeners.forEach((listener) => listener());
 // (Der Seiteninhalt des Editors gehört nicht dazu – er wird immer als Ganzes abgeglichen.)
 export function isIdListKey(key: string): boolean {
   return (
-    ["pages", "subjects", "todos", "pdfs", "english-vocab", "english-profiles", "flashcard-decks", "flashcards"].includes(key) ||
+    ["pages", "subjects", "todos", "pdfs", "english-vocab", "english-profiles", "flashcard-decks", "flashcards", "mindmaps"].includes(key) ||
+    key.startsWith("mindmap-nodes:") ||
     key.startsWith("english-vocab:") ||
     key.startsWith("page-drawing:") ||
     key.startsWith("page-images:") ||

@@ -1,18 +1,29 @@
 // Hauptansicht im Lern-Bereich: Übersicht, heute lernen, ein Stapel oder einen Stapel lernen.
-import { Layers, Plus, Sun } from "lucide-react";
+import { Layers, Network, Plus, Sun } from "lucide-react";
 
 import { isDue, isKnown } from "../../learning/srs";
 import { useNotes } from "../notes/NotesContext";
 import type { SectionProps } from "../types";
 import { CardTrainer } from "./CardTrainer";
 import { DeckView, NEW_DECK_NAME } from "./DeckView";
+import { MindmapView, NEW_MINDMAP_TITLE } from "./MindmapView";
 import { QuizView } from "./QuizView";
 import { useLearn } from "./LearnContext";
-import { deckSelection, parseLearnSelection } from "./selection";
+import { deckSelection, mindmapSelection, parseLearnSelection } from "./selection";
 
 export function LearnView({ selectedId, onSelect }: SectionProps) {
-  const { decks, cards } = useLearn();
+  const { decks, cards, mindmaps } = useLearn();
   const selection = parseLearnSelection(selectedId);
+
+  // Mindmap: volle Fläche statt der schmalen Lesespalte
+  if (selection.kind === "mindmap") {
+    const map = mindmaps.find((m) => m.id === selection.id);
+    return (
+      <div className="mindmap-page">
+        {map ? <MindmapView key={map.id} map={map} onDeleted={() => onSelect(null)} /> : <p className="muted">Diese Mindmap wurde gelöscht.</p>}
+      </div>
+    );
+  }
 
   let title = "Lernen";
   let content;
@@ -49,7 +60,7 @@ export function LearnView({ selectedId, onSelect }: SectionProps) {
 }
 
 function Overview({ onSelect }: { onSelect: (id: string | null) => void }) {
-  const { decks, cards, addDeck } = useLearn();
+  const { decks, cards, addDeck, mindmaps, addMindmap } = useLearn();
   const { subjects } = useNotes();
   const due = cards.filter((c) => isDue(c)).length;
   const known = cards.filter(isKnown).length;
@@ -98,6 +109,23 @@ function Overview({ onSelect }: { onSelect: (id: string | null) => void }) {
         <button className="project-card new-deck" onClick={() => onSelect(deckSelection(addDeck(NEW_DECK_NAME)))}>
           <Plus size={18} />
           <span>Neuer Stapel</span>
+        </button>
+      </div>
+
+      <h2 className="deck-list-title">Mindmaps</h2>
+      <div className="project-grid">
+        {mindmaps.map((map) => (
+          <button key={map.id} className="project-card" onClick={() => onSelect(mindmapSelection(map.id))}>
+            <div className="project-card-top">
+              <Network size={14} />
+              {folderName(map.folderId) && <span className="muted">{folderName(map.folderId)}</span>}
+            </div>
+            <h3>{map.title || "Ohne Titel"}</h3>
+          </button>
+        ))}
+        <button className="project-card new-deck" onClick={() => onSelect(mindmapSelection(addMindmap(NEW_MINDMAP_TITLE)))}>
+          <Plus size={18} />
+          <span>Neue Mindmap</span>
         </button>
       </div>
     </div>
