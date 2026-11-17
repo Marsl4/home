@@ -67,3 +67,82 @@ ${text}`,
   if (cards.length === 0) throw new Error("Die KI hat keine Karten geliefert. Bitte nochmal versuchen.");
   return cards;
 }
+
+// ---------- Abfragemodus ----------
+export type QuizKind = "open" | "choice";
+
+export type QuizQuestion = {
+  question: string;
+  answer: string; // Musterantwort (kurz)
+  options?: string[]; // nur Multiple Choice: genau 4
+  correctIndex?: number; // nur Multiple Choice
+  explanation?: string; // nur Multiple Choice: warum richtig
+};
+
+export async function createQuiz(material: Material, count: number, kind: QuizKind, signal?: AbortSignal): Promise<QuizQuestion[]> {
+  const { label, text } = await materialText(material);
+  checkLength(text);
+  const str = { type: "string" };
+  const choice = kind === "choice";
+  const result = await askAiJson<{ questions: QuizQuestion[] }>({
+    prompt: `Erstelle ${count} Prüfungsfragen zu diesem Material, um das Wissen einer Studentin / eines Studenten abzufragen.
+Regeln:
+- Nur Inhalte aus dem Material, nichts erfinden. Von leicht bis anspruchsvoll gemischt; Verständnis statt reines Auswendiglernen.
+- question: klare Frage. answer: knappe Musterantwort (1–3 Sätze oder kurze Aufzählung mit "- ").
+${choice ? `- options: genau 4 Antwortmöglichkeiten, genau eine richtig (correctIndex 0–3), die falschen plausibel. Die richtige nicht immer an derselben Stelle.
+- explanation: 1–2 Sätze, warum die richtige Antwort stimmt.` : "- Offene Fragen (keine Antwortmöglichkeiten vorgeben)."}
+- Sprache: wie das Material (meist Deutsch).
+
+Material (${label}):
+${text}`,
+    signal,
+    schema: {
+      type: "object",
+      properties: {
+        questions: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: choice
+              ? { question: str, answer: str, options: { type: "array", items: str }, correctIndex: { type: "integer" }, explanation: str }
+              : { question: str, answer: str },
+            required: choice ? ["question", "answer", "options", "correctIndex"] : ["question", "answer"],
+          },
+        },
+      },
+      required: ["questions"],
+    },
+  });
+  const questions = (result.questions ?? []).filter(
+    (q) =>
+      q.question?.trim() &&
+      q.answer?.trim() &&
+      (!choice || (q.options?.length === 4 && q.correctIndex !== undefined && q.correctIndex >= 0 && q.correctIndex < 4)),
+  );
+  if (questions.length === 0) throw new Error("Die KI hat keine Fragen geliefert. Bitte nochmal versuchen.");
+  return questions;
+}
+
+export type Grade = { result: "right" | "partly" | "wrong"; feedback: string };
+
+// Freie Antwort bewerten – anhand der Musterantwort (das ganze Material muss nicht nochmal mit).
+export async function gradeAnswer(question: QuizQuestion, answer: string, signal?: AbortSignal): Promise<Grade> {
+  const result = await askAiJson<Grade>({
+    prompt: `Bewerte die Antwort auf eine Prüfungsfrage. Sei fair: Es zählt der Inhalt, nicht die Formulierung.
+Frage: ${question.question}
+Musterantwort: ${question.answer}
+Antwort der Person: ${answer.trim() || "(keine Antwort)"}
+
+result: "right" (inhaltlich richtig und im Wesentlichen vollständig), "partly" (teilweise richtig / Wichtiges fehlt)
+oder "wrong" (falsch oder keine Antwort).
+feedback: 1–3 Sätze auf Deutsch, direkt an die Person ("du"): was gut war, was fehlt oder falsch ist.`,
+    signal,
+    schema: {
+      type: "object",
+      properties: { result: { type: "string", enum: ["right", "partly", "wrong"] }, feedback: { type: "string" } },
+      required: ["result", "feedback"],
+    },
+  });
+  const valid = ["right", "partly", "wrong"].includes(result.result);
+  return { result: valid ? result.result : "partly", feedback: result.feedback || "" };
+}

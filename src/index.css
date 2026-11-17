@@ -3634,3 +3634,126 @@ div.english-stat {
 .flashcard-back p {
   margin: 0 0 6px;
 }
+
+/* ---------- Lernen: Abfragemodus ---------- */
+.english-card h2 svg {
+  vertical-align: -3px;
+}
+
+.quiz-question {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.english-option.correct {
+  border-color: var(--ok-text);
+  background: var(--ok-bg);
+}
+
+.english-option.wrong {
+  border-color: var(--error-text);
+  background: var(--error-bg);
+}
+
+.english-option:disabled {
+  cursor: default;
+}
+
+.quiz-result {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--error-bg);
+}
+
+.quiz-result.right {
+  background: var(--ok-bg);
+}
+
+.quiz-result.partly {
+  background: var(--accent-soft);
+}
+
+.quiz-result strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--error-text);
+}
+
+.quiz-result.right strong {
+  color: var(--ok-text);
+}
+
+.quiz-result.partly strong {
+  color: var(--accent);
+}
+
+.quiz-result p {
+  margin: 0;
+}
+
+.quiz-model {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.quiz-model .muted {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.quiz-model p {
+  margin: 4px 0 0;
+}
+
+.quiz-nav {
+  justify-content: space-between;
+}
+
+.quiz-summary-item.right svg {
+  color: var(--ok-text);
+}
+
+.quiz-summary-item.partly svg {
+  color: var(--accent);
+}
+
+.quiz-summary-item.wrong svg {
+  color: var(--error-text);
+}
+
+.quiz-save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.quiz-save .settings-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.deck-folder-select {
+  min-width: 0;
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}

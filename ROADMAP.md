@@ -45,8 +45,8 @@
 - [x] **Englisch lernen**: Einstufungstest (KI) → Niveau + Lernplan mit 8 Einheiten und Vokabeln,
       Vokabeltrainer mit Wiederholung nach Lernstand, beide Richtungen, Aussprache; eigene Vokabeln.
       Offen: Grammatik-Übungen pro Einheit, Sprechen/Schreiben üben mit KI.
-- [ ] **Lern- und Abfragemodus (KI-gestützt)**: auf Basis der PDFs und Zusammenfassungen
-      Fragen stellen lassen, Wissen abfragen, Erklärungen bekommen.
+- [x] **Abfragemodus** (Lernen → Abfragen): KI stellt Fragen zu Notiz/PDF/Text (offen mit KI-Bewertung oder
+      Multiple Choice), Auswertung, nicht Gewusstes als Karteikarten speichern.
 - [x] **Karteikarten** (Bereich „Lernen“): Stapel pro Fach, Karten von Hand oder per KI aus Notiz/PDF/Text
       (mit Vorschau), Lernen mit Wiederholung nach Lernstand, „Heute lernen“ über alle Stapel.
 - [ ] **Mindmaps**: Themen als Mindmap darstellen (Knoten anlegen, verbinden, verschieben),

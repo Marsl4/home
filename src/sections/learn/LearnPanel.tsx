@@ -1,5 +1,5 @@
 // Zweite Seitenleiste im Lern-Bereich: Übersicht, heute lernen, Karteikarten-Stapel.
-import { Layers, LayoutGrid, Plus, Sun } from "lucide-react";
+import { Layers, LayoutGrid, MessageCircleQuestionMark, Plus, Sun } from "lucide-react";
 
 import { isDue } from "../../learning/srs";
 import type { SectionProps } from "../types";
@@ -24,6 +24,10 @@ export function LearnPanel({ selectedId, onSelect }: SectionProps) {
           <Sun size={15} className="panel-item-icon" />
           <span className="panel-item-label">Heute lernen</span>
           {totalDue ? <span className="panel-item-count">{totalDue}</span> : null}
+        </button>
+        <button className={`panel-item ${selection.kind === "quiz" ? "active" : ""}`} onClick={() => onSelect("quiz")}>
+          <MessageCircleQuestionMark size={15} className="panel-item-icon" />
+          <span className="panel-item-label">Abfragen</span>
         </button>
 
         <div className="panel-section-title">Karteikarten</div>

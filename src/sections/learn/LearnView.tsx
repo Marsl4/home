@@ -6,6 +6,7 @@ import { useNotes } from "../notes/NotesContext";
 import type { SectionProps } from "../types";
 import { CardTrainer } from "./CardTrainer";
 import { DeckView, NEW_DECK_NAME } from "./DeckView";
+import { QuizView } from "./QuizView";
 import { useLearn } from "./LearnContext";
 import { deckSelection, parseLearnSelection } from "./selection";
 
@@ -18,6 +19,9 @@ export function LearnView({ selectedId, onSelect }: SectionProps) {
   if (selection.kind === "today") {
     title = "Heute lernen";
     content = <CardTrainer cards={cards} showDeck onBack={() => onSelect(null)} />;
+  } else if (selection.kind === "quiz") {
+    title = "Abfragen";
+    content = <QuizView />;
   } else if (selection.kind === "deck") {
     const deck = decks.find((d) => d.id === selection.id);
     if (!deck) {
