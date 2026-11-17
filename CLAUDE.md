@@ -73,6 +73,12 @@ Nur für mich privat. Läuft auf Mac (Tippen) und später iPad (Apple Pencil).
 - Englisch (`src/sections/english/`): mehrere Personen (`english-profiles`, ID-Liste). Pro Person `english:<id>`
   (Profil + Plan) und `english-vocab:<id>` (Karten, ID-Liste für Sync); die erste Person `default` nutzt die alten
   Schlüssel `english` / `english-vocab` (Schlüssel über `englishKey`/`vocabKey` in db.ts). Gewählte Person: localStorage. KI-Aufrufe mit festem JSON-Format über `askGeminiJson` (`englishAi.ts`). Lernlogik `srs.ts`.
+- Hausarbeiten/Präsentationen (`src/sections/projects/`, Uni → Planung): private GitHub-Repos mit `home.json`
+  (Vorlage `vorlagen/projekt/`), entstehen in VS Code mit Claude. App liest nur (Fine-grained Token, Contents
+  read-only, localStorage `github:settings`). Projektliste/Änderungen/PDFs im eigenen Zwischenspeicher
+  `home-projects` (nicht Sync/Backup). Ergebnis-PDF über `PdfViewer` mit `external`; Stift-Notizen unter
+  `pdf-ink:gh:<repo>@<sha>` (pro Fassung). Auswahl-Text: `papers[:<repo>[:<sha>|latest]]`, ebenso `presentations`.
+  Andere Ansichten springen per `requestOpenSettings(page)` (`src/components/openSettings.ts`) in die Einstellungen.
 - Ältere Geräte: Das iPad läuft mit iPadOS 17.7 (Safari 17). pdf.js darum aus `pdfjs-dist/legacy/...`
   (die normale Ausgabe braucht Safari 18.4+). Neue Bibliotheken auf Safari-17-Tauglichkeit prüfen –
   Testskript `old-safari.mjs` im Scratchpad löscht neuere Browser-Funktionen in Chrome.

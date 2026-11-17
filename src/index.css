@@ -3122,3 +3122,206 @@ path.selected {
   align-items: center;
   gap: 6px;
 }
+
+/* ---------- Hausarbeiten & Präsentationen (GitHub-Projekte) ---------- */
+.project-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.project-back {
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.icon-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+a.icon-text {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.english-card .primary-button.icon-text {
+  align-self: flex-start;
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.project-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.project-card:hover {
+  border-color: var(--border-strong);
+}
+
+.project-card h3 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.project-card-top,
+.project-facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.project-facts {
+  margin-bottom: 12px;
+}
+
+.project-card-bottom {
+  font-size: 12px;
+}
+
+.project-status {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.project-status.done {
+  background: var(--ok-bg);
+  color: var(--ok-text);
+}
+
+.project-deadline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.project-deadline.big {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.project-deadline.urgent {
+  color: var(--error-text);
+}
+
+.project-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.project-progress-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--hover);
+  overflow: hidden;
+}
+
+.project-progress-bar > div {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.project-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 16px;
+}
+
+.project-tasks,
+.project-changes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project-tasks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.project-tasks li svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--text-muted);
+}
+
+.project-tasks li.done {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.project-tasks li.done svg {
+  color: var(--ok-text);
+}
+
+.project-changes li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.project-changes li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.project-changes .muted {
+  font-size: 12px;
+}
+
+.project-version-select {
+  max-width: 260px;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.pdf-name-fixed {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

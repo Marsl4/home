@@ -56,7 +56,7 @@ export function UniPanel({ section, selectedId, onSelect }: SectionProps) {
         {(section.subItems ?? []).map((item) => (
           <button
             key={item.id}
-            className={`panel-item ${selection.kind === "other" && selection.id === item.id ? "active" : ""}`}
+            className={`panel-item ${selection.kind === "other" && (selection.id === item.id || selection.id.startsWith(`${item.id}:`)) ? "active" : ""}`}
             onClick={() => onSelect(item.id)}
           >
             {item.icon && <item.icon size={15} className="panel-item-icon" />}

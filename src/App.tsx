@@ -2,6 +2,7 @@
 // Im Split-Modus zeigt jede Hälfte ("Pane") ihren eigenen Bereich. Die Leisten links steuern
 // immer die aktive Hälfte (die, in die zuletzt geklickt wurde).
 import { useEffect, useRef, type ReactNode } from "react";
+import { useOpenSettingsRequests } from "./components/openSettings";
 import { PanelLeftClose, X } from "lucide-react";
 
 import { AiSidebar } from "./ai/AiSidebar";
@@ -121,6 +122,7 @@ export default function App() {
     setPanelOpen(true);
   };
   const openAiSettings = () => openSettings("ai");
+  useOpenSettingsRequests(openSettings); // Sprünge aus anderen Ansichten (z. B. Hausarbeiten → GitHub)
 
   const { Panel } = focusedSection;
 

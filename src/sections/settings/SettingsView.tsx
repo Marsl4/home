@@ -10,12 +10,14 @@ import { useNotes } from "../notes/NotesContext";
 import { usePdfs } from "../pdfs/PdfsContext";
 import { useTodos } from "../todos/TodosContext";
 import type { SectionProps } from "../types";
+import { GithubSettings } from "../projects/GithubSettings";
 import { AppearanceSettings } from "./AppearanceSettings";
 
 export function SettingsView(props: SectionProps) {
   if (props.selectedId === "account") return <SyncSettings />;
   if (props.selectedId === "appearance") return <AppearanceSettings />;
   if (props.selectedId === "ai") return <AiSettings />;
+  if (props.selectedId === "github") return <GithubSettings />;
   return <BackupSettings />;
 }
 

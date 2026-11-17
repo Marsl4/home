@@ -11,7 +11,7 @@ import { usePenShortcuts } from "../../drawing/useStrokeInput";
 import { loadPdfFile, loadPdfInk, savePdfInk, type PdfDoc, type PdfInk } from "../../storage/db";
 import { publish, useLiveSync } from "../../storage/liveSync";
 import { usePersistentState } from "../../storage/uiState";
-import { exportPdfFile } from "../../storage/exportFiles";
+import { downloadBlob, exportPdfFile, safeFileName } from "../../storage/exportFiles";
 import { readScrollSpot, restoreScrollTop, saveScrollSpot } from "../../storage/scrollMemory";
 import { getDocument, type PDFDocumentProxy } from "./pdfjs";
 import { PdfPage } from "./PdfPage";
@@ -26,8 +26,16 @@ type Loaded = {
   sizes: [number, number][]; // Größe jeder Seite in PDF-Einheiten
 };
 
+// Ein PDF, das nicht im PDF-Bereich liegt (z. B. das Ergebnis einer Hausarbeit von GitHub):
+// Datei kommt von loadFile, Name ist fest (kein Umbenennen/Favorit), headerExtra z. B. eine Versionsauswahl.
+// Stift-Notizen werden wie sonst unter pdf-ink:<pdf.id> gespeichert.
+export type ExternalPdf = {
+  loadFile: () => Promise<Blob | undefined>;
+  headerExtra?: ReactNode;
+};
+
 // breadcrumb: optional ein Pfad vor dem Namen (im Uni-Bereich: „Uni › 7. Semester ›“)
-export function PdfViewer({ pdf, breadcrumb }: { pdf: PdfDoc; breadcrumb?: ReactNode }) {
+export function PdfViewer({ pdf, breadcrumb, external }: { pdf: PdfDoc; breadcrumb?: ReactNode; external?: ExternalPdf }) {
   const { updatePdf } = usePdfs();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +124,12 @@ export function PdfViewer({ pdf, breadcrumb }: { pdf: PdfDoc; breadcrumb?: React
     };
   }, [loaded, pdf.id, displayWidth]);
 
+  // Externe Datei: Ladefunktion immer aktuell halten (sie gehört fest zu pdf.id).
+  const externalRef = useRef(external);
+  useEffect(() => {
+    externalRef.current = external;
+  });
+
   // PDF-Datei und Zeichnungen laden.
   useEffect(() => {
     let task: ReturnType<typeof getDocument> | null = null;
@@ -123,7 +137,10 @@ export function PdfViewer({ pdf, breadcrumb }: { pdf: PdfDoc; breadcrumb?: React
 
     (async () => {
       try {
-        const [file, storedInk] = await Promise.all([loadPdfFile(pdf.id), loadPdfInk(pdf.id)]);
+        const [file, storedInk] = await Promise.all([
+          externalRef.current ? externalRef.current.loadFile() : loadPdfFile(pdf.id),
+          loadPdfInk(pdf.id),
+        ]);
         if (!file) throw new Error("Datei nicht gefunden");
         task = getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
         const doc = await task.promise;
@@ -183,21 +200,40 @@ export function PdfViewer({ pdf, breadcrumb }: { pdf: PdfDoc; breadcrumb?: React
             <span className="breadcrumb-separator">›</span>
           </span>
         )}
-        <input
-          className="pdf-name-input"
-          value={pdf.name}
-          onChange={(e) => updatePdf(pdf.id, { name: e.target.value })}
-        />
-        <button
-          className={`icon-button ${pdf.favorite ? "favorite" : ""}`}
-          onClick={() => updatePdf(pdf.id, { favorite: !pdf.favorite })}
-          title={pdf.favorite ? "Aus Favoriten entfernen" : "Zu Favoriten"}
-        >
-          <Star size={18} fill={pdf.favorite ? "currentColor" : "none"} />
-        </button>
-        <button className="icon-button" onClick={() => exportPdfFile(pdf)} title="PDF exportieren (in „Downloads“ speichern)">
-          <Share size={17} />
-        </button>
+        {external ? (
+          <>
+            <span className="pdf-name-input pdf-name-fixed">{pdf.name}</span>
+            {external.headerExtra}
+            <button
+              className="icon-button"
+              onClick={async () => {
+                const file = await external.loadFile();
+                if (file) downloadBlob(file, `${safeFileName(pdf.name, "PDF")}.pdf`);
+              }}
+              title="PDF herunterladen"
+            >
+              <Share size={17} />
+            </button>
+          </>
+        ) : (
+          <>
+            <input
+              className="pdf-name-input"
+              value={pdf.name}
+              onChange={(e) => updatePdf(pdf.id, { name: e.target.value })}
+            />
+            <button
+              className={`icon-button ${pdf.favorite ? "favorite" : ""}`}
+              onClick={() => updatePdf(pdf.id, { favorite: !pdf.favorite })}
+              title={pdf.favorite ? "Aus Favoriten entfernen" : "Zu Favoriten"}
+            >
+              <Star size={18} fill={pdf.favorite ? "currentColor" : "none"} />
+            </button>
+            <button className="icon-button" onClick={() => exportPdfFile(pdf)} title="PDF exportieren (in „Downloads“ speichern)">
+              <Share size={17} />
+            </button>
+          </>
+        )}
         {loaded && <span className="pdf-page-count">{loaded.sizes.length} Seiten</span>}
       </header>
 

@@ -5,7 +5,10 @@ import { useNotes } from "../notes/NotesContext";
 import { PageView } from "../notes/PageView";
 import { usePdfs } from "../pdfs/PdfsContext";
 import { PdfViewer } from "../pdfs/PdfViewer";
+import { requestOpenSettings } from "../../components/openSettings";
 import { PlaceholderView } from "../placeholder/PlaceholderView";
+import { parseProjectSelection, projectSelection } from "../projects/selection";
+import { ProjectsView } from "../projects/ProjectsView";
 import type { SectionProps } from "../types";
 import { FolderBrowser } from "./FolderBrowser";
 import { folderPath } from "./folders";
@@ -17,7 +20,22 @@ export function UniView(props: SectionProps) {
   const { pdfs } = usePdfs();
   const selection = parseSelection(selectedId);
 
-  if (selection.kind === "other") return <PlaceholderView {...props} selectedId={selection.id} />;
+  if (selection.kind === "other") {
+    // Hausarbeiten / Präsentationen: "papers", "papers:<repo>", "papers:<repo>:<fassung>"
+    const project = parseProjectSelection(selection.id);
+    if (project) {
+      return (
+        <ProjectsView
+          typ={project.typ}
+          repo={project.repo}
+          version={project.version}
+          onOpen={(repo, version) => onSelect(projectSelection(project.typ, repo, version))}
+          onOpenSettings={() => requestOpenSettings("github")}
+        />
+      );
+    }
+    return <PlaceholderView {...props} selectedId={selection.id} />;
+  }
 
   // Pfad über der Notiz, z. B. "Semester 7 › Steuern" (jeder Teil anklickbar).
   const breadcrumb = (folderId: string | null | undefined) => {
